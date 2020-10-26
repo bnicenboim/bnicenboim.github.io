@@ -1,0 +1,29 @@
+name: "bruno.nicenboim"
+output_dir: docs
+navbar:
+  title: "Bruno Nicenboim"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Publications & Presentations"
+      icon: fa-book  fa-2x
+      href: publications.html
+    - text: "CV"
+      icon: fa-file  fa-2x
+      href: cv.html
+  right:
+    - icon: fa-github fa-2x
+      href: https://github.com/bnicenboim
+    - icon: fa-twitter fa-2x
+      href: https://twitter.com/bruno_nicenboim
+    - icon: ai-orcid ai-2x
+      href: http://orcid.org/0000-0002-5176-3943
+    - icon: ai-osf ai-2x
+      href: https://osf.io/cmist/#!
+output:
+  html_document:
+    css: ["style.css","custom/css/academicons.css","custom/css/academicons.min.css"]
+    theme: readable
+    highlight: textmate
+exclude: ["*.csv", "*.bib","*.sh","*.R","*.sublime-*","*.tex"] 
+include: ["custom/*.*"]

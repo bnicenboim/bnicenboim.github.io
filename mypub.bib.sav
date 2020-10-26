@@ -1,0 +1,578 @@
+% Encoding: ISO-8859-1
+
+
+@book{Nicenboimetal,
+      title     = "An Introduction to {Bayesian} Data Analysis for Cognitive Science",
+      author    = "Bruno Nicenboim and Daniel Schad and Shravan Vasishth",
+      year      = "in preparation",
+  customa   = {https://vasishth.github.io/Bayes_CogSci/}
+    }
+
+@Article{PaapeEtAl2017,
+  author  = {Dario Paape and Bruno Nicenboim and Shravan Vasishth},
+  journal = {Glossa: {A} journal of general linguistics.},
+  title   = {Does antecedent complexity affect ellipsis processing? An empirical investigation},
+  year    = {2017},
+  number  = {1},
+  pages   = {71},
+  volume  = {2},
+  customa = {https://www.glossa-journal.org/articles/abstract/10.5334/gjgl.290/},
+  doi     = {10.5334/gjgl.290},
+  eprint  = {https://www.glossa-journal.org/articles/abstract/10.5334/gjgl.290/},
+}
+
+@Article{NicenboimEtAl2016When,
+  author  = {Bruno Nicenboim and Pavel Logačev and Carolina Gattei and Shravan Vasishth},
+  journal = {Frontiers in Psychology},
+  title   = {When high-capacity readers slow down and low-capacity readers speed up: {Working} memory and locality effects},
+  year    = {2016},
+  issn    = {1664-1078},
+  number  = {280},
+  volume  = {7},
+  customa = {papers/NicenboimEtAl2016When.pdf},
+  customb = {https://github.com/bnicenboim/papers/tree/master/NicenboimEtAl2016.%20When%20High-Capacity%20Readers%20Slow%20Down%20and%20Low-Capacity%20Readers%20Speed%20Up:%20Working%20Memory%20and%20Locality%20Effects},
+  doi     = {10.3389/fpsyg.2016.00280},
+  eprint  = {http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract},
+}
+@Article{NicenboimEtAl2015Working,
+  Title                    = {Working memory differences in long-distance dependency resolution},
+  Author                   = {Bruno Nicenboim and Shravan Vasishth and Carolina Gattei and Mariano Sigman and Reinhold Kliegl},
+  Year                     = {2015},
+  Doi                      = {10.3389/fpsyg.2015.00312},
+  ISSN                     = {1664-1078},
+  Number                   = {312},
+  eprint = {http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2015.00312/abstract},
+  Volume                   = {6},
+    customa   = {papers/NicenboimEtAl2015Working.pdf},
+
+    customb = {https://github.com/bnicenboim/papers/tree/master/NicenboimEtAl2015.%20Working%20memory%20differences%20in%20long-distance%20dependency%20resolution},  
+  Journal                  = {Frontiers in Psychology}
+}
+
+
+
+@ARTICLE{NicenboimVasishth2016llcII,
+   author = {Bruno Nicenboim and Shravan Vasishth},
+    title = "{Statistical methods for linguistic research: {Foundational} Ideas - {Part} {II}}",
+  journal = {Language and Linguistics Compass},
+   eprint = {https://arxiv.org/abs/1602.00245},
+  customa   = {papers/NicenboimVasishth2016llcII.pdf},
+  pages = {591--613},
+  doi = {10.1111/lnc3.12207},
+ url = {http://dx.doi.org/10.1111/lnc3.12207},
+  issn = {1749-818X},
+  number = {11},
+  volume = {10},
+     year = "2016"
+}
+
+
+@article{VasishthNicenboim2016llcI,
+author = {Vasishth, Shravan and Nicenboim, Bruno},
+title = {Statistical Methods for Linguistic Research: {Foundational} Ideas - {Part I}},
+journal = {Language and Linguistics Compass},
+volume = {10},
+number = {8},
+issn = {1749-818X},
+customa   = {papers/VasishthNicenboim2016llcI.pdf},
+url = {http://dx.doi.org/10.1111/lnc3.12201},
+eprint = {https://arxiv.org/abs/1601.01126},
+doi = {10.1111/lnc3.12201},
+pages = {349--369},
+year = {2016}
+}
+
+@Article{NicenboimEtAl2018Number,
+  author  = {Bruno Nicenboim and Shravan Vasishth and Felix Engelmann and Katja Suckow},
+  journal = {Cognitive Science},
+  title   = {Exploratory and confirmatory analyses in sentence processing: {A} case study of number interference in {German}},
+  year    = {2018},
+  number  = {S4},
+  pages   = {1075--1100},
+  volume  = {42},
+  customa = {papers/NicenboimEtAl2018Number.pdf},
+  customb = {https://osf.io/4dg9b/},
+  doi     = {10.1111/cogs.12589},
+  eprint  = {https://osf.io/preprints/psyarxiv/u2kqg/},
+}
+
+@Article{NicenboimEtAl2017EDAPS,
+  author  = {Bruno Nicenboim and Timo B. Roettger and Shravan Vasishth},
+  journal = {Journal of Phonetics},
+  title   = {Using meta-analysis for evidence synthesis: {The} case of incomplete neutralization in {German}},
+  year    = {2018},
+  pages   = {39--55},
+  volume  = {70},
+  customa = {https://psyarxiv.com/p5a4z/},
+  customb = {https://osf.io/g5ndw/},
+  doi     = {10.1016/j.wocn.2018.06.001},
+  eprint  = {https://psyarxiv.com/p5a4z/},
+}
+
+@article{VasishthEtAl2017EDAPS,
+  Title                    = {Bayesian data analysis in the phonetic sciences: {A} tutorial introduction},
+  Author                   = {Shravan Vasishth and Bruno Nicenboim and Mary E. Beckman and Fangfang Li and Eunjong Kong},
+doi = {10.1016/j.wocn.2018.07.008},
+eprint = {https://osf.io/5pj49/},
+  customa = {https://osf.io/5pj49/},
+  customb = {https://osf.io/g4zpv/},
+  volume="71",
+  pages= "147--161",
+  year = {2018},
+  journal= {Journal of Phonetics}
+}
+
+
+@unpublished{Vasishth_Nicenboim_Chopin_Ryder_2017,
+  title={Bayesian hierarchical finite mixture models of reading times: {A} case study},
+  url={osf.io/fwx3s},
+  DOI={10.17605/OSF.IO/FWX3S},
+  notes={unpublished},
+  author={Vasishth, Shravan and Nicenboim, Bruno and Chopin, Nicolas and Ryder, Robin},
+eprint = {https://osf.io/v5nps/},
+  customa = {https://osf.io/v5nps/}
+}
+
+
+@article{nicenboim_vasishth_rosler_2019,
+ title={Are words pre-activated probabilistically during sentence comprehension? {Evidence} from new data and a {Bayesian} random-effects meta-analysis using publicly available data},
+eprint ={https://psyarxiv.com/2atrh/},
+ customa={https://psyarxiv.com/2atrh/},
+ DOI={10.1016/j.neuropsychologia.2020.107427},
+notes = "In press",
+ author={Nicenboim, Bruno and Vasishth, Shravan and Rösler, Frank},
+ year={2020},
+journal = "Neuropsychologia"
+}
+
+@unpublished{lisson_etal_2020,
+ title={A computational evaluation of two models of retrieval processes in sentence processing in aphasia},
+ eprint={https://psyarxiv.com/r7dn5},
+ customa={https://psyarxiv.com/r7dn5},
+ DOI={10.31234/osf.io/r7dn5},
+ publisher={PsyArXiv},
+ author={Lisson, Paula and Pregla, Dorothea and Nicenboim, Bruno and Paape, Dario and van het Nederend, Mick L and Burchert, Frank and Stadie, Nicole and Caplan, David and Vasishth, Shravan},
+ year={2020},
+ notes={unpublished},
+ month={May}
+}
+
+@Article{NicenboimVasishth2017Models,
+  author  = {Bruno Nicenboim and Shravan Vasishth},
+  journal = {Journal of Memory and Language},
+  title   = {Models of Retrieval in Sentence Comprehension: {A} computational evaluation using {Bayesian} hierarchical modeling},
+  year    = {2018},
+  issn    = {0749-596X},
+  pages   = {1 --34},
+  volume  = {99},
+  customa = {papers/NicenboimVasishth2017Models.pdf},
+  customb = {https://osf.io/a5ymk},
+  doi     = {10.1016/j.jml.2017.08.004},
+  eprint  = {https://arxiv.org/abs/1612.04174},
+  url     = {https://arxiv.org/abs/1612.04174},
+}
+
+@article{vasishth_nicenboim_engelmann_burchert_2019,
+ title={Computational models of retrieval processes in sentence processing},
+  customa={https://psyarxiv.com/e4jds/},
+ eprint ={https://psyarxiv.com/e4jds/},
+ DOI={10.1016/j.tics.2019.09.003},
+volume = "23",
+number = "11",
+pages = "968 - 982",
+year = "2019",
+issn = "1364-6613",
+ journal = {Trends in Cognitive Sciences},
+ author={Vasishth, Shravan and Nicenboim, Bruno and Engelmann, Felix  and Burchert, Frank},
+ year={2019}
+}
+
+@Inproceedings{Nicenboim2019BICLCE,
+  Title                    = {Bayesian inference: Obstacles and opportunities},
+  Author                   = {Nicenboim, Bruno},
+  Booktitle                = {{8th Biennial International Conference on the Linguistics of Contemporary English (BICLCE), Bamberg, Germany}},
+  Year                     = {2019},
+  Month                    = {9},
+  customd= {talk}
+}
+
+
+@Inproceedings{Nicenboim2018StanCon,
+  Title                    = {The implementation of a model of choice: {The} (truncated) linear ballistic accumulator},
+  Author                   = {Nicenboim, Bruno},
+  Booktitle                = {{StanCon}},
+  Year                     = {2018},
+doi = {10.5281/zenodo.1465990},
+  Location                 = {Aalto University, Helsinki, Finland},
+  Month                    = {8},
+customa = {https://htmlpreview.github.io/?https://github.com/stan-dev/stancon_talks/blob/master/2018-helsinki/Contributed-Talks/nicenboim/LBA_stancon2018.html},
+  customd = {https://www.youtube.com/watch?v=wcpjZC9AV84&t=1h44m33s}
+}
+
+@InProceedings{GuerraEtAl2018,
+  author    = {Guerra, Ernesto and Nicenboim, Bruno and Helo, Andrea Verónica},
+  booktitle = {Architectures and Mechanisms for Language Processing ({AMLaP})},
+  title     = {A crack in the crystall ball: {Evidence} against pre-activation of gender features in sentence comprehension},
+  year      = {2018},
+  month     = {9},
+  customc   = {Poster},
+  location  = {Titanic Hotel Chaussee Berlin, Germany},
+}
+
+@InProceedings{NicenboimVasishth2018Symp,
+  author       = {Nicenboim, Bruno and Vasishth, Shravan},
+  booktitle    = {51. Kongress der Deutschen Gesellschaft für Psychologie},
+  title        = {Bayesian cognitive models of memory retrieval processes: {A} case study},
+  year         = {2018},
+  month        = {9},
+  booksubtitle = {Bayesian statistics as a coherent approach to psychologists’ statistical and methodological problems},
+  customd      = {talk},
+  location     = {Goethe-Universität Frankfurt, Germany},
+}
+
+
+@Inproceedings{Lissonetal2019Stancon,
+  Title                    = {Models of retrieval in sentence comprehension in aphasia},
+  Author                   = {Paula Lisson and Bruno Nicenboim  and Shravan Vasishth and Dario Paape},
+  Booktitle                = {{StanCon}},
+  Location                = {Cambridge, UK},
+  Year                     = {2019},
+  Month                    = {8},
+        customc = {Poster}
+
+}
+
+
+@Inproceedings{Lissonetal2019,
+  Title                    = {Competing models of retrieval in sentence processing: {The} case of aphasia},
+  Author                   = {Paula Lisson and Mick van het Nederend and Dorothea Pregla and Shravan Vasishth and Bruno Nicenboim and Dario Paape},
+    Booktitle                = {Architectures and Mechanisms for Language Processing ({AMLaP})},
+  Location                = {Institute of Cognitive Neuroscience and Centre for Language and Brain, Higher School of Economics, Russia},
+  Year                     = {2019},
+  Month                    = {9},
+        customc = {Poster}
+
+}
+
+
+@Inproceedings{VasishthEtAl2017Modelling,
+  Title                    = {Modelling dependency completion in sentence comprehension as a {Bayesian} hierarchical mixture process: {A} case study involving {Chinese} relative clauses},
+  Author                   = {Shravan Vasishth and Nicolas Chopin and Robin Ryder and Bruno Nicenboim},
+  eprint = {https://arxiv.org/abs/1702.00564v2},
+       year = 2017,
+    Booktitle={Proceedings of Cognitive Science Conference},
+Location={London, UK},
+  url                      = {https://arxiv.org/abs/1702.00564v2},
+  customa = {papers/VasishthEtAl2017Modelling.pdf}
+}
+
+
+@Inproceedings{VasishthEtAl2017Feature,
+   author = {{Vasishth}, S. and {Jaeger}, L.~A. and {Nicenboim}, B.},
+    title = "{Feature overwriting as a finite mixture process: {Evidence} from comprehension data}",
+archivePrefix = "arXiv",
+   eprint = {https://arxiv.org/abs/1703.04081},
+     Booktitle={Proceedings of MathPsych/ICCM Conference},
+Location={Warwick, UK},
+      year = 2017,
+  url = {https://arxiv.org/abs/1703.04081},
+  customa = {papers/VasishthEtAl2017Feature.pdf}
+  
+}
+
+
+
+
+
+@Inproceedings{Nicenboim2012a,
+  Title                    = {{Processing of filler-gap dependencies in Complex NP islands: Evidence from Hebrew}},
+  Author                   = {Nicenboim, Bruno},
+  Booktitle                = {{Proceedings of Annual CUNY Sentence Processing Conference, New York, NY}},
+  Year                     = {2012},
+  Month                    = {3},
+  customc = {Poster}
+}
+
+
+@Inproceedings{AlbertNicenboim2020,
+  Title                    = {Incorporating continuity in phonological models of the syllable using {NAP}},
+  Author                   = {Albert, Aviad and Nicenboim, Bruno},
+  Booktitle                = {LabPhon17},
+  Year                     = {2020},
+  Month                    = {7},
+  customc= {poster}
+}
+
+@Inproceedings{AlbertNicenboim2017,
+  Title                    = {Linking sonority with periodic energy: {Preliminary} findings from production and perception},
+  Author                   = {Albert, Aviad and Nicenboim, Bruno},
+  Booktitle                = {{3rd International Workshop on Dynamic Modeling, Cologne, Germany}},
+  Year                     = {2017},
+  Month                    = {7},
+  customd= {talk}
+}
+
+
+@Inproceedings{Nicenboim2012b,
+  Title                    = {{Processing Complex NP islands in Hebrew}},
+  Author                   = {Nicenboim, Bruno},
+  Booktitle                = {{Proceedings of Generative Linguistics in the Old World Conference (GLOW), Potsdam, Germany}},
+  Year                     = {2012},
+  Month                    = {3},
+    customd = {talk}
+}
+
+@Inproceedings{NicenboimEtAl2015ICCM,
+  Title                    = {Fail fast or succeed slowly: {Good}-enough processing can mask interference effects},
+  Author                   = {Bruno Nicenboim and Felix Engelmann and Katja Suckow and Shravan Vasishth},
+  Booktitle                = {International Conference on Cognitive Modeling ({ICCM})},
+  Year                     = {2015},
+  Month                    = {4},
+  customc = {Poster}
+}
+
+
+
+
+@Inproceedings{NicenboimEtAl2015CUNYb,
+  Title                    = {When high-capacity readers slow down and low-capacity readers speed up: {W}orking memory differences in unbounded dependencies},
+  Author                   = {Nicenboim, Bruno and Pavel Logacev and Carolina Gattei and Shravan Vasishth},
+  Booktitle                = {Proceedings of Annual {CUNY} Sentence Processing Conference},
+  Year                     = {2015},
+  Location                 = {University of Southern California, Los Angeles, CA},
+  Month                    = {3},
+  customc = {Poster}
+
+}
+
+@Inproceedings{NicenboimVasishth2017StanCon,
+  Title                    = {Models of Retrieval in Sentence Comprehension},
+  Author                   = {Nicenboim, Bruno and Vasishth, Shravan},
+  Booktitle                = {{StanCon}},
+  Year                     = {2017},
+  Location                 = {Columbia University New York, NY},
+  Month                    = {1},
+  customa ={http://mc-stan.org/events/stancon2017-notebooks/stancon2017-nicenboim-vasishth-retrieval-models.html},
+  customd = {https://youtu.be/DJ0c7Bm5Djk?t=6h18m1s}
+}
+
+
+
+@Inproceedings{NicenboimEtAl2014b,
+  Title                    = {When high-capacity readers slow down and low-capacity readers speed up: {Working memory differences in unbounded dependencies for German and Spanish readers}},
+  Author                   = {Bruno Nicenboim and Pavel Logacev and Carolina Gattei and Shravan Vasishth},
+  Booktitle                = {Mental Architecture for Processing and Learning of Language ({MAPLL})},
+
+  Year                     = {2014},
+  Location                 = {Tokyo, Japan},
+  Month                    = {August},
+    customd = {talk}
+
+}
+
+@Inproceedings{NicenboimEtAl2015CUNYa,
+  Title                    = {Good-enough processing can mask interference effects},
+  Author                   = {Nicenboim, Bruno and Katja Suckow and Shravan Vasishth},
+  Booktitle                = {Proceedings of Annual {CUNY} Sentence Processing Conference},
+  Year                     = {2015},
+  Location                 = {University of Southern California, Los Angeles, CA},
+  Month                    = {3},
+      customc = {Poster}
+}
+
+@Inproceedings{NicenboimEtAl2013,
+  Title                    = {The effect of distance on unbounded dependencies: An individual differences perspective},
+  Author                   = {Nicenboim, Bruno and Shravan Vasishth and Carolina Gattei and Pavel Logačev and Mariano Sigman},
+    Booktitle                = {Architectures and Mechanisms for Language Processing ({AMLaP})},
+  Location                = {Aix-Marseille Université, Marseille, France},
+  Year                     = {2013},
+  Month                    = {9},
+        customc = {Poster}
+
+}
+
+
+@Inproceedings{NicenboimEtAl2014c,
+  Title                    = {Readers with less cognitive control are more affected by surprising content: {Evidence from a self-paced reading experiment in German}},
+  Author                   = {Bruno Nicenboim and Shravan Vasishth and Reinhold Kliegl},
+  Booktitle                = {Mental Architecture for Processing and Learning of Language ({MAPLL})},
+  customa = {papers/NicenboimEtAl2014MAPLLb.pdf},
+
+  Year                     = {2014},
+  Location                 = {Tokyo, Japan},
+  Month                    = {August},
+        customd = {talk}
+
+}
+
+@Inproceedings{NicenboimEtAl2014d,
+  Title                    = {Readers with less cognitive control are more affected by surprising content},
+  Author                   = {Bruno Nicenboim and Shravan Vasishth and Reinhold Kliegl},
+  Booktitle                = {Architectures and Mechanisms for Language Processing ({AMLaP})},
+  Year                     = {2014},
+  Location                 = {Edinburgh, UK},
+  Month                    = {9},
+        customc = {Poster}
+
+}
+
+@Inproceedings{NicenboimEtAl2014a,
+  Title                    = {Working-memory capacity modulates antilocality effects in syntactic dependencies},
+  Author                   = {Nicenboim, Bruno and Shravan Vasishth and Reinhold Kliegl and Carolina Gattei and Mariano Sigman},
+  Booktitle                = {{Proceedings of Annual CUNY Sentence Processing Conference}},
+  Year                     = {2014},
+  Location                 = {The Ohio State University, Columbus, OH},
+  Month                    = {3},
+        customc = {Poster}
+
+}
+
+@InProceedings{PaapeEtAl2015AMLAP,
+  author    = {Dario Paape and Bruno Nicenboim and Shravan Vasishth},
+  booktitle = {Architectures and Mechanisms for Language Processing ({AMLaP})},
+  title     = {Antecedent ambiguity and ellipsis: Testing the reactivation account},
+  year      = {2015},
+  month     = {9},
+  customc   = {Poster},
+  location  = {Valletta, Malta},
+}
+
+@InProceedings{NicenboimEtAl2016AMLAP,
+  author    = {Bruno Nicenboim and Felix Engelmann and Katja Suckow and Shravan Vasishth},
+  booktitle = {Architectures and Mechanisms for Language Processing ({AMLaP})},
+  title     = {Number interference as predicted by cue-based retrieval},
+  year      = {2016},
+  month     = {9},
+  customc   = {Poster},
+  location  = {Bilbao, Spain},
+}
+
+@Inproceedings{NicenboimVasishth2017CUNY,
+  Title                    = {Models of retrieval in sentence comprehension: {A} computational evaluation using {Bayesian} hierarchical modeling},
+  Author                   = {Nicenboim, Bruno and Shravan Vasishth},
+  Booktitle                = {Proceedings of the Annual {CUNY} Sentence Processing Conference},
+  Year                     = {2017},
+  Location                 = {Massachusetts Institute of Technology, Boston, MA, USA},
+  Month                    = {3},
+  customc = {Poster}
+}
+
+@Misc{O2019,
+  month    = {6},
+  title    = {Bayesian models of memory retrieval in sentence comprehension},
+  year     = {2019},
+  location = {Institute of Cognitive Science, University of Osnabrueck, Germany},
+}
+
+
+@misc{ModelsJul2017,
+booktitle={},
+journaltitle={},
+title ={Bayesian models in psycholinguistics},
+Month = {7},
+year = {2017},
+location = {Institut für Linguistik - Phonetik, University of Cologne, Germany}
+}
+
+
+
+
+ @misc{BG2018,
+booktitle={},
+journaltitle={},
+title ={Memory in sentence comprehension},
+Month = {1},
+year = {2018},
+location = {Job Talk at the Department of Cognitive and Brain Sciences, University of Ben Gurion, Israel}
+}
+
+ 
+
+
+ @misc{StanUsers2018,
+booktitle={},
+journaltitle={},
+title ={A comparison of race and mixture models for explaining memory processes in sentence comprehension},
+Month = {6},
+year = {2018},
+location = {Stan user group in Berlin, Germany}
+}
+
+ 
+
+
+@misc{ModelsJan22017,
+booktitle={},
+journaltitle={},
+title ={Models of retrieval in sentence comprehension: {A} computational evaluation using Bayesian hierarchical modeling},
+Month = {1},
+year = {2017},
+location = {Colloquium of the HLP Lab at University of Rochester, NY, USA}
+}
+
+
+@misc{FailMar2015,
+booktitle={},
+journaltitle={},
+Month={3},
+year= {2015},
+title= {Fail fast or succeed slowly: {Good-enough} processing can mask interference effects}, 
+location ={Center for Research in Language at University of San Diego, California, USA}
+}
+
+
+@misc{HierarchicalJan2015,
+booktitle={},
+journaltitle={},
+Month={1},
+year= {2015},
+title= {Hierarchical multinomial processing tree models}, 
+location ={Research Seminar in Cognitive Psychology, University of Potsdam, Germany}
+}
+  
+@misc{SpeedDec013,
+booktitle={},
+journaltitle={},
+month= {12},
+year={2013},
+title= {Speed-up does not necessarily mean facilitation:{ Working} memory differences in long-distance dependency resolution}, 
+location ={Research Seminar in Cognitive Psychology, University of Potsdam, Germany}
+}
+
+@misc{EffectApr2013,
+booktitle={},
+journaltitle={},
+Month={4},
+year= {2013},
+title= {The Effect of Distance on Long-Distance Dependencies. {An} Individual Differences Perspective}, 
+location ={Research Seminar in Cognitive Psychology, University of Potsdam, Germany}
+}
+
+@misc{EffectMar2013,
+booktitle={},
+journaltitle={},
+Month={3},
+year= {2013},
+title= {The Effect of Distance on Long-Distance Dependencies. {An } Individual Differences Perspective}, 
+location ={Interdisciplinary Colloquium of the Linguistic Department, Tel Aviv University, Israel}
+}
+
+@misc{EffectDec2012,
+booktitle={},
+journaltitle={},
+Month={12},
+year= {2012},
+title= {The Effect of Distance on Unbounded  Dependencies.{ An} Individual Differences Perspective}, 
+location ={Psycholinguistic Seminar, Institute of Linguistics, University of Buenos Aires, Argentina}
+}
+
+@misc{EffectOct2012,
+booktitle={},
+journaltitle={},
+Month={8},
+year=  {2012},
+title= {The Effect of Distance on Unbounded (Linguistic) Dependencies. {An} Individual Differences Perspective}, 
+location ={Seminar, Laboratory of Integrative Neuroscience, University of Buenos Aires, Argentina}
+}
+
+@Comment{jabref-meta: databaseType:bibtex;}

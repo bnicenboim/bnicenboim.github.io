@@ -1,0 +1,99 @@
+---
+title: "Publications & Presentations"
+---
+
+
+
+```{r setup, include=FALSE,cache=F}
+
+####
+# Add [bib] with the biblatex
+###
+library(knitr)
+library(rmarkdown)
+library(htmltools)
+
+options(htmltools.dir.version = FALSE)
+
+library(RefManageR)
+bib <- ReadBib("mypub.bib", check = FALSE)
+
+
+BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
+           bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE)
+# sort(bib,sorting="ydnt")
+endcit<- "</cite></p>"
+ 
+ 
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+first_year <-  2000
+source("common.R")
+
+unpublished <- bib[list(bibtype="unpublished")]
+capture.output(print(unpublished, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/unpublished.bib")
+
+articlesall <- bib[list(bibtype="article")]
+capture.output(print(articlesall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/published.bib")
+
+booksall <- bib[list(bibtype="book")]
+capture.output(print(booksall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/published.bib")
+ 
+
+```
+<br/>
+<br/>
+
+# Unpublished manuscripts
+[[bibtex](papers/unpublished.bib)]
+
+```{r,echo=F,results="asis",cache=F}
+output(unpublished)
+```
+<br/>
+<br/>
+
+
+# Published (or accepted) in peer-reviewed journals
+[[bibtex](papers/published.bib)]
+
+```{r articles-pub,echo=F,results="asis",cache=F}
+last_year <- max(as.numeric(articlesall$year),na.rm=T)
+  
+for(y in seq(last_year,first_year,-1)){
+    articles <- suppressMessages(articlesall[list(year=as.character(y))])
+    if(length(articles)!=0){    
+        cat(paste0("## ",as.character(y),"\n" )) 
+        output(articles)
+    }
+}    
+
+```
+<br/>
+<br/>
+
+## Book in preparation
+
+```{r,echo=F,results="asis",cache=F}
+ 
+output(booksall,withbrackets=F)
+
+```
+<br/>
+<br/>
+
+# Conferences
+
+```{r,echo=F,results="asis",cache=F}
+presentationsall <- bib[list(bibtype="inproceedings")]
+
+last_year <- max(as.numeric(presentationsall$year))
+
+for(y in seq(last_year,first_year,-1)){
+
+    presentations <- suppressMessages(presentationsall[list(year=as.character(y))])
+    if(length(presentations)!=0){    
+        cat(paste0("## ",as.character(y),"\n" ))  
+        output(presentations)
+    }
+}
+```
