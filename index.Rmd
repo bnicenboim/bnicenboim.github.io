@@ -64,8 +64,9 @@ least in part, caused by linguistic preactivation that occurs prior to the predi
 
 - I'm working on [this textbook](https://vasishth.github.io/Bayes_CogSci/) (in progress) together with [Shravan Vasishth](http://www.ling.uni-potsdam.de/~vasishth/) and [Daniel Schad](https://danielschad.github.io/). 
 
-- Data and code for my published papers  is mostly in the [OSF website](https://osf.io/cmist/) (with some exceptions in my [github](https://github.com/bnicenboim) repo). And I'm also contributing to the
-[list of publicly available psycholinguistics datasets](https://github.com/tmalsburg/PsychlingDatasets/wiki/A-directory-of-publicly-available-data-sets-from-psycholinguistic-studies). 
+- Data and code for my published papers  is mostly in the [OSF website](https://osf.io/cmist/) (with some exceptions in my [github](https://github.com/bnicenboim) repo). And I'm also contributing to the [list of publicly available psycholinguistics datasets](https://github.com/tmalsburg/PsychlingDatasets/wiki/A-directory-of-publicly-available-data-sets-from-psycholinguistic-studies). 
+
+- I'm mantaining the [Stan for cognitive science website](https://cognitive-science-stan.github.io/) with resources for Bayesian modeling with Stan.
 
 
 <!-- #### News  -->
