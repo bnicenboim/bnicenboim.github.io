@@ -1,0 +1,83 @@
+---
+date: 
+title: Bruno Nicenboim
+---
+
+:::: {style="display: grid; grid-template-columns: 30% 65%; grid-column-gap: 1px; "}
+
+::: {}
+![](fig/s200_bruno.nicenboim.jpg)
+
+
+:::
+
+::: {}
+-----------        -------------------------------------------
+Email:             [initial].[lastname] [at] uvt.nl
+Office:            D108, Dante Building, Tilburg University
+Address:           Department of Cognitive Science and Artificial Intelligence
+                   Tilburg University
+                   PO Box 90153
+                   5000 LE Tilburg
+                   The Netherlands
+-----------        -------------------------------------------
+
+:::
+
+::::
+# About me
+
+I'm an assistant professor at the department of [Cognitive Science and AI of Tilburg University](https://research.tilburguniversity.edu/en/persons/bruno-nicenboim) and a guest researcher at the department of Linguistics the University of Potsdam, Germany. Before that I did my PhD and Postdoc in [Shravan Vasishth's lab](http://www.ling.uni-potsdam.de/~vasishth/), at the Department of Linguistics of University of Potsdam, Germany. 
+
+[Twitter](https://twitter.com/bruno_nicenboim)
+[Github](https://github.com/bnicenboim)
+[ORCID](http://orcid.org/0000-0002-5176-3943)
+[OSF](https://osf.io/cmist/#!)
+
+
+---
+
+<br />
+
+# My main interests
+
+## Computational (cognitive) modeling 
+
+- During my PhD, I worked on computational cognitive models that link memory processes with sentence comprehension, and on individual differences in sentence processing. The most important output of my PhD was [this paper about models of retrieval](papers/NicenboimVasishth2017Models.pdf); DOI: [10.1016/j.jml.2017.08.004](https://doi.org/10.1016/j.jml.2017.08.004). The paper shows the computational implementation of two different sentence processing theories (a verbal model and an ACT-R model) on the same framework using hierarchical Bayesian modeling. 
+
+- I'm also interested in decision making models. See here my attempt of a fully hierarchicallinear ballistic accumulator in Stan ([Stancon submission](https://htmlpreview.github.io/?https://github.com/stan-dev/stancon_talks/blob/master/2018-helsinki/Contributed-Talks/nicenboim/LBA_stancon2018.html)).
+
+## EEG
+
+- For my postdoc, I worked on predictions in language using EEG [(eprint)](https://psyarxiv.com/2atrh/); using novel EEG data, together with a meta-analysis of available data, we show that the N400 effect is, at
+least in part, caused by linguistic preactivation that occurs prior to the predicted target word, as opposed to semantic integration that occurs after the target word has been read. While this idea has been present in the literature for more than 10 years, experimental evidence has been so far controversial and included several failed replications. 
+
+- I'm developing a package for the manipulation of EEG data in R: https://bnicenboim.github.io/eeguana/. It is in the early stages of development, but it's able to do basic preprocessing for EEG data.  Feedback and comments (and [github issues](https://github.com/bnicenboim/eeguana/issues)) are welcome.
+
+ 
+##  Bayesian statistics 
+
+- I'm working on [this textbook](https://vasishth.github.io/Bayes_CogSci/) (in progress) together with [Shravan Vasishth](http://www.ling.uni-potsdam.de/~vasishth/) and [Daniel Schad](https://danielschad.github.io/). 
+
+
+- I'm mantaining the [Stan for cognitive science website](https://cognitive-science-stan.github.io/) with resources for Bayesian modeling with Stan.
+
+----
+
+## Data and code
+
+Data and code for my published papers  is mostly in the [OSF website](https://osf.io/cmist/) (with some exceptions in my [github](https://github.com/bnicenboim) repo). And I'm also contributing to the [list of publicly available psycholinguistics datasets](https://github.com/tmalsburg/PsychlingDatasets/wiki/A-directory-of-publicly-available-data-sets-from-psycholinguistic-studies). 
+
+---
+
+##  Recent posts
+
+<!-- #### News  -->
+
+
+<!-- <\!-- -------------- -\-> -->
+
+<!-- - I'll be teaching at the  [The Third Potsdam Summer School on Statistical Methods for Linguistics and Psychology (SMLP)](https://vasishth.github.io/smlp2020/), University of Potsdam, Germany. **7-11th September, 2020**. -->
+
+<!-- <br/> -->
+

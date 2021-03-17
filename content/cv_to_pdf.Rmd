@@ -1,0 +1,413 @@
+---
+title: "CURRICULUM VITAE"
+output: 
+  pdf_document:
+    toc: false # table of content true
+    number_sections: true  ## if you want number sections at each table header
+    keep_tex: true	
+---
+
+
+# Contact Information
+ 
+```{r setup, include=FALSE}
+# remove the year from talks, add months, order by months
+# 
+library(knitr)
+library(rmarkdown)
+library(htmltools)
+source("common.R")
+
+options(htmltools.dir.version = FALSE)
+
+library(RefManageR)
+bib <- ReadBib("mypub.bib", check = F)
+ ## 'style' should be one of "text", "Bibtex", "citation", "html", "latex", "textVersion", "R", "Biblatex", "markdown", "yaml"
+BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
+           bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE, no.print.fields=c("issn","url","customa","customb","customc"))
+
+
+sort(bib,sorting="ydnt")
+endcit<- "</cite></p>"
+
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+first_year <-  2000
+
+```
+--------------        -------------------------------------------
+Email:                bruno.nicenboim@uni-potsdam.de
+Tel:                  (+49)-0331/977-2796
+Office:               House 14, Room 214, Campus Golm, Potsdam
+Address:              Universität Potsdam
+                      Department für Linguistik
+                      Haus 14
+                      Karl-Liebknecht-Straße 24-25
+                      D-14476 Potsdam
+--------------        -------------------------------------------
+
+
+<br/>
+<br/>
+
+
+
+# Education
+
+------------------------  -----------------------------------------------------------------------
+2011--2017                **PhD  in Cognitive Science, University of Potsdam**
+
+                          Topic: Dependency resolution as a retrieval process
+
+                          Supervisors: Prof. Dr. Shravan Vasishth and Prof. Dr. Reinhold Kliegl
+
+                          Grade: *summa cum laude* <br/> <br/> 
+
+
+2010                      M.A. in Linguistics, Tel Aviv University
+
+                          Topic: Processing Complex NP Islands in Hebrew
+
+                          Supervisors: Prof. Dr. Julia Horvath and Prof. Dr. Tal Siloni 
+
+                          Grade: *summa cum laude*  <br/> <br/> 
+
+
+2009                      B.A Double Major, Tel Aviv University
+
+                          Linguistics. Grade: *summa cum laude*
+
+                          Sociology and Anthropology. Grade: very good
+------------------------  -----------------------------------------------------------------------
+
+<br/>
+<br/>
+
+# Academic-related work 
+
+------------------------  -----------------------------------------------------------------------
+2017--                    **Postdoctoral Researcher**, University of Potsdam.
+
+                          PIs: Shravan Vasishth, Frank Rösler <br/> <br/> 
+
+
+2016--2017                Coordinator of the Master in Cognitive Systems,  University of Potsdam <br/><br/>  
+    
+
+
+2009--2009                Research assistant, Tel Aviv University. Syntax and Lexicon interface. 
+
+                          PIs: Prof. Dr. Tal Siloni and Prof. Dr. Julia Horvath <br/> <br/> 
+
+
+2008--2009                Research assistant, Tel Aviv University. Psycholinguistics.  
+
+                          Assistance in experiments using E-prime and CHILDES software. 
+
+                          PI: Prof. Dr. Ruth Berman  
+---------------------------------   --------------------------------------------------------------------------------
+
+
+<br/> 
+<br/>
+
+# Articles
+
+## Published <!-- or accepted --> in peer-reviewed journals
+
+```{r articles-cv,echo=F,results="asis",cache=F}
+articlesall <- bib[list(bibtype="article")]
+last_year <- max(as.numeric(articlesall$year),na.rm=T)
+library(purrr)
+for(y in seq(last_year,first_year,-1)){
+    articles <- suppressMessages(articlesall[list(year=as.character(y))])
+    if(length(articles)!=0){    
+        ## cat(paste0(" \n" )) 
+        walk(articles, ~ {
+            cat("* ")
+            output(.x,withbrackets=F)
+            cat("\n")
+        }) 
+    }
+}    
+ 
+```
+<br/>
+<br/>
+
+
+## Unpublished manuscripts 
+
+```{r,echo=F,results="asis",cache=F}
+ 
+articles <- bib[list(bibtype="unpublished")]
+
+walk(articles, ~ {
+    cat("* ")
+    output(.x,withbrackets=F)
+    cat("\n")
+}) 
+
+```
+
+<br/>
+<br/>
+
+# Conferences
+
+```{r,echo=F,results="asis",cache=F}
+presentationsall <- bib[list(bibtype="inproceedings")]
+ last_year <- max(as.numeric(presentationsall$year))
+
+for(y in seq(last_year,first_year,-1)){
+
+    presentations <- suppressMessages(presentationsall[list(year=as.character(y))])
+    if(length(presentations)!=0){    
+        ## cat(paste0("## ",as.character(y),"\n" ))  
+        ## cat(paste0(" \n" )) 
+        walk(presentations, ~ {
+            cat("* ")
+            output(.x,withbrackets=F)
+            cat("\n")
+        }) 
+       ## output(presentations,withbrackets=F)
+    }
+}
+```
+<br/>
+<br/>
+
+# Invited talks
+
+```{r,echo=F,results="asis",cache=F}
+ 
+library(stringr)
+
+talksall <- bib[list(bibtype="misc")]
+
+for(y in seq(this_year,first_year,-1)){
+
+    talks <- suppressMessages(talksall[list(year=as.character(y))])
+    if(length(talks)!=0){    
+        ## cat(paste0("## ",as.character(y),"\n" ))  
+        ## output(talks,withbrackets=F,hack=T)
+        walk(talks, ~ {
+            cat("* ")
+            output(.x,withbrackets=F,hack=T)
+            cat("\n")
+        }) 
+    }
+}
+
+```
+<br/>
+<br/>
+
+
+# Honors and grants
+
+------------------------  -----------------------------------------------------------------------
+2012--2018                Potsdam Graduate School (PoGS) Travel Grants 
+
+2014                      Kommission für Forschung und wissenschaftlichen Nachwuchs (FNK, University of Potsdam) Travel Grant
+
+2014                      Potsdam Graduate School (PoGS) PhD Completion Scholarship (5 months)
+
+2013                      Minerva Fellowship Extension for Doctoral Research (1 year)
+
+2011                      Minerva Fellowship for Doctoral Research (2 years)
+
+2009                      Posis Scholarship from the School of Cultural Studies, Tel Aviv University
+
+2008                      Faculty of Humanities Scholarship for Achievements in M.A. studies, Tel Aviv University
+
+2006                      Dean's Award for Achievements in Linguistics, Tel Aviv University 
+------------------------  -----------------------------------------------------------------------
+
+<br/>
+<br/>
+
+# Teaching experience
+
+## Workshops and summer schools
+
+------------------------  -----------------------------------------------------------------------
+2020 (Forthcoming)        "Introduction to computational Bayesian methods using Stan", 
+                             with Shravan Vasishth 
+                       
+                          Physalia courses, Berlin, Germany\vspace{.1cm}
+                          
+2020 (Forthcoming)        "Methods in Advanced Statistics", with Shravan Vasishth 
+                       
+                          2020 Winter School 
+                          
+                          by Netherlands Graduate School in Linguistics (LOT),
+                          
+                          Tilburg, Netherlands\vspace{.1cm}
+
+2019 (Forthcoming)        "Introduction to Bayesian statistics using brms", 
+
+                          University of Cologne, Germany\vspace{.1cm}
+
+2019 (Forthcoming)        "Introduction to Bayesian statistics using brms", 
+
+                          University of Edinburgh, UK\vspace{.1cm}
+                          
+2019 (Forthcoming)        "Advanced Bayesian methods",
+
+                          Third Summer School on Statistical Methods for Linguistics and Psychology,
+
+                          University of Potsdam, Germany\vspace{.1cm}
+                          
+2018                      Talk:"Cognitive models of memory processes in sentence comprehension:  A case study using Bayesian hierarchical modeling"  
+
+                          Masterclass in Bayesian Statistics, Research school,
+
+                          CIRM (Marseille Luminy, France)\vspace{.1cm} 
+
+
+2018                      "Advanced topics in Bayesian modeling",
+
+                          Second Summer School on Statistical Methods for Linguistics and Psychology,
+
+                          University of Potsdam, Germany\vspace{.1cm} 
+
+
+2017                      "Introduction to Bayesian Modeling using Stan", 
+
+                          13. Tagung der Fachgruppe Methoden und Evaluation der Deutschen Gesellschaft für Psychologie,
+
+                          Tübingen, Germany\vspace{.1cm} 
+
+2017                      "Introduction to Bayesian modeling",
+
+                          First Summer School on Statistical Methods for Linguistics and Psychology,
+
+                          University of Potsdam, Germany\vspace{.1cm} 
+------------------------  -----------------------------------------------------------------------
+
+
+## Courses
+
+------------------------  -----------------------------------------------------------------------
+2015--2017 (Winter)       **Lecturer** in "Advanced Data Analysis". University of Potsdam
+
+2016 (Summer)             **Lecturer** in "Predictions in Language Processing".  University of Potsdam
+
+2015--2016 (Winter)       **Lecturer** in "Individual Differences in Sentence Processing".  University of Potsdam
+
+2015 (Summer)             **Lecturer** in "Predictions in Language Processing".  University of Potsdam
+
+2008--2010                **Teaching assistant** in "Syntax Beginners" and "Foundations of Theoretical Linguistics" Tel Aviv University
+------------------------  -----------------------------------------------------------------------
+
+
+
+<br/>
+<br/>
+
+
+# Supervising
+
+------------------------  -----------------------------------------------------------------------
+2019			          Chiara Tschirner (co-supervision with Prof. Dr. Vasishth), Master Thesis.	
+
+2018                      Eva-Maria Fey (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: "The effect of individual differences and the functional organisation of the human brain in joke comprehension based on left- and right-handedness"
+
+
+2016                      Daniel Grünke (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: "Der Zusammenhang zwischen Arbeitsgedächtnis und Satzverarbeitung" 
+ 
+
+2015                      Lisa Münchberger (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: "Unflüssigkeiten und Hemmungen in der Sprachverarbeitung im Deutschen" 
+------------------------  -----------------------------------------------------------------------
+
+
+<br/>
+<br/>
+
+
+# Open software 
+
+* [eeguana](https://bnicenboim.github.io/eeguana/). An R package for flexible manipulation of EEG data. (https://bnicenboim.github.io/eeguana/)
+
+
+<br/>
+<br/>
+
+
+# Academic-related training
+
+------------------------  -----------------------------------------------------------------------
+2016                      Groningen Spring School on Cognitive Modeling, the Netherlands
+
+2015--2016                International Teaching Professionals,  University of Potsdam, Germany 
+
+2013                      Autumn School Methods in Language Comprehension,  Rovereto (TN), Italy 
+
+2012                      Eye-tracking-while-reading  at Laboratory of Integrative Neuroscience, University of Buenos Aires (3 months). Host: Dr. Mariano Sigman 
+------------------------  -----------------------------------------------------------------------
+
+
+
+
+
+<br/>
+<br/>
+
+
+
+
+# Reviewing
+
+
+* Journal of Experimental Psychology: Learning, Memory, and Cognition
+
+* Neuropsychologia
+
+* Lingua
+
+* Phonological Data and Analysis
+
+* Language, Cognition and Neuroscience
+
+* Routledge Manuscript
+
+* Journal of Memory and Language
+
+* Quarterly Journal of Experimental Psychology
+
+* Journal of Cognitive Psychology  
+
+* Journal of Phonetics 
+
+* CUNY Conference
+
+* Quantitative approaches in corpus linguistics and psycholinguistics, Paris, France    
+
+<br/>
+<br/>
+
+# Languages
+
+* Spanish (Mother tongue)
+
+* English   (Fluent)
+
+* Hebrew    (Fluent)
+
+* German    (Advanced)
+ 
+
+
+<br/>
+<br/>
+
+# Non-academic professional experience
+
+------------------------  -----------------------------------------------------------------------
+2009--2011                QA engineer: NLP Testing at Clearforest.                           Testing rules and heuristics for identifying semantic entities and relations in English, Spanish and French texts. 
+
+2007--2009                Content Specialist position at Celebros. Organization, analysis and categorization of data of Spanish and U.S. clients' databases. 
+------------------------  -----------------------------------------------------------------------
+
+
+

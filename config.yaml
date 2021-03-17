@@ -1,0 +1,61 @@
+baseurl: /
+languageCode: en-us
+title: Bruno Nicenboim
+theme: hugo-lithium
+googleAnalytics: ''
+disqusShortname: ''
+
+enableEmoji: true
+publishDir: docs
+
+ignoreFiles:
+  - \.Rmd$
+  - \.Rmarkdown$
+  - _cache$
+  - _draft$
+  - \.knit\.md$
+  - \.utf8\.md$
+permalinks:
+  post: /:year/:month/:day/:slug/
+menu:
+  main:
+    - name: About me
+      url: /
+      weight: 1
+    - name: Publications and presentations
+      url: /publications/
+      weight: 2
+    - name: CV
+      url: /cv/
+      weight: 3
+    - name: Posts
+      url: /post/
+      weigth: 4
+params:
+  author: Bruno Nicenboim
+  gravatar:
+    email: bruno.nicenboim@gmail.com
+    social:
+    - name: github
+      url: https://github.com/example
+      weight: 10
+    - name: twitter
+      url: https://twitter.com/example
+      weight: 30
+  MathJaxCDN: //cdnjs.cloudflare.com/ajax/libs
+  MathJaxVersion: 2.7.5
+  description: Bruno Nicenboim's academic website.
+  favicon: asd.ico
+  highlightjsCDN: //cdnjs.cloudflare.com/ajax/libs
+  highlightjsLang:
+    - r
+    - yaml
+    - stan
+    - python
+  highlightjsTheme: github
+  highlightjsVersion: 9.12.0
+  logo:
+    alt: Logo
+    height: 500
+    url: logo.png
+    width: 500
