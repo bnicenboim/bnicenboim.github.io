@@ -30,7 +30,7 @@ output <- function(articles, withbrackets=TRUE,hack=FALSE){
                         if(substr(brackets[[b]],1,4)=="http" | substr(brackets[[b]],nchar(brackets[[b]])-3,nchar(brackets[[b]]))==".pdf" ){
                             a <- paste0(a,' **[**<a href="',brackets[[b]],'">**',names(brackets[b]),'**</a>**]** ')    
                         } else {  #This is mostly to create the [ talk ] with no link
-                            a <- paste0(a,' **[**',names(brackets[b]),'**]** ')
+                            a <- paste0(a,' **[**',brackets[b],'**]** ')
                         }
                         
                     }
