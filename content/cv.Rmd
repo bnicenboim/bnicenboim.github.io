@@ -16,7 +16,7 @@ library(knitr)
 library(rmarkdown)
 library(htmltools)
 source("common.R")
-
+ 
 options(htmltools.dir.version = FALSE)
 
 library(RefManageR)
