@@ -33,6 +33,7 @@ menu:
       weigth: 4
 params:
   author: Bruno Nicenboim
+  commentsrepo: bnicenboim/bnicenboim.github.io
   gravatar:
     email: bruno.nicenboim@gmail.com
     social:

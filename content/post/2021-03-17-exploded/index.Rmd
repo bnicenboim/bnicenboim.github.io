@@ -236,7 +236,7 @@ The whole model named `exploded.stan` includes the usual data declaration, the p
 ```{stan output.var = "exploded", code = readLines("exploded.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
 ```
 
-Let's see if I can recover the parameter values.
+Let's see if we can recover the parameter values.
 
 ```{r, message = FALSE, results = "hide"}
 ldata <- list(res = lapply(res, as.numeric),
@@ -258,25 +258,26 @@ f_exploded
 
 ```{r, echo = FALSE}
 width <- getOption("width")
-options(width = 70)
+options(width = 80)
 f_exploded
 options(width = width)
 ```
 
 I plot the posterior distributions of the probability values and the true probability values below.
 
-```{r}
-mcmc_recover_hist(f_exploded$draws("Theta"), P_toppings)
+```{r, fig.height= 7}
+mcmc_recover_hist(f_exploded$draws("Theta"), P_toppings,facet_args = list(scales = "fixed", ncol = 3)) +
+ theme(legend.position="bottom")
 ```
+
+SBC 
 
 ## Caveats
 
 Not a cognitive model ....
 
 
-## Session info
-
-I used `r papaja::cite_r("r-references.bib")` to generate this document.
+## Session info ^[I used `r papaja::cite_r("r-references.bib")` to generate this document.]
 
 ```{r}
 sessionInfo()

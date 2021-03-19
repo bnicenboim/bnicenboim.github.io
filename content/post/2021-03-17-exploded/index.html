@@ -200,7 +200,7 @@ model {
     target += exploded_lpmf(res[r]|Theta);
   }
 }</code></pre>
-<p>Let’s see if I can recover the parameter values.</p>
+<p>Let’s see if we can recover the parameter values.</p>
 <pre class="r"><code>ldata &lt;- list(res = lapply(res, as.numeric),
               N_ranked = length(res[[1]]), #5
               N_options = length(P_toppings), #25
@@ -216,41 +216,31 @@ f_exploded &lt;- m_expl$sample(
 )
 
 f_exploded</code></pre>
-<pre><code> variable    mean  median   sd  mad      q5     q95 rhat ess_bulk
- lp__     -631.55 -631.15 3.62 3.49 -638.04 -626.26 1.00     1495
- Theta[1]    0.20    0.19 0.03 0.03    0.15    0.25 1.00     9269
- Theta[2]    0.18    0.18 0.03 0.02    0.14    0.23 1.00     8692
- Theta[3]    0.15    0.15 0.02 0.02    0.11    0.19 1.00     7806
- Theta[4]    0.08    0.08 0.02 0.02    0.06    0.11 1.00     8939
- Theta[5]    0.06    0.06 0.01 0.01    0.04    0.09 1.00     7868
- Theta[6]    0.06    0.06 0.01 0.01    0.04    0.09 1.00     8288
- Theta[7]    0.04    0.04 0.01 0.01    0.03    0.06 1.00     9224
- Theta[8]    0.01    0.01 0.01 0.01    0.01    0.02 1.00     7123
- Theta[9]    0.01    0.01 0.01 0.00    0.00    0.02 1.00     7596
- ess_tail
-     2225
-     3242
-     2867
-     2826
-     2880
-     2831
-     2804
-     3105
-     2958
-     2478
+<pre><code> variable    mean  median   sd  mad      q5     q95 rhat ess_bulk ess_tail
+ lp__     -631.55 -631.15 3.62 3.49 -638.04 -626.26 1.00     1495     2225
+ Theta[1]    0.20    0.19 0.03 0.03    0.15    0.25 1.00     9269     3242
+ Theta[2]    0.18    0.18 0.03 0.02    0.14    0.23 1.00     8692     2867
+ Theta[3]    0.15    0.15 0.02 0.02    0.11    0.19 1.00     7806     2826
+ Theta[4]    0.08    0.08 0.02 0.02    0.06    0.11 1.00     8939     2880
+ Theta[5]    0.06    0.06 0.01 0.01    0.04    0.09 1.00     7868     2831
+ Theta[6]    0.06    0.06 0.01 0.01    0.04    0.09 1.00     8288     2804
+ Theta[7]    0.04    0.04 0.01 0.01    0.03    0.06 1.00     9224     3105
+ Theta[8]    0.01    0.01 0.01 0.01    0.01    0.02 1.00     7123     2958
+ Theta[9]    0.01    0.01 0.01 0.00    0.00    0.02 1.00     7596     2478
 
  # showing 10 of 26 rows (change via &#39;max_rows&#39; argument)</code></pre>
 <p>I plot the posterior distributions of the probability values and the true probability values below.</p>
-<pre class="r"><code>mcmc_recover_hist(f_exploded$draws(&quot;Theta&quot;), P_toppings)</code></pre>
+<pre class="r"><code>mcmc_recover_hist(f_exploded$draws(&quot;Theta&quot;), P_toppings,facet_args = list(scales = &quot;fixed&quot;, ncol = 3)) +
+ theme(legend.position=&quot;bottom&quot;)</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>SBC</p>
 </div>
 <div id="caveats" class="section level2">
 <h2>Caveats</h2>
 <p>Not a cognitive model ….</p>
 </div>
 <div id="session-info" class="section level2">
-<h2>Session info</h2>
-<p>I used R <span class="citation">(Version 4.0.3; R Core Team <a href="#ref-R-base">2020</a>)</span> and the R-packages <em>bayesplot</em> <span class="citation">(Version 1.8.0.9000; Gabry et al. <a href="#ref-R-bayesplot">2019</a>)</span>, <em>cmdstanr</em> <span class="citation">(Version 0.3.0.9000; Gabry and Češnovar <a href="#ref-R-cmdstanr">2020</a>)</span>, <em>dplyr</em> <span class="citation">(Version 1.0.4; Wickham et al. <a href="#ref-R-dplyr">2021</a>)</span>, <em>extraDistr</em> <span class="citation">(Version 1.9.1; Wolodzko <a href="#ref-R-extraDistr">2020</a>)</span>, <em>ggplot2</em> <span class="citation">(Version 3.3.3; Wickham <a href="#ref-R-ggplot2">2016</a>)</span>, <em>mediumr</em> <span class="citation">(Version 0.0.0.9000; Yutani <a href="#ref-R-mediumr">2021</a>)</span>, <em>purrr</em> <span class="citation">(Version 0.3.4; Henry and Wickham <a href="#ref-R-purrr">2020</a>)</span>, <em>rcorpora</em> <span class="citation">(Version 2.0.0; Kazemi et al. <a href="#ref-R-rcorpora">2018</a>)</span>, and <em>shiny</em> <span class="citation">(Version 1.6.0; Chang et al. <a href="#ref-R-shiny">2021</a>)</span> to generate this document.</p>
+<h2>Session info<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></h2>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 4.0.3 (2020-10-10)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -353,5 +343,6 @@ loaded via a namespace (and not attached):
 <hr />
 <ol>
 <li id="fn1"><p>This model is also called the <em>rank ordered logit model</em> <span class="citation">(Beggs, Cardell, and Hausman <a href="#ref-BEGGS19811">1981</a>)</span> or Plackett–Luce model due to <span class="citation">Plackett (<a href="#ref-Plackett">1975</a>)</span> and <span class="citation">Luce (<a href="#ref-Luce1959">1959</a>)</span>, but I liked the explosion part more.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>I used R <span class="citation">(Version 4.0.3; R Core Team <a href="#ref-R-base">2020</a>)</span> and the R-packages <em>bayesplot</em> <span class="citation">(Version 1.8.0.9000; Gabry et al. <a href="#ref-R-bayesplot">2019</a>)</span>, <em>cmdstanr</em> <span class="citation">(Version 0.3.0.9000; Gabry and Češnovar <a href="#ref-R-cmdstanr">2020</a>)</span>, <em>dplyr</em> <span class="citation">(Version 1.0.4; Wickham et al. <a href="#ref-R-dplyr">2021</a>)</span>, <em>extraDistr</em> <span class="citation">(Version 1.9.1; Wolodzko <a href="#ref-R-extraDistr">2020</a>)</span>, <em>ggplot2</em> <span class="citation">(Version 3.3.3; Wickham <a href="#ref-R-ggplot2">2016</a>)</span>, <em>mediumr</em> <span class="citation">(Version 0.0.0.9000; Yutani <a href="#ref-R-mediumr">2021</a>)</span>, <em>purrr</em> <span class="citation">(Version 0.3.4; Henry and Wickham <a href="#ref-R-purrr">2020</a>)</span>, <em>rcorpora</em> <span class="citation">(Version 2.0.0; Kazemi et al. <a href="#ref-R-rcorpora">2018</a>)</span>, and <em>shiny</em> <span class="citation">(Version 1.6.0; Chang et al. <a href="#ref-R-shiny">2021</a>)</span> to generate this document.<a href="#fnref2" class="footnote-back">↩</a></p></li>
 </ol>
 </div>
