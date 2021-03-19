@@ -1,0 +1,285 @@
+---
+title: "A simple way to model rankings with Stan"
+author: "Bruno Nicenboim"
+date: "`r Sys.Date()`"
+categories: ["stats"]
+tags: ["stan", "Bayesian", "r"]
+bibliography: ["biblio.bib","r-references.bib"]
+draft: false
+---
+
+
+```{r setup, include = FALSE}
+papaja::r_refs("r-references.bib")
+
+## Global options
+options(#max.print="75",
+        width = 60,
+        tibble.width = 75,
+        digits = 2)
+knitr::opts_chunk$set(echo=TRUE,
+	             cache=FALSE,
+               prompt=FALSE,
+               tidy=FALSE,
+               comment=NA,
+               message=FALSE,
+               warning=TRUE)
+knitr::opts_knit$set(width=80)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+set.seed(42) 
+```
+
+## The initial problem 
+
+
+I wrote what I thought it was the generative process for some modeling work, and it looked too common to not have a name, so I started to ask around in Twitter:
+
+```{r echo=FALSE}
+blogdown::shortcode('tweet', '1369217174699732995')
+```
+
+One useful clue was this one:
+
+```{r echo=FALSE}
+blogdown::shortcode('tweet', '1369226616312901637')
+```
+
+
+It turns out that the distribution that I was describing is in general used for rankings and it is called an  [*exploded logit distribution*](https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit).^[This model is also called the *rank ordered logit model* [@BEGGS19811] or Plackett–Luce model due to @Plackett and @Luce1959, but I liked the explosion part more.]
+
+![](https://media.giphy.com/media/3osxYCsLd9qgsgqpwI/giphy.gif)
+
+
+In this post, I'll show how it can be fit in Stan, and how it is useful to  describe *some* aspects of ranking data.
+
+
+I'm going to load some R packages that will be useful throughout this post.
+
+```{r}
+library(dplyr) # Data manipulation
+library(purrr) # List manipulation
+library(ggplot2) # Nice plots
+library(extraDistr) # More distributions
+library(rcorpora) # Get random words
+library(cmdstanr) # Lightweight Stan interface
+library(bayesplot) # Nice Bayesian plots
+```
+
+
+## Ranking data
+
+Ranking data appear when we care about the *underlying* order or ranking that certain elements have. We might want to know which are the best horses after looking at several races [@gakisetal2018], which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.
+
+
+One way to assess get a ranking of exemplars of a category is to present them to participants and ask them to order all (or a subset) of them [see @Barsalou1985].
+
+### A ranking simulation using pizza toppings
+
+![](https://media.giphy.com/media/3oEjHZhG9COPG6XjzO/giphy.gif)
+
+```{r ptoppings, echo = FALSE}
+toppings <- corpora("foods/pizzaToppings")$pizzaToppings
+N_toppings <- length(toppings)
+```
+
+Let's consider the following `r N_toppings` pizza toppings:
+
+```{r, echo = TRUE}
+toppings <- corpora("foods/pizzaToppings")$pizzaToppings
+N_toppings <- length(toppings)
+toppings
+```
+
+Let's say that we want to know the underlying universal order of pizza toppings. For the modeling, I'm going to assume that the toppings are ordered according to an underlying value. This underlying value also represents how likely it is for each topping to be *the* exemplar of their category.
+
+So I'm going to assign probabilities that sum up to one to the toppings. For this, I draw random samples from a [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution). The Dirichlet distribution is the generalization of the Beta distribution. It has a concentration parameter, usually $\boldsymbol{\alpha}$, which is a vector as long as the probabilities were are sampling (`r N_toppings` here). When the vector is full of ones, the distribution is uniform: All probabilities are equally likely, so on average each one is $\frac{1}{vector \text{  } length}$ ($\frac{1}{`r N_toppings`}$ here). By setting all the concentration parameters below one (namely $.5$), I'm assuming sparsity, that is, many probability values close to zero. 
+
+These is the true ranking that I'm assuming here:
+
+```{r Probs}
+# all elements of the vector are .5
+alpha <- rep(.5, N_toppings)
+# Generate one draw from a Dirichlet distribution
+P_toppings <- c(rdirichlet(1, alpha)) %>%
+  # Add names
+  setNames(toppings) %>%
+  # Sort from the best exemplar
+  sort(decreasing = TRUE) %>%
+  round(3)
+P_toppings
+```
+
+Given these values, if I were to ask a participant "What's the most appropriate topping for a pizza?" I would assume that `r P_toppings[[1]]*100` percent of the time, I would get `r names(P_toppings[1])`.
+
+Essentially,  we expect something like this to be happening.
+
+$$
+response \sim Categorical(\Theta_{toppings})
+$$
+
+With $\Theta_{toppings}$ representing the different probabilities for each topping. The probability mass function of the categorical distribution is absurdly simple: It's just the probability of the outcome.
+
+$p(x = i) = \Theta_i$, where $i = \{$`r paste0(names(P_toppings), collapse = ", ")`$\}$. 
+
+
+We can simulate this with 100 participants as follows:
+
+```{r}
+response <- rcat(100, P_toppings, names(P_toppings))
+```
+
+And this should match approximately `P_toppings`.
+
+```{r table}
+table(response)/100
+```
+
+Now, what happens if we ask about the second most appropriate topping for a pizza?
+
+Now we need to exclude the first topping that was given, and draw another sample from a categorical distribution. (We don't allow the participant to repeat toppings, that is, to say that best topping is pineapple and second best is also pineapple). This means that now the probability of the topping already given is zero, and that we need to normalize our original probability values by dividing them by the new total probability (which will be lower than 1).
+
+Here, the probability of getting the element $j$ (where $j \neq i$) is
+
+$$p(x = j) = \frac{\Theta_j}{\sum \Theta_{-i}}$$
+
+where $\Theta_{-i}$ represents the probabilities of all the outcomes except of $i$, which was the first one. We can go on with the third best topping, where we need to normalize the remaining probabilities by dividing by the new sum of probabilities.
+
+
+$$p(x = k) = \frac{\Theta_k}{\sum \Theta_{-i,-j}}$$
+
+We can do this until we get to the last element, which will be drawn with probability 1.
+
+**And this is the exploded logit distribution.**
+
+This process can be simulated in R as follows:
+
+```{r rexploded}
+rexploded <-  function(n, ranked = 3, prob, labels = NULL){
+  #run n times
+  lapply(1:n, function(nn){
+    res <- rep(NA,ranked)
+    if(!is.null(labels)){
+      res <- factor(res, labels)
+    } else {
+      # if there are no labels, just 1,2,3,...
+      labels <- seq_along(prob)
+    }
+  for(i in 1:ranked){
+    # normalize the probability so that it sums to 1
+    prob <- prob/sum(prob)
+    res[i] <- rcat(1, prob = prob, labels = labels)
+    # remove the choice from the set:
+    prob[res[i]] <- 0
+  }
+    res
+  })
+}
+```
+
+If we would like to simulate 50 subjects creating a ranking of the best 5 toppings, we would do the following:
+
+```{r}
+res <- rexploded(n = 50,
+                 ranked = 5,
+                 prob = P_toppings,
+                 labels = names(P_toppings))
+# subject 1:
+res[[1]]
+```
+
+```{r subjects, fig.show='animate', ffmpeg.format='gif', dev='jpeg', echo = FALSE}
+plots <- map_dfr(res,
+                     ~ tibble(topping= .x) %>%
+                       mutate(order = 1:n()),
+                     .id="subject") %>%
+  mutate(subject =factor(subject,levels=rev(unique(subject)))) %>%
+  group_by(subject) %>%
+  group_split() %>%
+  map(~ ggplot(.x, aes(x=order, y = subject, label = topping, group = subject)) +
+  geom_line() +
+  geom_label() +
+  theme_minimal())
+
+walk(plots, print)
+```
+
+We have simulated ranking data of pizza toppings, can we recover the original probability values and "discover" the underlying order?
+
+## Fitting the exploded logistic distribution in Stan
+
+To fit the model in Stan, I'm going to create a custom probability mass function that takes an array of integers, `x`, which represents a set of rankings, and a vector of probability values, `theta`, that sums up to one.
+
+The logic of this function is that the probability mass function of a ranking $\{i,j,k, \ldots, N \}$ can be written as a product of normalized categorical distributions (where the first one is just divided by 1).
+
+$$p(x = \{i,j,k,\ldots\}) = \frac{\Theta_i}{\sum \Theta} \cdot \frac{\Theta_j}{ \Theta_{-i}} \cdot \frac{\Theta_k}{ \Theta_{-i, -j}} \ldots$$
+
+In log-space products become sums, and divisions differences, and the log of $\sum \Theta$ will be zero:
+
+$$log(p(x = \{i,j,k,\ldots\})) = \log(\Theta_i) - log(\sum \Theta) + \log(\Theta_j) -  \log(\Theta_{-i}) + \log(\Theta_k) -\log( \Theta_{-i, -j}) + \ldots$$
+
+The following Stan custom function follows this logic but iterating over the rankings. In each iteration, it aggregates in the variable `out` the addends of the log probability mass function, and turns the probability of selecting again the already ranked element to zero.
+
+```
+ real exploded_lpmf(int[] x, vector Theta){
+    real out = 0;
+    vector[num_elements(Theta)] thetar = Theta;
+    for(pos in x){
+      out += log(thetar[pos]) - log(sum(thetar));
+      thetar[pos] = 0;
+      }
+     return(out);
+ }
+```
+
+The whole model named `exploded.stan` includes the usual data declaration, the parameter `Theta` declared as a simplex (i.e., it sums to one), and a uniform Dirichlet prior for `Theta`. (I'm assuming that I don't know how sparse the probabilities are).
+
+```{stan output.var = "exploded", code = readLines("exploded.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+Let's see if I can recover the parameter values.
+
+```{r, message = FALSE, results = "hide"}
+ldata <- list(res = lapply(res, as.numeric),
+              N_ranked = length(res[[1]]), #5
+              N_options = length(P_toppings), #25
+              N_ranking = length(res)) # 10
+
+
+m_expl <- cmdstan_model("./exploded.stan")
+
+f_exploded <- m_expl$sample(
+  data = ldata,
+  seed = 123,
+  parallel_chains = 4
+)
+
+f_exploded
+```
+
+```{r, echo = FALSE}
+width <- getOption("width")
+options(width = 70)
+f_exploded
+options(width = width)
+```
+
+I plot the posterior distributions of the probability values and the true probability values below.
+
+```{r}
+mcmc_recover_hist(f_exploded$draws("Theta"), P_toppings)
+```
+
+## Caveats
+
+Not a cognitive model ....
+
+
+## Session info
+
+I used `r papaja::cite_r("r-references.bib")` to generate this document.
+
+```{r}
+sessionInfo()
+```
+
+## References
