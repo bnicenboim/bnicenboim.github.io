@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Bruno Nicenboim</title>
+    <link>/post/</link>
+    <description>Recent content in Posts on Bruno Nicenboim</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 19 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>A simple way to model rankings with Stan</title>
+      <link>/2021/03/19/a-simple-way-to-model-rankings-with-stan/</link>
+      <pubDate>Fri, 19 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>/2021/03/19/a-simple-way-to-model-rankings-with-stan/</guid>
+      <description>The initial problem I wrote what I thought it was the generative process for some modeling work, and it looked too common to not have a name, so I started to ask around in Twitter:
+Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2
+2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1</description>
+    </item>
+    
+  </channel>
+</rss>
