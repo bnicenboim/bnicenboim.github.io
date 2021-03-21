@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 categories: ["stats"]
 tags: ["stan", "Bayesian", "r"]
 bibliography: ["biblio.bib","r-references.bib"]
-draft: true
+draft: false 
 ---
 
 
@@ -45,12 +45,12 @@ blogdown::shortcode('tweet', '1369226616312901637')
 ```
 
 
-It turns out that the distribution that I was describing is in general used for rankings and it is called an  [*exploded logit distribution*](https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit).^[This model is also called the *rank ordered logit model* [@BEGGS19811] or Plackett–Luce model due to @Plackett and @Luce1959, but I liked the explosion part more.]
+It turns out that the distribution that I was describing is in general used for rankings or ordered data and it is called an  [*exploded logit distribution*](https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit).^[This model is also called the *rank ordered logit model* [@BEGGS19811] or Plackett–Luce model due to @Plackett and @Luce1959, but I liked the explosion part more.]
 
 ![](https://media.giphy.com/media/3osxYCsLd9qgsgqpwI/giphy.gif)
 
 
-In this post, I'll show how it can be fit in Stan, and how it is useful to  describe *some* aspects of ranking data.
+In this post, I'll show how this model can be fit in the probabilistic programming language [Stan](https://mc-stan.org/), and how it can be used to describe the underlying order of ranking data.
 
 
 I'm going to load some R packages that will be useful throughout this post.
@@ -68,10 +68,10 @@ library(bayesplot) # Nice Bayesian plots
 
 ## Ranking data
 
-Ranking data appear when we care about the *underlying* order or ranking that certain elements have. We might want to know which are the best horses after looking at several races [@gakisetal2018], which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.
+Ranking data appear when we care about the *underlying* order  that certain elements have. We might want to know which are the best horses after looking at several races [@gakisetal2018], which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.
 
 
-One way to assess get a ranking of exemplars of a category is to present them to participants and ask them to order all (or a subset) of them [see @Barsalou1985].
+One way to get a ranking of exemplars of a category, for example,  is to present them to participants and ask them to order all (or a subset) of them [see @Barsalou1985].
 
 ### A ranking simulation using pizza toppings
 
@@ -92,9 +92,9 @@ toppings
 
 Let's say that we want to know the underlying order of pizza toppings. For the modeling, I'm going to assume that the toppings are ordered according to an underlying value, which also represents how likely it is for each topping to be *the* exemplar of their category.
 
-So I'm going to assign probabilities that sum up to one to the toppings. For this, I draw random samples from a [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution). The Dirichlet distribution is the generalization of the Beta distribution. It has a concentration parameter, usually $\boldsymbol{\alpha}$, which is a vector as long as the probabilities were are sampling (`r N_toppings` here). When the vector is full of ones, the distribution is uniform: All probabilities are equally likely, so on average each one is $\frac{1}{vector \text{  } length}$ ($\frac{1}{`r N_toppings`}$ here). By setting all the concentration parameters below one (namely $.2$), I'm enforcing sparsity in the random values that I'm generating, that is, many probability values close to zero. 
+To get a known ground truth for the ranking, I'm going to simulate an order of pizza toppings. I assign probabilities that sum up to one to the toppings by drawing a random sample from a [Dirichlet distribution](https://en.wikipedia.org/wiki/Dirichlet_distribution). The Dirichlet distribution is the generalization of the Beta distribution. It has a concentration parameter, usually $\boldsymbol{\alpha}$, which is a vector as long as the probabilities we are sampling (`r N_toppings` here). When the vector is full of ones, the distribution is uniform: All probabilities are equally likely, so on average each one is $\frac{1}{vector \text{  } length}$ ($\frac{1}{`r N_toppings`}$ here). By setting all the concentration parameters below one (namely $.2$), I'm enforcing sparsity in the random values that I'm generating, that is, many probability values close to zero. 
 
-These is the true ranking that I'm assuming here:
+These is the true order that I'm assuming here:
 
 ```{r Probs}
 # all elements of the vector are .5
@@ -104,23 +104,29 @@ P_toppings <- c(rdirichlet(1, alpha)) %>%
   # Add names
   setNames(toppings) %>%
   # Sort from the best exemplar
-  sort(decreasing = TRUE) %>%
+  sort(decreasing = TRUE)
+P_toppings %>%
   round(3)
-P_toppings
 ```
 
-- Given these values, if I were to ask a participant "What's the most appropriate topping for a pizza?" I would assume that `r P_toppings[[1]]*100` percent of the time, I would get `r names(P_toppings[1])`.
+- Given these values, if I were to ask a participant "What's the most appropriate topping for a pizza?" I would assume that `r P_toppings[[1]]*100` percent of the time, I would get *`r names(P_toppings[1])`*.
 
 Essentially,  we expect something like this to be happening.
 
 \begin{equation} 
 response \sim Categorical(\Theta_{toppings})
-(\#eq:probi)
+(\#eq:probicat)
 \end{equation}
 
 With $\Theta_{toppings}$ representing the different probabilities for each topping. The probability mass function of the categorical distribution is absurdly simple: It's just the probability of the outcome.
 
-$p(x = i) = \Theta_i$, where $i = \{$`r paste0(names(P_toppings), collapse = ", ")`$\}$. 
+
+\begin{equation} 
+p(x = i) = \Theta_i
+(\#eq:probi)
+\end{equation}
+
+where $i = \{$`r paste0(names(P_toppings), collapse = ", ")`$\}$. 
 
 
 We can simulate this with 100 participants as follows:
@@ -145,7 +151,7 @@ If we don't relay on lists and there is sparcity, it requires a large number of 
 
 - Now, what happens if we ask about the second most appropriate topping for a pizza?
 
-Now we need to exclude the first topping that was given, and draw another sample from a categorical distribution. (We don't allow the participant to repeat toppings, that is, to say that best topping is pineapple and second best is also pineapple). This means that now the probability of the topping already given is zero, and that we need to normalize our original probability values by dividing them by the new total probability (which will be lower than 1).
+Now we need to exclude the first topping that was given, and draw another sample from a categorical distribution. (We don't allow the participant to repeat toppings, that is, to say that the best topping is pineapple and the second best is also pineapple). This means that now the probability of the topping already given is zero, and that we need to normalize our original probability values by dividing them by the new total probability (which will be lower than 1).
 
 Here, the probability of getting the element $j$ (where $j \neq i$) is
 
@@ -232,14 +238,19 @@ To fit the model in Stan, I'm going to create a custom probability mass function
 The logic of this function is that the probability mass function of a ranking $\{i,j,k, \ldots, N \}$ can be written as a product of normalized categorical distributions (where the first one is just divided by 1).
 
 \begin{equation}
-p(x = \{i,j,k,\ldots\}) = \frac{\Theta_i}{\sum \Theta} \cdot \frac{\Theta_j}{ \Theta_{-i}} \cdot \frac{\Theta_k}{ \Theta_{-i, -j}} \ldots
+p(x = \{i,j,k,\ldots\}) = \frac{\Theta_i}{\sum \Theta} \cdot \frac{\Theta_j}{\sum \Theta_{[-i]}} \cdot \frac{\Theta_k}{\sum \Theta_{[-i, -j]}} \ldots
 (\#eq:probijk)
 \end{equation}
 
-In log-space products become sums, and divisions differences, and the log of $\sum \Theta$ will be zero:
+For Stan, we need the log-PDF. In log-space, products become sums, and divisions differences, and the log of $\sum \Theta$ will be zero:
 
 \begin{equation}
-log(p(x = \{i,j,k,\ldots\})) = \log(\Theta_i) - log(\sum \Theta) + \log(\Theta_j) -  \log(\Theta_{-i}) + \log(\Theta_k) -\log( \Theta_{-i, -j}) + \ldots
+\begin{aligned}
+log(p(x = \{i,j,k,\ldots\})) =& \log(\Theta_i) - log(\sum \Theta) \\
+& + \log(\Theta_j) -  \log(\sum \Theta_{[-i]}) \\
+&+ \log(\Theta_k) -\log(\sum \Theta_{[-i, -j]}) \\
+& + \ldots
+\end{aligned}
 (\#eq:probijk)
 \end{equation}
 
@@ -263,7 +274,7 @@ The whole model named `exploded.stan` includes the usual data declaration, the p
 ```{stan output.var = "exploded", code = readLines("exploded.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
 ```
 
-Let's see if we can recover the parameter values.
+Let's see if I can recover the parameter values.
 
 ```{r, message = FALSE, results = "hide"}
 ldata <- list(res = lapply(res, as.numeric),
@@ -294,17 +305,18 @@ I plot the posterior distributions of the probability values and the true probab
 ```{r, fig.height= 10}
 mcmc_recover_hist(f_exploded$draws("Theta"),
                   P_toppings,
-                  facet_args = list(scales = "fixed", ncol = 3)) +
+                  facet_args =
+                    list(scales = "fixed", ncol = 3)) +
   theme(legend.position="bottom")
 ```
 
-It looks reasonable. However, if we really want to be sure that this is working, we should do simulation based calibration [@taltsValidatingBayesianInference2018].
+It looks reasonable. However, if we really want to be sure that this is working, we should probably use simulation based calibration [@taltsValidatingBayesianInference2018].
 
 
 
 ## What is this good for?
 
-This super simple example shows how to get an underlying ranking based on a set of responses. It's straight forward to adapt this model to data from participants ranking elements from sets of the *same size*. It's a little less straight forward if the sets are of different sizes, e.g., rank 7 toppings out 25, but 7 tools out 50, because Stan doesn't allow ragged arrays. See [here](https://discourse.mc-stan.org/t/ragged-array-of-simplexes/1382/31) some tips for implementing the latter model.
+This super simple example shows how to get an underlying ranking based on a set of responses from a number of subjects. It's straightforward to adapt this model to data from participants ranking elements from different sets of the *same size* (e.g., 7 out of 25 toppings, 7 out of 25 tools). It's a little less straightforward if the sets are of different sizes, e.g., rank 7 toppings out 25, but 7 tools out 50. This is just because Stan doesn't allow ragged arrays. See [here](https://discourse.mc-stan.org/t/ragged-array-of-simplexes/1382/31) some tips for implementing the latter model.
 
 ## Could this be used as cognitive model of people's rankings? 
 
@@ -314,9 +326,9 @@ This super simple example shows how to get an underlying ranking based on a set 
 Maybe. And I enter here in the realm of half baked research, ideal for a blog post.
 
 @Lee2014 show the implementation of a cognitive model for rank order data from the latent knowledge of participants, which is 
-based on Thurstonian models [@thurstone1927law; @thurstone1931rank] fitted with Bayesian methods [@Johnson2013].
+based on Thurstonian models [@thurstone1927law; @thurstone1931rank] fitted with Bayesian methods in JAGS [@Johnson2013].
 
-The exploded logit model seems to be closely related to the Thurstonian model. The Thurstonian model assumes that each participant assigns an underlying score, which is drawn from a true score with normally distributed error. We can think about the exploded logit similarly. While I modeled the underlying ranking based on probability values, one could assume that each participant $s$ had their own score $mu_{is}$ for each item (or pizza topping) $i$, which is built as a common score $mu_i$ together with some individual deviation $\epsilon_is$:
+The exploded logit model seems to be closely related to the Thurstonian model. The Thurstonian model assumes that each participant assigns an underlying score to each item of a set, which is drawn from a true score with normally distributed error. The score determines the order that the participant gives. We can think about the exploded logit similarly. While I modeled the underlying ranking based on probability values, one could assume that each participant $s$ had their own score $mu_{is}$ for each item (or pizza topping) $i$, which is built as a common score $mu_i$ together with some individual deviation $\epsilon_{is}$:
 
 
 \begin{equation} 
@@ -324,23 +336,25 @@ The exploded logit model seems to be closely related to the Thurstonian model. T
 (\#eq:muis)
 \end{equation}
 
-If we assume that $\epsilon_is$ has a [Gumbel](https://en.wikipedia.org/wiki/Gumbel_distribution) distribution, then the probability of $\mu_is$ being ranked first out of N options is determined by a softmax function:
+If we assume that $\epsilon_{is}$ has a [Gumbel](https://en.wikipedia.org/wiki/Gumbel_distribution) distribution, then the probability of $\mu_{is}$ being ranked first out of N options is determined by a softmax function:
 
 \begin{equation} 
-P(i) = \frac{exp(\mu_i)}{\sum_{n=1}^{N} exp(\mu_n)}
+P(i) = \frac{\exp(\mu_i)}{\sum \exp(\mu)}
 (\#eq:probi2)
 \end{equation}
 
-and the probability of ordering $j$ second is:
+where $\mu$ is the vector of scores for all elements of the set.
+
+And the probability of ordering $j$ second is:
 
 \begin{equation} 
-P(i,j,\ldots) = \frac{exp(\mu_j)}{\sum_{n=1}^{N} exp(\mu_{[-i]n} )}
+P(i,j,\ldots) = \frac{\exp(\mu_j)}{\sum \exp(\mu_{[-i]} )}
 (\#eq:probj2)
 \end{equation}
 
 and so forth.
 
-These last equations are the same categorical distributions that I used before in \@ref(eq:probi) and \@ref(eq:probj), but the softmax function converts the real and unbounded scores into probabilities first. However, with the exploded logit we the error term goes away leading to a more tractable model, while this not the case for Thurstonian model leading to a more complex model, but also a model that can incorporate participants with more or less reliable judgments.
+These last equations are essentially the same categorical distributions that I used before in \@ref(eq:probi) and \@ref(eq:probj), but the softmax function converts the unbounded scores into probabilities first. However, with the exploded logit, the error term goes away leading to a more tractable model. This is not the case for the Thurstonian model. The Thurstonian model  is more complex, but at the same time we gain more flexibility. With the error term, the Thurstonian model can incorporate the reliability of the participants' judgments and even correlations, which, as far as I know, can't be included in the exploded logit model. 
 
 
 ## Session info ^[I used `r papaja::cite_r("r-references.bib")` to generate this document.]
