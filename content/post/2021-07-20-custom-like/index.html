@@ -1,0 +1,46 @@
+---
+title: Intensity and response times
+author: "Bruno Nicenboim"
+date: "2021-09-29"
+slug: custom-lik
+categories: ["stats"]
+tags: ["stan", "Bayesian", "r"]
+draft: true 
+---
+
+
+
+<p>First part d<em>, p</em>, <em>q</em>, r* like functions for R. MLE
+Second part brms
+Third part custom funciton Stan and SBC
+Fourth part C++ implementation</p>
+<pre class="r"><code>ddm &lt;- function(x, delta, epsilon, t_0){
+  ((delta + 1) * (epsilon - 1)/
+     ((delta + epsilon) * t_0)) *
+    ifelse(x &lt;= t_0,
+    (x/ t_0)^delta,
+    (x / t_0)^(-epsilon))
+}</code></pre>
+<p>In lieu of any suitable theoretical al-
+ternative, we attempted to fit the doublemonomial (DM) to our RT distributions.The DM was derived by Luce and Galan-ter (1963, p. 288) as the form of a gen-
+eralization function in magnitude estima-
+tion. It consists of two power functions
+that meet at the mode. As a result it hastwo qualitative features of our empiricaldistributions—peakedness at the mode and
+high tails (in the sense that a negativepower approaches zero much more slowlythan an exponential). The density func</p>
+<p><a href="https://www.wolframalpha.com/input/?i=integrate+%5B%28%28delta+%2B+1%29+*+%28epsilon+-+1%29%2F++++++%28%28delta+%2B+epsilon%29+*+t_0%29%29+++++%28x%2F+t_0%29%5Edelta%5D+" class="uri">https://www.wolframalpha.com/input/?i=integrate+%5B%28%28delta+%2B+1%29+*+%28epsilon+-+1%29%2F++++++%28%28delta+%2B+epsilon%29+*+t_0%29%29+++++%28x%2F+t_0%29%5Edelta%5D+</a></p>
+<p>(x (ϵ - 1) (x/t_0)^δ)/(t_0 (δ + ϵ)) + constant</p>
+<p><a href="https://www.wolframalpha.com/input/?i=integrate+%5B%28%28delta+%2B+1%29+*+%28epsilon+-+1%29%2F++++++%28%28delta+%2B+epsilon%29+*+t_0%29%29+++++%28x%2F+t_0%29%5E%28-epsilon%29%5D+from+x+%3D+t_0+to+x" class="uri">https://www.wolframalpha.com/input/?i=integrate+%5B%28%28delta+%2B+1%29+*+%28epsilon+-+1%29%2F++++++%28%28delta+%2B+epsilon%29+*+t_0%29%29+++++%28x%2F+t_0%29%5E%28-epsilon%29%5D+from+x+%3D+t_0+to+x</a></p>
+<p>integral_(t_0)^x (((δ + 1) (ϵ - 1)) (x/t_0)^(-ϵ))/((δ + ϵ) t_0) dx = ((δ + 1) x^(-ϵ) (t_0 x^ϵ - x t_0^ϵ))/(t_0 (δ + ϵ)) for t_0&gt;0 ∧ Re(x)&gt;t_0 ∧ Im(x) = 0</p>
+<pre class="r"><code>pdm &lt;- function(x, delta, epsilon, t_0){
+
+lower_than_t_0 &lt;- function(x) (x* (epsilon - 1) * (x/t_0)^delta)/(t_0 *(delta + epsilon))
+
+  ifelse(x &lt;= t_0, lower_than_t_0(x),
+         lower_than_t_0(t_0) + 
+  ((delta + 1)* x^(-epsilon) *(t_0* x^epsilon - x * t_0^epsilon))/(t_0 *(delta + epsilon)) 
+    )
+}
+pdm(10000000000000000000000000000000, 1.1,1.1,200)</code></pre>
+<pre><code>## [1] 0.998712</code></pre>
+<p>number generation:</p>
+<p><a href="https://mc-stan.org/docs/2_27/stan-users-guide/truncated-random-number-generation.html" class="uri">https://mc-stan.org/docs/2_27/stan-users-guide/truncated-random-number-generation.html</a></p>

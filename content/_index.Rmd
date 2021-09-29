@@ -13,7 +13,7 @@ title: Bruno Nicenboim
 
 ::: {}
 -----------        -------------------------------------------
-Email:             [initial].[lastname] [at] uvt.nl
+Email:             [initial].[lastname] [at] tilburguniversity.edu
 Office:            D108, Dante Building, Tilburg University
 Address:           Department of Cognitive Science and Artificial Intelligence
                    Tilburg University

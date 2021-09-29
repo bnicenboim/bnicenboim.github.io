@@ -9,3 +9,4 @@ if(!is.null(changed$changes)){
   snapshot <- fileSnapshot(path = "content/mypub.bib", md5sum = TRUE)
   saveRDS(snapshot, "R/snapshot.RDS")
 }
+

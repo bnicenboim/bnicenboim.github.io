@@ -21,12 +21,15 @@ options(htmltools.dir.version = FALSE)
 
 library(RefManageR)
 bib <- ReadBib("mypub.bib", check = F)
+bib2 <- ReadBib("others.bib", check = F)
 
 BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
            bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE, no.print.fields=c("issn","eprint","url","customa","customb","customc"))
 
 
 sort(bib,sorting="ydnt")
+sort(bib2,sorting="ydnt")
+
 endcit<- "</cite></p>"
 
 this_year <- as.numeric(format(Sys.Date(), "%Y"))
@@ -34,7 +37,7 @@ first_year <-  2000
 
 ```
 -----------        -------------------------------------------
-Email:             [initial].[lastname] [at] uvt.nl
+Email:             [initial].[lastname] [at] tilburguniversity.edu
 Office:            D108, Dante Building, Tilburg University
 Address:           Department of Cognitive Science and Artificial Intelligence
                    Tilburg University
@@ -161,11 +164,31 @@ output(books,withbrackets=F)
 <br/>
 <br/>
 
+# Short peer-reviewed papers in conferences 
+
+
+```{r,echo=F,results="asis",cache=F}
+proceedingsall <- bib[list(bibtype="inproceedings")]
+
+last_year <- max(as.numeric(proceedingsall$year))
+
+for(y in seq(last_year,first_year,-1)){
+
+    presentations <- suppressMessages(proceedingsall[list(year=as.character(y))])
+    if(length(presentations)!=0){    
+        cat(paste0("## ",as.character(y),"\n" ))  
+        output(presentations)
+    }
+}
+```
+
+<br/>
+<br/>
 
 # Conferences
 
 ```{r,echo=F,results="asis",cache=F}
-presentationsall <- bib[list(bibtype="inproceedings")]
+presentationsall <- bib2[list(bibtype="inproceedings")]
  last_year <- max(as.numeric(presentationsall$year))
 
 for(y in seq(last_year,first_year,-1)){
@@ -186,7 +209,7 @@ for(y in seq(last_year,first_year,-1)){
  
 library(stringr)
 
-talksall <- bib[list(bibtype="misc")]
+talksall <- bib2[list(bibtype="misc")]
 
 for(y in seq(this_year,first_year,-1)){
 
@@ -231,8 +254,13 @@ for(y in seq(this_year,first_year,-1)){
 ## Workshops and summer schools
 
 ------------------------  -----------------------------------------------------------------------
-2020                      "Introduction to computational Bayesian methods using Stan", with Shravan Vasishth 
-                       
+2017-2021                 "Bayesian methods",
+
+                          Yearly Summer School on Statistical Methods for Linguistics and Psychology,
+
+                          University of Potsdam, Germany\vspace{.1cm}
+                          
+2020-2021                 "Introduction to computational Bayesian methods using Stan", 
                           Physalia courses,
                           
                           Berlin, Germany\vspace{.1cm}
@@ -251,24 +279,13 @@ for(y in seq(this_year,first_year,-1)){
 
                           University of Edinburgh, UK\vspace{.1cm}
                           
-2019                      "Advanced Bayesian methods",
 
-                          Third Summer School on Statistical Methods for Linguistics and Psychology,
-
-                          University of Potsdam, Germany\vspace{.1cm}
-                          
 2018                      Talk:"Cognitive models of memory processes in sentence comprehension:  A case study using Bayesian hierarchical modeling"  
 
                           Masterclass in Bayesian Statistics, Research school,
 
                           CIRM (Marseille Luminy, France)\vspace{.1cm} 
 
-
-2018                      "Advanced topics in Bayesian modeling",
-
-                          Second Summer School on Statistical Methods for Linguistics and Psychology,
-
-                          University of Potsdam, Germany\vspace{.1cm} 
 
 
 2017                      "Introduction to Bayesian Modeling using Stan", 
@@ -277,18 +294,18 @@ for(y in seq(this_year,first_year,-1)){
 
                           Tübingen, Germany\vspace{.1cm} 
 
-2017                      "Introduction to Bayesian modeling",
 
-                          First Summer School on Statistical Methods for Linguistics and Psychology,
-
-                          University of Potsdam, Germany\vspace{.1cm} 
 ------------------------  -----------------------------------------------------------------------
 
 
 ## Courses
 
 ------------------------  -----------------------------------------------------------------------
-2020 (Spring)             **Lecturer** in "Methodology for Premasters Data Science & Society". Tilburg University
+2021                      **Lecturer** in "Bayesian Models of Cognitive Processes", Master in Cogntive Science & AI. Tilburg University
+
+2020-2021                 **Lecturer** in "Research skill: Programing with R", Data Science & Society. Tilburg University
+
+2020-2021                 **Lecturer** in "Methodology for Premasters Data Science & Society". Tilburg University
 
 2015--2017 (Winter)       **Lecturer** in "Advanced Data Analysis". University of Potsdam
 

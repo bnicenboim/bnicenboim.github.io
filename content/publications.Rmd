@@ -16,6 +16,7 @@ options(htmltools.dir.version = FALSE)
 
 library(RefManageR)
 bib <- ReadBib("mypub.bib", check = FALSE)
+bib2 <- ReadBib("others.bib", check = FALSE)
 
 BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
            bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE)
@@ -38,7 +39,9 @@ capture.output(print(articlesall, .opts=list(style="Bibtex",no.print.fields=c("c
 booksall <- bib[list(bibtype="book")]
 capture.output(print(booksall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/published.bib")
  
-
+proceedingsall <- bib[list(bibtype="inproceedings")]
+capture.output(print(proceedingsall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/proceedings.bib")
+ 
 ```
 <br/>
 <br/>
@@ -77,11 +80,26 @@ for(y in seq(last_year,first_year,-1)){
 <br/>
 <br/>
 
+# Short peer-reviewed papers in conferences [[bibtex](papers/proceedings.bib)]
+
+
+```{r,echo=F,results="asis",cache=F}
+last_year <- max(as.numeric(proceedingsall$year))
+
+for(y in seq(last_year,first_year,-1)){
+
+    presentations <- suppressMessages(proceedingsall[list(year=as.character(y))])
+    if(length(presentations)!=0){    
+        cat(paste0("## ",as.character(y),"\n" ))  
+        output(presentations)
+    }
+}
+```
 
 # Conferences
 
 ```{r,echo=F,results="asis",cache=F}
-presentationsall <- bib[list(bibtype="inproceedings")]
+presentationsall <- bib2[list(bibtype="inproceedings")]
 
 last_year <- max(as.numeric(presentationsall$year))
 
