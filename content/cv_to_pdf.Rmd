@@ -2,9 +2,9 @@
 title: "BRUNO NICENBOIM"
 subtitle: "CURRICULUM VITAE"
 output: 
-  blogdown::pdf_document2:
+  bookdown::pdf_document2:
     toc: false # table of content true
-    number_sections: true  ## if you want number sections at each table header
+    number_sections: false ## if you want number sections at each table header
     depth: 1  # upto three depths of headings (specified by #, ## and ###)
     keep_tex: true	
 ---
@@ -28,7 +28,16 @@ BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
            bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE, no.print.fields=c("issn","eprint","url","customa","customb","customc"))
 
 
+bib <- ReadBib("mypub.bib", check = F)
+bib2 <- ReadBib("others.bib", check = F)
+
+BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
+           bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE, no.print.fields=c("issn","eprint","url","customa","customb","customc"))
+
+
 sort(bib,sorting="ydnt")
+sort(bib2,sorting="ydnt")
+
 endcit<- "</cite></p>"
 
 this_year <- as.numeric(format(Sys.Date(), "%Y"))
@@ -145,36 +154,57 @@ output(articles,withbrackets=F)
 
 ```
 
+
+
+
+
 <br/>
 <br/>
 
-## Book in preparation
+## Short peer-reviewed papers in conferences 
+
+
+```{r,echo=F,results="asis",cache=F}
+proceedingsall <- bib[list(bibtype="inproceedings")]
+
+last_year <- max(as.numeric(proceedingsall$year))
+
+for(y in seq(last_year,first_year,-1)){
+
+    presentations <- suppressMessages(proceedingsall[list(year=as.character(y))])
+        output(presentations,withbrackets=F)
+
+}
+```
+
+<br/>
+<br/>
+
+<br/>
+<br/>
+
+# Book in preparation  
 
 ```{r,echo=F,results="asis",cache=F}
  
 books <- bib[list(bibtype="book")]
 
 output(books,withbrackets=F)
-
 ```
-
-
-
-<br/>
-<br/>
+https://vasishth.github.io/bayescogsci/book/
 
 
 # Conferences
 
 ```{r,echo=F,results="asis",cache=F}
-presentationsall <- bib[list(bibtype="inproceedings")]
+presentationsall <- bib2[list(bibtype="inproceedings")]
  last_year <- max(as.numeric(presentationsall$year))
 
 for(y in seq(last_year,first_year,-1)){
 
     presentations <- suppressMessages(presentationsall[list(year=as.character(y))])
     if(length(presentations)!=0){    
-        cat(paste0("## ",as.character(y),"\n" ))  
+        cat(paste0("### ",as.character(y),"\n" ))  
         output(presentations,withbrackets=F)
     }
 }
@@ -188,13 +218,13 @@ for(y in seq(last_year,first_year,-1)){
  
 library(stringr)
 
-talksall <- bib[list(bibtype="misc")]
+talksall <- bib2[list(bibtype="misc")]
 
 for(y in seq(this_year,first_year,-1)){
 
     talks <- suppressMessages(talksall[list(year=as.character(y))])
     if(length(talks)!=0){    
-        cat(paste0("## ",as.character(y),"\n" ))  
+        cat(paste0("### ",as.character(y),"\n" ))  
         output(talks,withbrackets=F,hack=T)
 
     }
@@ -203,7 +233,6 @@ for(y in seq(this_year,first_year,-1)){
 ```
 <br/>
 <br/>
-
 
 # Honors and grants
 
@@ -225,23 +254,21 @@ for(y in seq(this_year,first_year,-1)){
 
 |            | |
 :-----------|:----------------------------------------------------------------------------------
-2020 |                    "Introduction to computational Bayesian methods using Stan", with Shravan Vasishth, Physalia courses, Berlin, Germany
+2017-2021|                      "Bayesian methods", Yearly Summer School on Statistical Methods for Linguistics and Psychology, University of Potsdam, Germany
+2020-2021 |                    "Introduction to computational Bayesian methods using brms", Physalia courses, Berlin, Germany
 2020|                      "Methods in Advanced Statistics", with Shravan Vasishth 2020 Winter School organized by Netherlands Graduate School in Linguistics (LOT), Tilburg, Netherlands
 2019|                     "Introduction to Bayesian statistics using brms", University of Cologne, Germany
 2019|                     "Introduction to Bayesian statistics using brms", University of Edinburgh, UK
-2019|                      "Advanced Bayesian methods", Third Summer School on Statistical Methods for Linguistics and Psychology, University of Potsdam, Germany
 2018|                     Talk:"Cognitive models of memory processes in sentence comprehension:  A case study using Bayesian hierarchical modeling" Masterclass in Bayesian Statistics, Research school, CIRM (Marseille Luminy, France)
-2018|                     "Advanced topics in Bayesian modeling", Second Summer School on Statistical Methods for Linguistics and Psychology, University of Potsdam, Germany
 2017|                     "Introduction to Bayesian Modeling using Stan", 13. Tagung der Fachgruppe Methoden und Evaluation der Deutschen Gesellschaft für Psychologie, Tübingen, Germany
-2017|                     "Introduction to Bayesian modeling", First Summer School on Statistical Methods for Linguistics and Psychology, University of Potsdam, Germany 
-
 
 ## Courses
 
 
 |            | |
 :-----------|:----------------------------------------------------------------------------------
-2020--2021  |            **Lecturer** in "Research Skills: Programming with R". Tilburg University
+2020--2021  |            **Lecturer** in "Bayesian Cognitive Processes", Master in Cognitive Science & AI. Tilburg University
+2020--2021  |            **Lecturer** in "Research Skills: Programming with R", Master in Data Science & Society. Tilburg University
 2020--2021   |           **Lecturer** in "Methodology for Premasters Data Science & Society". Tilburg University
 2015--2017 (Winter)|       **Lecturer** in "Advanced Data Analysis". University of Potsdam
 2016 (Summer) |            **Lecturer** in "Predictions in Language Processing".  University of Potsdam

@@ -149,7 +149,28 @@ output(articles,withbrackets=F)
 <br/>
 <br/>
 
-## Book in preparation
+
+## Short peer-reviewed papers in conferences 
+
+
+```{r,echo=F,results="asis",cache=F}
+proceedingsall <- bib[list(bibtype="inproceedings")]
+
+last_year <- max(as.numeric(proceedingsall$year))
+
+for(y in seq(last_year,first_year,-1)){
+
+    presentations <- suppressMessages(proceedingsall[list(year=as.character(y))])
+        output(presentations,withbrackets=F)
+
+}
+
+```
+
+<br/>
+<br/>
+
+# Book in preparation
 
 ```{r,echo=F,results="asis",cache=F}
  
@@ -164,27 +185,6 @@ output(books,withbrackets=F)
 <br/>
 <br/>
 
-# Short peer-reviewed papers in conferences 
-
-
-```{r,echo=F,results="asis",cache=F}
-proceedingsall <- bib[list(bibtype="inproceedings")]
-
-last_year <- max(as.numeric(proceedingsall$year))
-
-for(y in seq(last_year,first_year,-1)){
-
-    presentations <- suppressMessages(proceedingsall[list(year=as.character(y))])
-    if(length(presentations)!=0){    
-        cat(paste0("## ",as.character(y),"\n" ))  
-        output(presentations)
-    }
-}
-```
-
-<br/>
-<br/>
-
 # Conferences
 
 ```{r,echo=F,results="asis",cache=F}
@@ -195,7 +195,7 @@ for(y in seq(last_year,first_year,-1)){
 
     presentations <- suppressMessages(presentationsall[list(year=as.character(y))])
     if(length(presentations)!=0){    
-        cat(paste0("## ",as.character(y),"\n" ))  
+        cat(paste0("### ",as.character(y),"\n" ))  
         output(presentations,withbrackets=F)
     }
 }
@@ -215,7 +215,7 @@ for(y in seq(this_year,first_year,-1)){
 
     talks <- suppressMessages(talksall[list(year=as.character(y))])
     if(length(talks)!=0){    
-        cat(paste0("## ",as.character(y),"\n" ))  
+        cat(paste0("### ",as.character(y),"\n" ))  
         output(talks,withbrackets=F,hack=T)
 
     }

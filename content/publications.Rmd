@@ -84,15 +84,15 @@ for(y in seq(last_year,first_year,-1)){
 
 
 ```{r,echo=F,results="asis",cache=F}
+proceedingsall <- bib[list(bibtype="inproceedings")]
+
 last_year <- max(as.numeric(proceedingsall$year))
 
 for(y in seq(last_year,first_year,-1)){
 
     presentations <- suppressMessages(proceedingsall[list(year=as.character(y))])
-    if(length(presentations)!=0){    
-        cat(paste0("## ",as.character(y),"\n" ))  
-        output(presentations)
-    }
+        output(presentations,withbrackets=F)
+
 }
 ```
 
@@ -107,7 +107,7 @@ for(y in seq(last_year,first_year,-1)){
 
     presentations <- suppressMessages(presentationsall[list(year=as.character(y))])
     if(length(presentations)!=0){    
-        cat(paste0("## ",as.character(y),"\n" ))  
+        cat(paste0("### ",as.character(y),"\n" ))  
         output(presentations)
     }
 }
