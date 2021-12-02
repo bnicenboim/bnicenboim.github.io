@@ -1,0 +1,316 @@
+---
+title: 'Not a tutorial of hierarchical Bayesian models of reinforcement learning '
+author: Bruno Nicenboim
+date: '2021-11-29'
+slug: not-a-tutorial-of-hierarchical-bayesian-models-of-reinforcement-learning
+categories: ["stats"]
+bibliography: ["../biblio.bib","r-references.bib"]
+tags: ["stan", "Bayesian", "r"]
+draft: true 
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>In this post, I’ll focus on the Stan implementation of Q-learning, a specific type of reinforcement learning (RL) model, for modeling how humans (and other organisms) learn behavioral policies (to make decisions) from rewards. <span class="citation"><a href="#ref-niv2009reinforcement" role="doc-biblioref">Niv</a> (<a href="#ref-niv2009reinforcement" role="doc-biblioref">2009</a>)</span> presents a very extensive review of RL in the brain.</p>
+<p>I will <em>mostly</em> follow the implementation of <span class="citation"><a href="#ref-vanGeenGerraty2021" role="doc-biblioref">van Geen and Gerraty</a> (<a href="#ref-vanGeenGerraty2021" role="doc-biblioref">2021</a>)</span>. However, I think there are places where a reparametrization would be more appropriate and I will model my own simulated data.</p>
+<p>I’m going to load some R packages that will be useful throughout this post and set a seed, so that the synthetic data would be always the same.</p>
+<pre class="r"><code>library(dplyr) # Data manipulation
+library(tidyr) # To pivot the data
+library(purrr) # List manipulation
+library(ggplot2) # Nice plots
+library(extraDistr) # More distributions
+library(MASS) # Tu use the multinormal distribution
+library(cmdstanr) # Lightweight Stan interface
+library(bayesplot) # Nice Bayesian plots
+set.seed(123)</code></pre>
+<div id="restless-bandits-or-slot-machines-with-non-fixed-probabilities-of-a-reward" class="section level1">
+<h1>Restless bandits or slot machines with non-fixed probabilities of a reward</h1>
+<p>I simulate data from a two-armed restless bandit, where the arms are independent. This is basically as there are two slot machines that offer rewards with probabilities that vary with time. There is a (post from Speekenbrink lab)[<a href="https://speekenbrink-lab.github.io/modelling/2019/02/28/fit_kf_rl_1.html" class="uri">https://speekenbrink-lab.github.io/modelling/2019/02/28/fit_kf_rl_1.html</a>] that gives more context to the restless bandits and shows how they can represent realistic options in life (they also simulate data from a different RL algorithm).</p>
+<p><img src="https://media.giphy.com/media/xT1XGOzcLKDYN2kxLW/giphy.gif" /></p>
+<p>I set up here a restless bandit with 2 arms that runs over 500 trials. They reward <span class="math inline">\(R_{t,a}\)</span> for the time step or trial <span class="math inline">\(t\)</span> for the arm <span class="math inline">\(a\)</span> is defined as follows:</p>
+<ul>
+<li>For <span class="math inline">\(t &gt;1\)</span></li>
+</ul>
+<p><span class="math display">\[\begin{equation}
+R_{t,a} \sim \mathit{Normal}(R_{t-1,a}, \sigma)
+\end{equation}\]</span></p>
+<ul>
+<li>Otherwise</li>
+</ul>
+<p><span class="math display">\[\begin{equation}
+R_{1,a} \sim \mathit{Normal}(0, \sigma)
+\end{equation}\]</span></p>
+<p>with <span class="math inline">\(\sigma = .1\)</span></p>
+<pre class="r"><code># set up
+N_arms &lt;- 2
+N_trials &lt;- 1000
+sigma &lt;- .1
+## Reward matrix
+# First define a matrix with values sampled from Normal(0, sigma)
+R &lt;- matrix(rnorm(N_trials * N_arms, mean = 0, sd = sigma), ncol = N_arms)
+# Then I do a cummulative sum over the rows (MARGIN = 2)
+R &lt;- apply(R, MARGIN = 2, FUN = cumsum)
+colnames(R) &lt;- paste0(&quot;arm_&quot;, 1:N_arms)
+head(R)</code></pre>
+<pre><code>      arm_1 arm_2
+[1,] -0.056 -0.10
+[2,] -0.079 -0.20
+[3,]  0.077 -0.21
+[4,]  0.084 -0.22
+[5,]  0.097 -0.47
+[6,]  0.268 -0.37</code></pre>
+<p>Some <code>tidyr</code> to plot the rewards.</p>
+<pre class="r"><code>d_exp &lt;- R %&gt;%
+  as_tibble() %&gt;%
+  pivot_longer(cols = everything(), names_to = &quot;arm&quot;, values_to = &quot;reward&quot;) %&gt;%
+  group_by(arm) %&gt;%
+  mutate(trial = 1:n())
+ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
+  geom_line()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<div id="q-learning" class="section level2">
+<h2>Q-learning</h2>
+<p>Q-learning is a type of RL model where an agent learns the predictive value (in terms of future expected rewards) of taking a specific action (here, choosing on of the arm, <span class="math inline">\(a\)</span>, of the bandit) at a certain state (here at a given trial, <span class="math inline">\(t\)</span>), denoted as <span class="math inline">\(Q\)</span>. In a simplified model of Q-learning, <span class="math inline">\(Q\)</span> will look as follows</p>
+<ul>
+<li>For <span class="math inline">\(t &gt;1\)</span></li>
+</ul>
+<p><span class="math display">\[\begin{equation}
+Q_{t,a} = Q_{t-1, a} + \alpha \cdot (R_t - Q_{t, a})
+\end{equation}\]</span></p>
+<ul>
+<li>Otherwise</li>
+</ul>
+<p><span class="math display">\[\begin{equation}
+Q_{1,a} = .5 
+\end{equation}\]</span></p>
+<p>where <span class="math inline">\(\alpha\)</span> is the learning rate, which determines the extent to which prediction error will play a role in updating an action’s value. This prediction error is quantified as the difference between the expected value of an action and the actual reward
+on a given trial, <span class="math inline">\((R_t - Q_{t, a})\)</span>.</p>
+<p>Higher values of <span class="math inline">\(\alpha\)</span> imply greater sensitivity to the most recent choice outcome, that is the most recent reward.</p>
+<p>The influence of <span class="math inline">\(Q\)</span> in the agent behavior is governed by an inverse temperature parameter
+(<span class="math inline">\(\beta\)</span>). Smaller values of <span class="math inline">\(\beta\)</span> lead to a more exploratory behavior.</p>
+<p>The idea will be that we obtain the probability, (<span class="math inline">\(\theta\)</span>), of a specific action in a given trial (or state) based on two factors: that action’s value, <span class="math inline">\(Q\)</span> in that context (learned
+through its reward history), and how influential this value will be in determining choice.</p>
+<pre class="r"><code># True values
+alpha &lt;- .3 # learning rate
+beta_0 &lt;- 0.5 # bias to arm &quot;b&quot;
+beta_1 &lt;- 3 # inverse temperature
+# Q vector with the first value set at 0.5
+# True Q matrix
+Q &lt;- matrix(nrow = N_trials + 1, ncol = N_arms)
+Q[1, ] &lt;- rep(.5, N_arms) # initial values for all Q
+action &lt;- rep(NA, times = N_trials)
+theta &lt;- rep(NA, times = N_trials)
+for (t in 1:N_trials) {
+  # probability of choosing arm_2
+  theta[t] &lt;- plogis(beta_0 + beta_1 * (Q[t, 2] - Q[t, 1]))
+  # What the synthethic subject would respond, with 1 indicating arm 1, and 2 indicating arm 2
+  action[t] &lt;- rbern(1, theta[t]) + 1
+  Q[t + 1, action[t]] &lt;- Q[t, action[t]] + alpha * (R[t, action[t]] - Q[t, action[t]])
+  nonactions_t &lt;- (1:N_arms)[-action[t]]
+  Q[t + 1, nonactions_t] &lt;- Q[t, nonactions_t]
+}</code></pre>
+<pre class="r"><code>d_res &lt;- tibble(arm = ifelse(action == 1, &quot;arm_1&quot;, &quot;arm_2&quot;), trial = 1:N_trials) %&gt;% left_join(d_exp)
+ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
+  geom_line() +
+  geom_point(data = d_res, aes(x = trial, y = reward), color = &quot;black&quot;, shape = 1)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>tibble(Q[1:N_trials,],R,action)</code></pre>
+<pre><code># A tibble: 1,000 × 3
+   `Q[1:N_trials, ]`[,1]    [,2] R[,&quot;arm_1&quot;] [,&quot;arm_2&quot;] action
+                   &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+ 1                 0.5    0.5        -0.0560    -0.0996      2
+ 2                 0.5    0.320      -0.0791    -0.204       1
+ 3                 0.326  0.320       0.0768    -0.205       2
+ 4                 0.326  0.162       0.0839    -0.219       1
+ 5                 0.254  0.162       0.0968    -0.474       2
+ 6                 0.254 -0.0283      0.268     -0.369       2
+ 7                 0.254 -0.131       0.314     -0.344       1
+ 8                 0.272 -0.131       0.188     -0.103       2
+ 9                 0.272 -0.122       0.119     -0.0344      1
+10                 0.226 -0.122       0.0746    -0.0791      1
+# … with 990 more rows</code></pre>
+<pre class="r"><code>response_1subj &lt;- function(
+                           alpha = .3,
+                           beta_0 = 0.5,
+                           beta_1 = 3){
+Q &lt;- matrix(nrow = N_trials + 1, ncol = N_arms)
+Q[1, ] &lt;- rep(.5, N_arms) # initial values for all Q
+action &lt;- rep(NA, times = N_trials)
+theta &lt;- rep(NA, times = N_trials)
+for (t in 1:N_trials) {
+  # probability of choosing arm_2
+  theta[t] &lt;- plogis(beta_0 + beta_1 * (Q[t, 2] - Q[t, 1]))
+
+  # What the synthethic subject would respond, with 1 indicating arm 1, and 2 indicating arm 2
+  action[t] &lt;- rbern(1, theta[t]) + 1
+  Q[t + 1, action[t]] &lt;- Q[t, action[t]] + alpha * (R[t, action[t]]
+ - Q[t, action[t]])
+  nonactions_t &lt;- (1:N_arms)[-action[t]]
+  Q[t + 1, nonactions_t] &lt;- Q[t, nonactions_t]
+}
+  tibble(arm = ifelse(action == 1, &quot;arm_1&quot;, &quot;arm_2&quot;), trial = 1:N_trials) %&gt;% left_join(d_exp, by = c(&quot;arm&quot;, &quot;trial&quot;)) %&gt;%
+    mutate(alpha = alpha, beta_1 = beta_1)
+  
+}
+
+alphas &lt;- seq(0, 1,.25)
+betas_1 &lt;- seq(0, 10, 2)
+pars &lt;- expand.grid(alphas, betas_1)
+
+d_res_all &lt;- pmap_dfr(pars, ~ response_1subj(alpha = .x, beta_0 = .5, beta_1 = .y))
+
+ggplot(d_res_all, aes(x = trial, y = reward)) +
+    geom_line(data = d_exp, aes(x = trial, y = reward, color = arm)) +
+    geom_point( color = &quot;black&quot;, shape = 1) +
+  facet_grid(rows = vars(alpha), cols = vars(beta_1))</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>m_ql &lt;- cmdstan_model(&quot;qlearning.stan&quot;)
+fit_ql &lt;- m_ql$sample(
+  data = list(
+    action = action,
+    N_trials = N_trials,
+    N_arms = N_arms,
+    R = R
+  ),
+  parallel_chains = 4
+)</code></pre>
+<pre class="r"><code>fit_ql$summary(c(&quot;alpha&quot;, &quot;beta_0&quot;, &quot;beta_1&quot;))</code></pre>
+<pre><code># A tibble: 3 × 10
+  variable  mean median     sd    mad    q5   q95  rhat ess_bulk ess_tail
+  &lt;chr&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 alpha    0.265  0.259 0.0480 0.0457 0.196 0.353  1.00    2829.    2542.
+2 beta_0   0.586  0.584 0.122  0.125  0.389 0.786  1.00    2897.    3009.
+3 beta_1   2.98   2.97  0.246  0.251  2.59  3.40   1.00    2927.    2902.</code></pre>
+<pre class="r"><code>mcmc_recover_hist(fit_ql$draws(c(&quot;alpha&quot;, &quot;beta_0&quot;, &quot;beta_1&quot;)), true = c(alpha, beta_0, beta_1))</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="a-hierarchical-q-learning-model" class="section level2">
+<h2>A hierarchical Q-learning model</h2>
+<pre class="r"><code>alpha &lt;- .3 # learning rate
+tau_u_alpha &lt;- .1
+beta_0 &lt;- 0.5 # bias to arm &quot;b&quot;
+tau_u_beta_0 &lt;- .15
+beta_1 &lt;- 3 # inverse temperature
+tau_u_beta_1 &lt;- .3
+N_adj &lt;- 3
+
+# Experiment data
+N_subj &lt;- 20
+subj &lt;- rep(1:N_subj, each = nrow(R))
+# trial_ &lt;- rep(1:nrow(R), times =N_subj)
+trial &lt;- matrix(1:(N_trials * N_subj), ncol = N_trials, byrow = TRUE)
+# each column indicates in which rows of Q correspond to a given trial
+trial[, 1] # trial 1 happens int he following rows of Q</code></pre>
+<pre><code> [1]     1  1001  2001  3001  4001  5001  6001  7001  8001  9001 10001 11001
+[13] 12001 13001 14001 15001 16001 17001 18001 19001</code></pre>
+<pre class="r"><code># R
+
+tau_u &lt;- c(tau_u_alpha, tau_u_beta_0, tau_u_beta_1)
+rho_u &lt;- .3
+Cor_u &lt;- matrix(rep(rho_u, N_adj^2), nrow = N_adj)
+diag(Cor_u) &lt;- 1
+Sigma_u &lt;- diag(tau_u, N_adj, N_adj) %*%
+  Cor_u %*%
+  diag(tau_u, N_adj, N_adj)
+u &lt;- mvrnorm(n = N_subj, rep(0, N_adj), Sigma_u)
+
+Q &lt;- matrix(nrow = N_trials * N_subj, ncol = N_arms)
+Q[trial[, 1], ] &lt;- .5 # initial values for all Q
+
+for (t in 2:N_trials) {
+  for (a in 1:N_arms) {
+    Q[trial[, t], a] &lt;- Q[trial[, t] - 1, a] + plogis(qlogis(alpha) + u[, 1]) * (R[t - 1, a] - Q[trial[, t] - 1, a])
+  }
+}
+
+
+# b is 1
+theta_b &lt;- plogis(beta_0 + u[subj, 2] + (beta_1 + u[subj, 3]) * (Q[, 2] - Q[, 1]))
+
+# prob of choosing 1
+response &lt;- rbern(N_trials * N_subj, theta_b)</code></pre>
+<pre class="r"><code>data_h &lt;- list(
+  N_subj = N_subj,
+  subj = subj,
+  trial = trial,
+  response = response,
+  N_trials = N_trials,
+  N_arms = N_arms,
+  R = R
+)</code></pre>
+<pre class="r"><code>m_ql_h &lt;- cmdstan_model(&quot;qlearning_h.stan&quot;)
+fit_ql_h &lt;- m_ql_h$sample(data_h,
+  parallel_chains = 4
+)</code></pre>
+<p>1199 s</p>
+<pre class="r"><code>fit_ql_h</code></pre>
+<pre><code> variable     mean   median   sd  mad       q5      q95 rhat ess_bulk ess_tail
+ lp__     -5232.02 -5231.81 7.98 7.55 -5245.54 -5219.49 1.00      993     1772
+ alpha        0.32     0.32 0.02 0.02     0.28     0.36 1.00     3498     2370
+ beta_0       0.47     0.47 0.04 0.04     0.40     0.54 1.00     2044     2093
+ beta_1       3.03     3.03 0.09 0.09     2.90     3.18 1.00     2297     2687
+ tau_u[1]     0.17     0.15 0.12 0.12     0.01     0.40 1.00     1402     1583
+ tau_u[2]     0.14     0.14 0.05 0.04     0.07     0.22 1.00     1469     1558
+ tau_u[3]     0.30     0.29 0.09 0.08     0.17     0.45 1.00     1736     1934
+ z_u[1,1]    -0.10    -0.11 0.87 0.88    -1.48     1.35 1.00     3363     3118
+ z_u[2,1]    -0.20    -0.20 0.73 0.72    -1.38     1.00 1.00     3777     2445
+ z_u[3,1]    -0.31    -0.31 0.76 0.74    -1.53     0.94 1.00     3530     2655
+
+ # showing 10 of 136 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
+</div>
+<div id="session-info" class="section level2">
+<h2>Session info<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.1.1 (2021-08-10)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 20.04.3 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=nl_NL.UTF-8   
+ [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=nl_NL.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bayesplot_1.8.1     cmdstanr_0.4.0.9000 MASS_7.3-54         extraDistr_1.9.1    ggplot2_3.3.5       purrr_0.3.4         tidyr_1.1.4        
+[8] dplyr_1.0.7        
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.1.1     xfun_0.26            bslib_0.3.0          reshape2_1.4.4       colorspace_2.0-2     vctrs_0.3.8          generics_0.1.0      
+ [8] htmltools_0.5.2      yaml_2.2.1           utf8_1.2.2           rlang_0.4.12         jquerylib_0.1.4      pillar_1.6.4         glue_1.4.2          
+[15] withr_2.4.2          DBI_1.1.1            distributional_0.2.2 matrixStats_0.60.1   lifecycle_1.0.1      plyr_1.8.6           stringr_1.4.0       
+[22] posterior_1.1.0      munsell_0.5.0        blogdown_1.5.2       gtable_0.3.0         evaluate_0.14        labeling_0.4.2       papaja_0.1.0.9997   
+[29] knitr_1.36           fastmap_1.1.0        ps_1.6.0             fansi_0.5.0          highr_0.9            Rcpp_1.0.7           backports_1.2.1     
+[36] scales_1.1.1         checkmate_2.0.0      jsonlite_1.7.2       abind_1.4-5          farver_2.1.0         tensorA_0.36.2       digest_0.6.28       
+[43] stringi_1.7.5        processx_3.5.2       bookdown_0.22        grid_4.1.1           cli_3.1.0            tools_4.1.1          magrittr_2.0.1      
+[50] sass_0.4.0           tibble_3.1.5         crayon_1.4.1         pkgconfig_2.0.3      ellipsis_0.3.2       data.table_1.14.2    ggridges_0.5.3      
+[57] assertthat_0.2.1     rmarkdown_2.11       rstudioapi_0.13      R6_2.5.1             compiler_4.1.1      </code></pre>
+</div>
+<div id="references" class="section level2 unnumbered">
+<h2>References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-niv2009reinforcement" class="csl-entry">
+Niv, Yael. 2009. <span>“Reinforcement Learning in the Brain.”</span> <em>Journal of Mathematical Psychology</em> 53 (3): 139–54.
+</div>
+<div id="ref-R-base" class="csl-entry">
+R Core Team. 2021. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.
+</div>
+<div id="ref-vanGeenGerraty2021" class="csl-entry">
+van Geen, Camilla, and Raphael T. Gerraty. 2021. <span>“Hierarchical <span>Bayesian</span> Models of Reinforcement Learning: <span>Introduction</span> and Comparison to Alternative Methods.”</span> <em>Journal of Mathematical Psychology</em> 105: 102602. https://doi.org/<a href="https://doi.org/10.1016/j.jmp.2021.102602">https://doi.org/10.1016/j.jmp.2021.102602</a>.
+</div>
+</div>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>I used R [Version 4.1.1; <span class="citation"><a href="#ref-R-base" role="doc-biblioref">R Core Team</a> (<a href="#ref-R-base" role="doc-biblioref">2021</a>)</span>] to generate this document.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>

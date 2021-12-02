@@ -45,7 +45,7 @@ first_year <-  2000
 
 ```
 -----------        -------------------------------------------
-Email:             B.Nicenboim@tilburguniversity.edu
+Email:             bruno.nicenboim@gmail.com
 Office:            D108, Dante Building, Tilburg University
 Address:           Department of Cognitive Science and Artificial Intelligence
                    Tilburg University
