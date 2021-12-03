@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>stats on Bruno Nicenboim</title>
@@ -6,14 +5,32 @@
     <description>Recent content in stats on Bruno Nicenboim</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 29 Sep 2021 00:00:00 +0000</lastBuildDate><atom:link href="/categories/stats/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 29 Sep 2021 00:00:00 +0000</lastBuildDate>
+    
+        <atom:link href="/categories/stats/index.xml" rel="self" type="application/rss+xml" />
+    
+    
     <item>
       <title>Intensity and response times</title>
       <link>/2021/09/29/intensity-and-response-times/</link>
       <pubDate>Wed, 29 Sep 2021 00:00:00 +0000</pubDate>
       
       <guid>/2021/09/29/intensity-and-response-times/</guid>
-      <description></description>
+      <description>
+
+
+
+</description>
+      
+            <category>stan</category>
+      
+            <category>Bayesian</category>
+      
+            <category>r</category>
+      
+      
+            <category>stats</category>
+      
     </item>
     
     <item>
@@ -22,9 +39,423 @@
       <pubDate>Sun, 21 Mar 2021 00:00:00 +0000</pubDate>
       
       <guid>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</guid>
-      <description>The initial problem I wrote what I thought it was the generative process for some modeling work, and it looked too common to not have a name, so I started to ask around in Twitter:
-Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2
-2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1</description>
+      <description>
+&lt;script src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
+
+
+&lt;div id=&#34;the-initial-problem&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;The initial problem&lt;/h2&gt;
+&lt;p&gt;I wrote what I thought it was the generative process for some modeling work, and it looked too common to not have a name, so I started to ask around in Twitter:&lt;/p&gt;
+&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? &lt;br&gt;Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2&lt;br&gt;2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1&lt;br&gt;3rd, y ~ categorical(p3/(p3+p4),p4/(p3+p4)); y =3&lt;br&gt;4th, it&amp;#39;s y =4&lt;/p&gt;&amp;mdash; Bruno Nicenboim (@bruno_nicenboim) &lt;a href=&#34;https://twitter.com/bruno_nicenboim/status/1369217174699732995?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/p&gt;
+&lt;p&gt;One useful clue was this one:&lt;/p&gt;
+&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;If I understand you correctly, the situation is similar to a (literal) horse-race, as modeled here: &lt;a href=&#34;https://t.co/TGGS1h4xxe&#34;&gt;https://t.co/TGGS1h4xxe&lt;/a&gt;&lt;/p&gt;&amp;mdash; Pavel Logačev (@pavellogacev) &lt;a href=&#34;https://twitter.com/pavellogacev/status/1369226616312901637?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/p&gt;
+&lt;p&gt;It turns out that the distribution that I was describing is in general used for rankings or ordered data and it is called an &lt;a href=&#34;https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit&#34;&gt;&lt;em&gt;exploded logit distribution&lt;/em&gt;&lt;/a&gt;.&lt;a href=&#34;#fn1&#34; class=&#34;footnote-ref&#34; id=&#34;fnref1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://media.giphy.com/media/3osxYCsLd9qgsgqpwI/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;In this post, I’ll show how this model can be fit in the probabilistic programming language &lt;a href=&#34;https://mc-stan.org/&#34;&gt;Stan&lt;/a&gt;, and how it can be used to describe the underlying order of ranking data.&lt;/p&gt;
+&lt;p&gt;I’m going to load some R packages that will be useful throughout this post.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(dplyr) # Data manipulation
+library(purrr) # List manipulation
+library(ggplot2) # Nice plots
+library(extraDistr) # More distributions
+library(rcorpora) # Get random words
+library(cmdstanr) # Lightweight Stan interface
+library(bayesplot) # Nice Bayesian plots&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;ranking-data&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Ranking data&lt;/h2&gt;
+&lt;p&gt;Ranking data appear when we care about the &lt;em&gt;underlying&lt;/em&gt; order that certain elements have. We might want to know which are the best horses after looking at several races &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-gakisetal2018&#34; role=&#34;doc-biblioref&#34;&gt;Gakis et al. 2018&lt;/a&gt;)&lt;/span&gt;, which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.&lt;/p&gt;
+&lt;p&gt;One way to get a ranking of exemplars of a category, for example, is to present them to participants and ask them to order all (or a subset) of them &lt;span class=&#34;citation&#34;&gt;(see &lt;a href=&#34;#ref-Barsalou1985&#34; role=&#34;doc-biblioref&#34;&gt;Barsalou 1985&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;div id=&#34;a-ranking-simulation-using-pizza-toppings&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;A ranking simulation using pizza toppings&lt;/h3&gt;
+&lt;p&gt;&lt;img src=&#34;https://media.giphy.com/media/3oEjHZhG9COPG6XjzO/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Let’s consider the following 25 pizza toppings:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;toppings &amp;lt;- corpora(&amp;quot;foods/pizzaToppings&amp;quot;)$pizzaToppings
+N_toppings &amp;lt;- length(toppings)
+toppings&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt; [1] &amp;quot;anchovies&amp;quot;        &amp;quot;artichoke&amp;quot;       
+ [3] &amp;quot;bacon&amp;quot;            &amp;quot;breakfast bacon&amp;quot; 
+ [5] &amp;quot;Canadian bacon&amp;quot;   &amp;quot;cheese&amp;quot;          
+ [7] &amp;quot;chicken&amp;quot;          &amp;quot;chili peppers&amp;quot;   
+ [9] &amp;quot;feta&amp;quot;             &amp;quot;garlic&amp;quot;          
+[11] &amp;quot;green peppers&amp;quot;    &amp;quot;grilled onions&amp;quot;  
+[13] &amp;quot;ground beef&amp;quot;      &amp;quot;ham&amp;quot;             
+[15] &amp;quot;hot sauce&amp;quot;        &amp;quot;meatballs&amp;quot;       
+[17] &amp;quot;mushrooms&amp;quot;        &amp;quot;olives&amp;quot;          
+[19] &amp;quot;onions&amp;quot;           &amp;quot;pepperoni&amp;quot;       
+[21] &amp;quot;pineapple&amp;quot;        &amp;quot;sausage&amp;quot;         
+[23] &amp;quot;spinach&amp;quot;          &amp;quot;sun-dried tomato&amp;quot;
+[25] &amp;quot;tomatoes&amp;quot;        &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let’s say that we want to know the underlying order of pizza toppings. For the modeling, I’m going to assume that the toppings are ordered according to an underlying value, which also represents how likely it is for each topping to be &lt;em&gt;the&lt;/em&gt; exemplar of their category.&lt;/p&gt;
+&lt;p&gt;To get a known ground truth for the ranking, I’m going to simulate an order of pizza toppings. I assign probabilities that sum up to one to the toppings by drawing a random sample from a &lt;a href=&#34;https://en.wikipedia.org/wiki/Dirichlet_distribution&#34;&gt;Dirichlet distribution&lt;/a&gt;. The Dirichlet distribution is the generalization of the Beta distribution. It has a concentration parameter, usually &lt;span class=&#34;math inline&#34;&gt;\(\boldsymbol{\alpha}\)&lt;/span&gt;, which is a vector as long as the probabilities we are sampling (25 here). When the vector is full of ones, the distribution is uniform: All probabilities are equally likely, so on average each one is &lt;span class=&#34;math inline&#34;&gt;\(\frac{1}{vector \text{  } length}\)&lt;/span&gt; (&lt;span class=&#34;math inline&#34;&gt;\(\frac{1}{25}\)&lt;/span&gt; here). By setting all the concentration parameters below one (namely &lt;span class=&#34;math inline&#34;&gt;\(.2\)&lt;/span&gt;), I’m enforcing sparsity in the random values that I’m generating, that is, many probability values close to zero.&lt;/p&gt;
+&lt;p&gt;These is the true order that I’m assuming here:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# all elements of the vector are .5
+alpha &amp;lt;- rep(.2, N_toppings)
+# Generate one draw from a Dirichlet distribution
+P_toppings &amp;lt;- c(rdirichlet(1, alpha)) %&amp;gt;%
+  # Add names
+  setNames(toppings) %&amp;gt;%
+  # Sort from the best exemplar
+  sort(decreasing = TRUE)
+P_toppings %&amp;gt;%
+  round(3)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt; breakfast bacon          chicken             feta 
+           0.294            0.241            0.087 
+       anchovies sun-dried tomato           olives 
+           0.087            0.077            0.057 
+       pepperoni        artichoke           cheese 
+           0.056            0.049            0.010 
+  Canadian bacon            bacon              ham 
+           0.008            0.008            0.006 
+       meatballs    chili peppers           garlic 
+           0.004            0.004            0.004 
+     ground beef         tomatoes        hot sauce 
+           0.003            0.003            0.002 
+          onions          sausage        pineapple 
+           0.000            0.000            0.000 
+         spinach        mushrooms   grilled onions 
+           0.000            0.000            0.000 
+   green peppers 
+           0.000 &lt;/code&gt;&lt;/pre&gt;
+&lt;ul&gt;
+&lt;li&gt;Given these values, if I were to ask a participant “What’s the most appropriate topping for a pizza?” I would assume that 29.37 percent of the time, I would get &lt;em&gt;breakfast bacon&lt;/em&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Essentially, we expect something like this to be happening.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probicat&#34;&gt;\[\begin{equation} 
+response \sim Categorical(\Theta_{toppings})
+\tag{1}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;With &lt;span class=&#34;math inline&#34;&gt;\(\Theta_{toppings}\)&lt;/span&gt; representing the different probabilities for each topping. The probability mass function of the categorical distribution is absurdly simple: It’s just the probability of the outcome.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi&#34;&gt;\[\begin{equation} 
+p(x = i) = \Theta_i
+\tag{2}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(i = \{\)&lt;/span&gt;breakfast bacon, chicken, feta, anchovies, sun-dried tomato, olives, pepperoni, artichoke, cheese, Canadian bacon, bacon, ham, meatballs, chili peppers, garlic, ground beef, tomatoes, hot sauce, onions, sausage, pineapple, spinach, mushrooms, grilled onions, green peppers&lt;span class=&#34;math inline&#34;&gt;\(\}\)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;We can simulate this with 100 participants as follows:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;response &amp;lt;- rcat(100, P_toppings, names(P_toppings))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And this should match approximately &lt;code&gt;P_toppings&lt;/code&gt;.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;table(response)/100&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;response
+ breakfast bacon          chicken             feta 
+            0.26             0.19             0.16 
+       anchovies sun-dried tomato           olives 
+            0.07             0.15             0.06 
+       pepperoni        artichoke           cheese 
+            0.01             0.08             0.00 
+  Canadian bacon            bacon              ham 
+            0.02             0.00             0.00 
+       meatballs    chili peppers           garlic 
+            0.00             0.00             0.00 
+     ground beef         tomatoes        hot sauce 
+            0.00             0.00             0.00 
+          onions          sausage        pineapple 
+            0.00             0.00             0.00 
+         spinach        mushrooms   grilled onions 
+            0.00             0.00             0.00 
+   green peppers 
+            0.00 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;It seems that by only asking participants to give the best topping we could already deduce the underlying order…&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;True, but one motivation for considering ranking data is the amount of information that we gather with a list due to their combinatorial nature. If we ask participants to rank &lt;span class=&#34;math inline&#34;&gt;\(n\)&lt;/span&gt; items, an answer consists in making a single selection out of &lt;span class=&#34;math inline&#34;&gt;\(n!\)&lt;/span&gt; possibilities. Ordering 7 pizza toppings, for example, constitutes making a single selection out of 5040 possibilities!&lt;/p&gt;
+&lt;p&gt;If we don’t relay on lists and there is sparcity, it requires a large number of participants until we get answers of low probability. (For example, we’ll need a very large number of participants until we hear something else but &lt;em&gt;hammer&lt;/em&gt; as an exemplar of tools).&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Now, what happens if we ask about the second most appropriate topping for a pizza?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now we need to exclude the first topping that was given, and draw another sample from a categorical distribution. (We don’t allow the participant to repeat toppings, that is, to say that the best topping is pineapple and the second best is also pineapple). This means that now the probability of the topping already given is zero, and that we need to normalize our original probability values by dividing them by the new total probability (which will be lower than 1).&lt;/p&gt;
+&lt;p&gt;Here, the probability of getting the element &lt;span class=&#34;math inline&#34;&gt;\(j\)&lt;/span&gt; (where &lt;span class=&#34;math inline&#34;&gt;\(j \neq i\)&lt;/span&gt;) is&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probj&#34;&gt;\[\begin{equation}
+p(x = j) = \frac{\Theta_j}{\sum \Theta_{[-i]}}
+\tag{3}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(\Theta_{[-i]}\)&lt;/span&gt; represents the probabilities of all the outcomes except of &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;, which was the first one.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;We can go on with the third best topping, where we need to normalize the remaining probabilities by dividing by the new sum of probabilities.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probk&#34;&gt;\[\begin{equation}
+p(x = k) = \frac{\Theta_k}{\sum \Theta_{[-i,-j]}}
+\tag{4}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;We can do this until we get to the last element, which will be drawn with probability 1.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;And this is the exploded logit distribution.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;This process can be simulated in R as follows:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;rexploded &amp;lt;-  function(n, ranked = 3, prob, labels = NULL){
+  #run n times
+  lapply(1:n, function(nn){
+    res &amp;lt;- rep(NA,ranked)
+    if(!is.null(labels)){
+      res &amp;lt;- factor(res, labels)
+    } else {
+      # if there are no labels, just 1,2,3,...
+      labels &amp;lt;- seq_along(prob)
+    }
+  for(i in 1:ranked){
+    # normalize the probability so that it sums to 1
+    prob &amp;lt;- prob/sum(prob)
+    res[i] &amp;lt;- rcat(1, prob = prob, labels = labels)
+    # remove the choice from the set:
+    prob[res[i]] &amp;lt;- 0
+  }
+    res
+  })
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If we would like to simulate 50 subjects creating a ranking of the best 7 toppings, we would do the following:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;res &amp;lt;- rexploded(n = 50,
+                 ranked = 7,
+                 prob = P_toppings,
+                 labels = names(P_toppings))
+# subject 1:
+res[[1]]&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;[1] sun-dried tomato artichoke        olives          
+[4] breakfast bacon  chicken          pepperoni       
+[7] anchovies       
+25 Levels: breakfast bacon chicken feta ... green peppers&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/subjects.gif&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;We have simulated ranking data of pizza toppings, can we recover the original probability values and “discover” the underlying order?&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;fitting-the-exploded-logistic-distribution-in-stan&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Fitting the exploded logistic distribution in Stan&lt;/h2&gt;
+&lt;p&gt;To fit the model in Stan, I’m going to create a custom probability mass function that takes an array of integers, &lt;code&gt;x&lt;/code&gt;, which represents a set of rankings, and a vector of probability values, &lt;code&gt;theta&lt;/code&gt;, that sums up to one.&lt;/p&gt;
+&lt;p&gt;The logic of this function is that the probability mass function of a ranking &lt;span class=&#34;math inline&#34;&gt;\(\{i,j,k, \ldots, N \}\)&lt;/span&gt; can be written as a product of normalized categorical distributions (where the first one is just divided by 1).&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probijk&#34;&gt;\[\begin{equation}
+p(x = \{i,j,k,\ldots\}) = \frac{\Theta_i}{\sum \Theta} \cdot \frac{\Theta_j}{\sum \Theta_{[-i]}} \cdot \frac{\Theta_k}{\sum \Theta_{[-i, -j]}} \ldots
+\tag{5}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;For Stan, we need the log-PDF. In log-space, products become sums, and divisions differences, and the log of &lt;span class=&#34;math inline&#34;&gt;\(\sum \Theta\)&lt;/span&gt; will be zero:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probijk&#34;&gt;\[\begin{equation}
+\begin{aligned}
+log(p(x = \{i,j,k,\ldots\})) =&amp;amp; \log(\Theta_i) - log(\sum \Theta) \\
+&amp;amp; + \log(\Theta_j) -  \log(\sum \Theta_{[-i]}) \\
+&amp;amp;+ \log(\Theta_k) -\log(\sum \Theta_{[-i, -j]}) \\
+&amp;amp; + \ldots
+\end{aligned}
+\tag{5}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;The following Stan custom function follows this logic but iterating over the rankings. In each iteration, it aggregates in the variable &lt;code&gt;out&lt;/code&gt; the addends of the log probability mass function, and turns the probability of selecting again the already ranked element to zero.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; real exploded_lpmf(int[] x, vector Theta){
+    real out = 0;
+    vector[num_elements(Theta)] thetar = Theta;
+    for(pos in x){
+      out += log(thetar[pos]) - log(sum(thetar));
+      thetar[pos] = 0;
+      }
+     return(out);
+ }&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The whole model named &lt;code&gt;exploded.stan&lt;/code&gt; includes the usual data declaration, the parameter &lt;code&gt;Theta&lt;/code&gt; declared as a simplex (i.e., it sums to one), and a uniform Dirichlet prior for &lt;code&gt;Theta&lt;/code&gt;. (I’m assuming that I don’t know how sparse the probabilities are).&lt;/p&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;functions {
+ real exploded_lpmf(int[] x, vector Theta){
+    real out = 0;
+    vector[num_elements(Theta)] thetar = Theta;
+    for(pos in x){
+      out += log(thetar[pos]) - log(sum(thetar));
+      thetar[pos] = 0;
+      }
+     return(out);
+ }
+}
+data{
+  int N_ranking; //total times the choices were ranked
+  int N_ranked; //total choices ranked
+  int N_options; //total options
+  int res[N_ranking, N_ranked];
+}
+parameters {
+  simplex[N_options] Theta;
+}
+model {
+  target += dirichlet_lpdf(Theta| rep_vector(1, N_options));
+  for(r in 1:N_ranking){
+    target += exploded_lpmf(res[r]|Theta);
+  }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let’s see if I can recover the parameter values.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# Makethe list of lists into a matrix
+res_matrix &amp;lt;- t(sapply(res, as.numeric))
+ldata &amp;lt;- list(res = res_matrix, 
+              N_ranked = length(res[[1]]), 
+              N_options = length(P_toppings), 
+              N_ranking = length(res)) 
+
+m_expl &amp;lt;- cmdstan_model(&amp;quot;./exploded.stan&amp;quot;)
+
+f_exploded &amp;lt;- m_expl$sample(
+  data = ldata,
+  seed = 123,
+  parallel_chains = 4
+)
+
+f_exploded&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt; variable    mean  median   sd  mad      q5     q95 rhat ess_bulk ess_tail
+ lp__     -724.91 -724.59 3.59 3.49 -731.39 -719.59 1.00     1262     2290
+ Theta[1]    0.29    0.29 0.04 0.04    0.23    0.35 1.00     5575     2538
+ Theta[2]    0.27    0.27 0.04 0.04    0.21    0.33 1.00     5320     3114
+ Theta[3]    0.08    0.08 0.01 0.01    0.06    0.10 1.00     6830     3167
+ Theta[4]    0.09    0.08 0.01 0.01    0.06    0.11 1.00     5790     2746
+ Theta[5]    0.07    0.07 0.01 0.01    0.05    0.09 1.00     6440     3142
+ Theta[6]    0.05    0.04 0.01 0.01    0.03    0.06 1.00     6608     3177
+ Theta[7]    0.04    0.04 0.01 0.01    0.03    0.06 1.00     6373     2697
+ Theta[8]    0.05    0.05 0.01 0.01    0.03    0.06 1.00     5620     2863
+ Theta[9]    0.01    0.01 0.00 0.00    0.00    0.01 1.00     7235     2664
+
+ # showing 10 of 26 rows (change via &amp;#39;max_rows&amp;#39; argument or &amp;#39;cmdstanr_max_rows&amp;#39; option)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I plot the posterior distributions of the probability values and the true probability values below.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;mcmc_recover_hist(f_exploded$draws(&amp;quot;Theta&amp;quot;),
+                  P_toppings,
+                  facet_args =
+                    list(scales = &amp;quot;fixed&amp;quot;, ncol = 3)) +
+  theme(legend.position=&amp;quot;bottom&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/unnamed-chunk-10-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;It looks reasonable. However, if we really want to be sure that this is working, we should probably use simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-taltsValidatingBayesianInference2018&#34; role=&#34;doc-biblioref&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;what-is-this-good-for&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;What is this good for?&lt;/h2&gt;
+&lt;p&gt;This super simple example shows how to get an underlying ranking based on a set of responses from a number of subjects. It’s straightforward to adapt this model to data from participants ranking elements from different sets of the &lt;em&gt;same size&lt;/em&gt; (e.g., 7 out of 25 toppings, 7 out of 25 tools). It’s a little less straightforward if the sets are of different sizes, e.g., rank 7 toppings out 25, but 7 tools out 50. This is just because Stan doesn’t allow ragged arrays. See &lt;a href=&#34;https://discourse.mc-stan.org/t/ragged-array-of-simplexes/1382/31&#34;&gt;here&lt;/a&gt; some tips for implementing the latter model.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;could-this-be-used-as-a-cognitive-model-of-peoples-rankings&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Could this be used as a cognitive model of people’s rankings?&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&#34;https://media.giphy.com/media/dXcwxFuXCd8sI3VcFb/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Maybe. And I enter here in the realm of half baked research, ideal for a blog post.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;Lee, Steyvers, and Miller&lt;/a&gt; (&lt;a href=&#34;#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;2014&lt;/a&gt;)&lt;/span&gt; show the implementation of a cognitive model for rank order data from the latent knowledge of participants, which is
+based on Thurstonian models &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-thurstone1927law&#34; role=&#34;doc-biblioref&#34;&gt;Thurstone 1927&lt;/a&gt;, &lt;a href=&#34;#ref-thurstone1931rank&#34; role=&#34;doc-biblioref&#34;&gt;1931&lt;/a&gt;)&lt;/span&gt; fitted with Bayesian methods in JAGS &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-Johnson2013&#34; role=&#34;doc-biblioref&#34;&gt;Johnson and Kuhn 2013&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;The exploded logit model seems to be closely related to the Thurstonian model. The Thurstonian model assumes that each participant assigns an underlying score to each item of a set, which is drawn from a true score with normally distributed error. The score determines the order that the participant gives. We can think about the exploded logit similarly. While I modeled the underlying ranking based on probability values, one could assume that each participant &lt;span class=&#34;math inline&#34;&gt;\(s\)&lt;/span&gt; had their own score &lt;span class=&#34;math inline&#34;&gt;\(mu_{is}\)&lt;/span&gt; for each item (or pizza topping) &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;, which is built as a common score &lt;span class=&#34;math inline&#34;&gt;\(mu_i\)&lt;/span&gt; together with some individual deviation &lt;span class=&#34;math inline&#34;&gt;\(\epsilon_{is}\)&lt;/span&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:muis&#34;&gt;\[\begin{equation} 
+\mu_{is}  = \mu_i + \epsilon_{is}
+\tag{6}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;If we assume that &lt;span class=&#34;math inline&#34;&gt;\(\epsilon_{is}\)&lt;/span&gt; has a &lt;a href=&#34;https://en.wikipedia.org/wiki/Gumbel_distribution&#34;&gt;Gumbel&lt;/a&gt; distribution, then the probability of &lt;span class=&#34;math inline&#34;&gt;\(\mu_{is}\)&lt;/span&gt; being ranked first out of N options is determined by a softmax function:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi2&#34;&gt;\[\begin{equation} 
+P(i) = \frac{\exp(\mu_i)}{\sum \exp(\mu)}
+\tag{7}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(\mu\)&lt;/span&gt; is the vector of scores for all elements of the set.&lt;/p&gt;
+&lt;p&gt;And the probability of ordering &lt;span class=&#34;math inline&#34;&gt;\(j\)&lt;/span&gt; second is:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probj2&#34;&gt;\[\begin{equation} 
+P(i,j,\ldots) = \frac{\exp(\mu_j)}{\sum \exp(\mu_{[-i]} )}
+\tag{8}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;and so forth.&lt;/p&gt;
+&lt;p&gt;These last equations are essentially the same categorical distributions that I used before in &lt;a href=&#34;#eq:probi&#34;&gt;(2)&lt;/a&gt; and &lt;a href=&#34;#eq:probj&#34;&gt;(3)&lt;/a&gt;, but the softmax function converts the unbounded scores into probabilities first. However, with the exploded logit, the error term goes away leading to a more tractable model. This is not the case for the Thurstonian model. The Thurstonian model is more complex, but at the same time we gain more flexibility. With the error term, the Thurstonian model can incorporate the reliability of the participants’ judgments and even correlations, which, as far as I know, can’t be included in the exploded logit model.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;session-info&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Session info&lt;a href=&#34;#fn2&#34; class=&#34;footnote-ref&#34; id=&#34;fnref2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sessionInfo()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;R version 4.1.1 (2021-08-10)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 20.04.3 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=nl_NL.UTF-8   
+ [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=nl_NL.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bayesplot_1.8.1     cmdstanr_0.4.0.9000 rcorpora_2.0.0      extraDistr_1.9.1    ggplot2_3.3.5       purrr_0.3.4         dplyr_1.0.7        
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.1.1     xfun_0.26            bslib_0.3.0          reshape2_1.4.4       colorspace_2.0-2     vctrs_0.3.8          generics_0.1.1      
+ [8] htmltools_0.5.2      yaml_2.2.1           utf8_1.2.2           rlang_0.4.12         jquerylib_0.1.4      pillar_1.6.4         glue_1.5.1          
+[15] withr_2.4.2          DBI_1.1.1            distributional_0.2.2 matrixStats_0.60.1   lifecycle_1.0.1      plyr_1.8.6           stringr_1.4.0       
+[22] posterior_1.1.0      munsell_0.5.0        blogdown_1.5.2       gtable_0.3.0         evaluate_0.14        labeling_0.4.2       papaja_0.1.0.9997   
+[29] knitr_1.36           fastmap_1.1.0        ps_1.6.0             fansi_0.5.0          highr_0.9            Rcpp_1.0.7           scales_1.1.1        
+[36] backports_1.2.1      checkmate_2.0.0      jsonlite_1.7.2       abind_1.4-5          farver_2.1.0         tensorA_0.36.2       digest_0.6.28       
+[43] stringi_1.7.6        processx_3.5.2       bookdown_0.22        grid_4.1.1           tools_4.1.1          magrittr_2.0.1       sass_0.4.0          
+[50] tibble_3.1.5         crayon_1.4.2         pkgconfig_2.0.3      ellipsis_0.3.2       data.table_1.14.2    ggridges_0.5.3       assertthat_0.2.1    
+[57] rmarkdown_2.11       R6_2.5.1             compiler_4.1.1      &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;references&#34; class=&#34;section level2 unnumbered&#34;&gt;
+&lt;h2&gt;References&lt;/h2&gt;
+&lt;div id=&#34;refs&#34; class=&#34;references csl-bib-body hanging-indent&#34;&gt;
+&lt;div id=&#34;ref-Barsalou1985&#34; class=&#34;csl-entry&#34;&gt;
+Barsalou, Lawrence W. 1985. &lt;span&gt;“Ideals, Central Tendency, and Frequency of Instantiation as Determinants of Graded Structure in Categories.”&lt;/span&gt; &lt;em&gt;Journal of Experimental Psychology: Learning, Memory, and Cognition&lt;/em&gt; 11 (4): 629.
+&lt;/div&gt;
+&lt;div id=&#34;ref-BEGGS19811&#34; class=&#34;csl-entry&#34;&gt;
+Beggs, S, S Cardell, and J Hausman. 1981. &lt;span&gt;“Assessing the Potential Demand for Electric Cars.”&lt;/span&gt; &lt;em&gt;Journal of Econometrics&lt;/em&gt; 17 (1): 1–19. https://doi.org/&lt;a href=&#34;https://doi.org/10.1016/0304-4076(81)90056-7&#34;&gt;https://doi.org/10.1016/0304-4076(81)90056-7&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-shiny&#34; class=&#34;csl-entry&#34;&gt;
+Chang, Winston, Joe Cheng, JJ Allaire, Carson Sievert, Barret Schloerke, Yihui Xie, Jeff Allen, Jonathan McPherson, Alan Dipert, and Barbara Borges. 2021. &lt;em&gt;Shiny: Web Application Framework for r&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=shiny&#34;&gt;https://CRAN.R-project.org/package=shiny&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-cmdstanr&#34; class=&#34;csl-entry&#34;&gt;
+Gabry, Jonah, and Rok Češnovar. 2020. &lt;em&gt;Cmdstanr: R Interface to ’CmdStan’&lt;/em&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-bayesplot&#34; class=&#34;csl-entry&#34;&gt;
+Gabry, Jonah, Daniel Simpson, Aki Vehtari, Michael Betancourt, and Andrew Gelman. 2019. &lt;span&gt;“Visualization in Bayesian Workflow.”&lt;/span&gt; &lt;em&gt;J. R. Stat. Soc. A&lt;/em&gt; 182: 389–402. &lt;a href=&#34;https://doi.org/10.1111/rssa.12378&#34;&gt;https://doi.org/10.1111/rssa.12378&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-gakisetal2018&#34; class=&#34;csl-entry&#34;&gt;
+Gakis, Konstantinos, Panos Pardalos, Chang-Hwan Choi, Jae-Hyeon Park, and Jiwun Yoon. 2018. &lt;span&gt;“Simulation of a Probabilistic Model for Multi-Contestant Races.”&lt;/span&gt; &lt;em&gt;Athens Journal of Sports&lt;/em&gt; 5 (2): 95–114.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-purrr&#34; class=&#34;csl-entry&#34;&gt;
+Henry, Lionel, and Hadley Wickham. 2020. &lt;em&gt;Purrr: Functional Programming Tools&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=purrr&#34;&gt;https://CRAN.R-project.org/package=purrr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Johnson2013&#34; class=&#34;csl-entry&#34;&gt;
+Johnson, Timothy R., and Kristine M. Kuhn. 2013. &lt;span&gt;“Bayesian &lt;span&gt;Thurstonian&lt;/span&gt; Models for Ranking Data Using &lt;span&gt;JAGS&lt;/span&gt;.”&lt;/span&gt; &lt;em&gt;Behavior Research Methods&lt;/em&gt; 45 (3): 857–72. &lt;a href=&#34;https://doi.org/10.3758/s13428-012-0300-3&#34;&gt;https://doi.org/10.3758/s13428-012-0300-3&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-rcorpora&#34; class=&#34;csl-entry&#34;&gt;
+Kazemi, Darius, Cole Willsea, Serin Delaunay, Karl Swedberg, Matthew Rothenberg, Greg Kennedy, Nathaniel Mitchell, et al. 2018. &lt;em&gt;Rcorpora: A Collection of Small Text Corpora of Interesting Data&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=rcorpora&#34;&gt;https://CRAN.R-project.org/package=rcorpora&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Lee2014&#34; class=&#34;csl-entry&#34;&gt;
+Lee, Michael D., Mark Steyvers, and Brent Miller. 2014. &lt;span&gt;“A Cognitive Model for Aggregating People’s Rankings.”&lt;/span&gt; &lt;em&gt;PLOS ONE&lt;/em&gt; 9 (5): e96431. &lt;a href=&#34;https://doi.org/10.1371/journal.pone.0096431&#34;&gt;https://doi.org/10.1371/journal.pone.0096431&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Luce1959&#34; class=&#34;csl-entry&#34;&gt;
+Luce, R. Duncan. 1959. &lt;em&gt;Individual Choice Behavior : A Theoretical Analysis&lt;/em&gt;. Book. Wiley N.Y.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Plackett&#34; class=&#34;csl-entry&#34;&gt;
+Plackett, R. L. 1975. &lt;span&gt;“The Analysis of Permutations.”&lt;/span&gt; &lt;em&gt;Journal of the Royal Statistical Society. Series C (Applied Statistics)&lt;/em&gt; 24 (2): 193–202. &lt;a href=&#34;http://www.jstor.org/stable/2346567&#34;&gt;http://www.jstor.org/stable/2346567&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-base&#34; class=&#34;csl-entry&#34;&gt;
+R Core Team. 2020. &lt;em&gt;R: A Language and Environment for Statistical Computing&lt;/em&gt;. Vienna, Austria: R Foundation for Statistical Computing. &lt;a href=&#34;https://www.R-project.org/&#34;&gt;https://www.R-project.org/&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-taltsValidatingBayesianInference2018&#34; class=&#34;csl-entry&#34;&gt;
+Talts, Sean, Michael Betancourt, Daniel Simpson, Aki Vehtari, and Andrew Gelman. 2018. &lt;span&gt;“Validating &lt;span&gt;Bayesian Inference Algorithms&lt;/span&gt; with &lt;span&gt;Simulation&lt;/span&gt;-&lt;span&gt;Based Calibration&lt;/span&gt;,”&lt;/span&gt; April. &lt;a href=&#34;http://arxiv.org/abs/1804.06788&#34;&gt;http://arxiv.org/abs/1804.06788&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-thurstone1927law&#34; class=&#34;csl-entry&#34;&gt;
+Thurstone, Louis L. 1927. &lt;span&gt;“A Law of Comparative Judgement.”&lt;/span&gt; &lt;em&gt;Psychological Reviews&lt;/em&gt; 34: 273–86.
+&lt;/div&gt;
+&lt;div id=&#34;ref-thurstone1931rank&#34; class=&#34;csl-entry&#34;&gt;
+———. 1931. &lt;span&gt;“Rank Order as a Psycho-Physical Method.”&lt;/span&gt; &lt;em&gt;Journal of Experimental Psychology&lt;/em&gt; 14 (3): 187.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-ggplot2&#34; class=&#34;csl-entry&#34;&gt;
+Wickham, Hadley. 2016. &lt;em&gt;Ggplot2: Elegant Graphics for Data Analysis&lt;/em&gt;. Springer-Verlag New York. &lt;a href=&#34;https://ggplot2.tidyverse.org&#34;&gt;https://ggplot2.tidyverse.org&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-dplyr&#34; class=&#34;csl-entry&#34;&gt;
+Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. &lt;em&gt;Dplyr: A Grammar of Data Manipulation&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=dplyr&#34;&gt;https://CRAN.R-project.org/package=dplyr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-extraDistr&#34; class=&#34;csl-entry&#34;&gt;
+Wolodzko, Tymoteusz. 2020. &lt;em&gt;extraDistr: Additional Univariate and Multivariate Distributions&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=extraDistr&#34;&gt;https://CRAN.R-project.org/package=extraDistr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-mediumr&#34; class=&#34;csl-entry&#34;&gt;
+Yutani, Hiroaki. 2021. &lt;em&gt;Mediumr: R Interface to ’Medium’ API&lt;/em&gt;.
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;footnotes&#34;&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;This model is also called the &lt;em&gt;rank ordered logit model&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-BEGGS19811&#34; role=&#34;doc-biblioref&#34;&gt;Beggs, Cardell, and Hausman 1981&lt;/a&gt;)&lt;/span&gt; or Plackett–Luce model due to &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;Plackett&lt;/a&gt; (&lt;a href=&#34;#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;1975&lt;/a&gt;)&lt;/span&gt; and &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;Luce&lt;/a&gt; (&lt;a href=&#34;#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;1959&lt;/a&gt;)&lt;/span&gt;, but I liked the explosion part more.&lt;a href=&#34;#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;I used R [Version 4.1.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;R Core Team&lt;/a&gt; (&lt;a href=&#34;#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;] and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; [Version 1.8.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;Gabry et al.&lt;/a&gt; (&lt;a href=&#34;#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;2019&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;cmdstanr&lt;/em&gt; [Version 0.4.0.9000; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;Gabry and Češnovar&lt;/a&gt; (&lt;a href=&#34;#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;dplyr&lt;/em&gt; [Version 1.0.7; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;Wickham et al.&lt;/a&gt; (&lt;a href=&#34;#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;extraDistr&lt;/em&gt; [Version 1.9.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;Wolodzko&lt;/a&gt; (&lt;a href=&#34;#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;ggplot2&lt;/em&gt; [Version 3.3.5; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;Wickham&lt;/a&gt; (&lt;a href=&#34;#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;2016&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;mediumr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-R-mediumr&#34; role=&#34;doc-biblioref&#34;&gt;Yutani 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;purrr&lt;/em&gt; [Version 0.3.4; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;Henry and Wickham&lt;/a&gt; (&lt;a href=&#34;#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;rcorpora&lt;/em&gt; [Version 2.0.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;Kazemi et al.&lt;/a&gt; (&lt;a href=&#34;#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;], and &lt;em&gt;shiny&lt;/em&gt; [Version 1.6.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;Chang et al.&lt;/a&gt; (&lt;a href=&#34;#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;] to generate this document.&lt;a href=&#34;#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+      
+            <category>stan</category>
+      
+            <category>Bayesian</category>
+      
+            <category>r</category>
+      
+      
+            <category>stats</category>
+      
     </item>
     
   </channel>

@@ -1,0 +1,16 @@
+<h3>Citation:</h3>
+<p>For attribution, please cite this work as</p>
+<code>
+{{$.Page.Params.author}}. ({{ $.Page.Params.date.Format "2006" }}). "{{$.Page.Params.title}}". Retrieved from {{ $.Page.Permalink }}. 
+</code>
+<p>BibTex citation</p>
+<h5>
+<code><pre>
+  @misc&#123;
+    title = {{$title_str := $.Page.Params.title}}{{printf "{%s}" $title_str}},
+    howpublished = {{$url_str := $.Page.Permalink}}{{printf "{\\url{%s}}" $url_str}},
+    year = {{$year_str :=  $.Page.Params.date.Format "2006"  }}{{printf "{%s}" $year_str}}
+  &#125;
+ 
+</pre></code>
+ </h5>

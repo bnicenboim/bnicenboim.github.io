@@ -1,10 +1,10 @@
 ---
 title: "A simple way to model rankings with Stan"
 author: "Bruno Nicenboim"
-date: "`r Sys.Date()`"
+date: "2021-03-21"
 categories: ["stats"]
 tags: ["stan", "Bayesian", "r"]
-bibliography: ["biblio.bib","r-references.bib"]
+bibliography: ["../biblio.bib","r-references.bib"]
 draft: false 
 ---
 
@@ -277,7 +277,9 @@ The whole model named `exploded.stan` includes the usual data declaration, the p
 Let's see if I can recover the parameter values.
 
 ```{r, message = FALSE, results = "hide"}
-ldata <- list(res = lapply(res, as.numeric),
+# Makethe list of lists into a matrix
+res_matrix <- t(sapply(res, as.numeric))
+ldata <- list(res = res_matrix, 
               N_ranked = length(res[[1]]), 
               N_options = length(P_toppings), 
               N_ranking = length(res)) 
@@ -318,7 +320,7 @@ It looks reasonable. However, if we really want to be sure that this is working,
 
 This super simple example shows how to get an underlying ranking based on a set of responses from a number of subjects. It's straightforward to adapt this model to data from participants ranking elements from different sets of the *same size* (e.g., 7 out of 25 toppings, 7 out of 25 tools). It's a little less straightforward if the sets are of different sizes, e.g., rank 7 toppings out 25, but 7 tools out 50. This is just because Stan doesn't allow ragged arrays. See [here](https://discourse.mc-stan.org/t/ragged-array-of-simplexes/1382/31) some tips for implementing the latter model.
 
-## Could this be used as cognitive model of people's rankings? 
+## Could this be used as a cognitive model of people's rankings? 
 
 
 ![](https://media.giphy.com/media/dXcwxFuXCd8sI3VcFb/giphy.gif)
