@@ -1,9 +1,0 @@
----
-title: Intensity and response times
-author: "Bruno Nicenboim"
-date: "`r Sys.Date()`"
-slug: intensity-and-response-times
-categories: ["stats"]
-tags: ["stan", "Bayesian", "r"]
-draft: true 
----
