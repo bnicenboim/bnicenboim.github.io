@@ -1,0 +1,25 @@
+data {
+  int<lower=0> N_trials;
+  int response[N_trials];
+  int N_arms;
+  matrix[N_trials,N_arms] R;
+}
+parameters {
+  real<lower = 0, upper = 1> alpha;
+  real beta_0;
+  real beta_1;
+}
+transformed parameters{
+  matrix[N_trials, N_arms] Q;
+  Q[1, ] = rep_row_vector(0.5, N_arms);
+  for(t in 2:N_trials)
+    for(a in 1:N_arms)
+      Q[t,a] = Q[t-1,a] + alpha* (R[t-1,a]-Q[t-1,a]);    
+}
+model {
+  target += beta_lpdf(alpha | 1, 1);
+  target += normal_lpdf(beta_0 | 2, 5);
+  target += normal_lpdf(beta_1 | 0, 1);
+  target += bernoulli_logit_lpmf(response | beta_0 + beta_1 * (Q[,2] - Q[,1]));
+}
+

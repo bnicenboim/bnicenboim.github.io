@@ -1,0 +1,336 @@
+---
+title: 'Not a tutorial of hierarchical Bayesian models of reinforcement learning '
+author: Bruno Nicenboim
+date: '2021-11-29'
+slug: not-a-tutorial-of-hierarchical-bayesian-models-of-reinforcement-learning
+categories: ["stats"]
+bibliography: ["../biblio.bib","r-references.bib"]
+tags: ["stan", "Bayesian", "r"]
+draft: true 
+---
+
+```{r setup, include = FALSE}
+papaja::r_refs("r-references.bib")
+## Global options
+options( # max.print="75",
+  width = 80,
+  tibble.width = 75,
+  digits = 2
+)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  cache = FALSE,
+  prompt = FALSE,
+  tidy = FALSE,
+  comment = NA,
+  message = FALSE,
+  warning = TRUE,
+  fig.align='center'
+)
+knitr::opts_knit$set(width = 80)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+
+# folding:
+local({
+  hook_source <- knitr::knit_hooks$get("source")
+  knitr::knit_hooks$set(source = function(x, options) {
+    fold <- options$fold
+    if(is.null(fold)) fold <- FALSE
+    if(fold==TRUE){
+      if(knitr::is_html_output()){
+        # fold code here
+        foldb <- ""
+        folde <- ""
+        options$class.source = 'fold-hide'
+        hook_source(c(foldb,x, folde), options)
+    } else {
+      #empty code for pdf
+    }
+  } else {
+    #regular output elsewhere:
+    hook_source(x, options)
+  }
+  })
+})
+
+```
+
+In this post, I'll focus on the Stan implementation of Q-learning, a specific type of reinforcement learning (RL) model,  for modeling how humans (and other organisms) learn behavioral policies (to make decisions) from rewards. @niv2009reinforcement presents a very extensive review of RL in the brain.
+
+I will *mostly* follow the implementation of @vanGeenGerraty2021. However, I think there are places where a reparametrization would be more appropriate and I will model my own simulated data.
+
+
+I'm going to load some R packages that will be useful throughout this post and set a seed, so that the synthetic data would be always the same.
+
+```{r}
+library(dplyr) # Data manipulation
+library(tidyr) # To pivot the data
+library(purrr) # List manipulation
+library(ggplot2) # Nice plots
+library(extraDistr) # More distributions
+library(MASS) # Tu use the multinormal distribution
+library(cmdstanr) # Lightweight Stan interface
+library(bayesplot) # Nice Bayesian plots
+set.seed(123)
+```
+
+# Restless bandits or slot machines with non-fixed probabilities of a reward
+
+I simulate data from a two-armed restless bandit, where the arms are independent. This is basically as there are two slot machines that offer rewards with probabilities that vary with time. There is a (post from Speekenbrink lab)[https://speekenbrink-lab.github.io/modelling/2019/02/28/fit_kf_rl_1.html] that gives more context to the restless bandits and shows how they can represent realistic options in life (they also simulate data from a different RL algorithm).
+
+![](https://media.giphy.com/media/xT1XGOzcLKDYN2kxLW/giphy.gif)
+
+
+I set up here a restless bandit with 2 arms that runs over 500 trials. They reward $R_{t,a}$ for the time step or trial $t$ for the arm $a$ is defined as follows:
+
+- For $t >1$
+
+\begin{equation}
+R_{t,a} \sim \mathit{Normal}(R_{t-1,a}, \sigma)
+\end{equation}
+
+- Otherwise 
+
+\begin{equation}
+R_{1,a} \sim \mathit{Normal}(0, \sigma)
+\end{equation}
+
+with $\sigma = .1$
+
+```{r}
+# set up
+N_arms <- 2
+N_trials <- 1000
+sigma <- .1
+## Reward matrix
+# First define a matrix with values sampled from Normal(0, sigma)
+R <- matrix(rnorm(N_trials * N_arms, mean = 0, sd = sigma), ncol = N_arms)
+# Then I do a cummulative sum over the rows (MARGIN = 2)
+R <- apply(R, MARGIN = 2, FUN = cumsum)
+colnames(R) <- paste0("arm_", 1:N_arms)
+head(R)
+```
+
+Some `tidyr` to plot the rewards.
+
+```{r}
+d_exp <- R %>%
+  as_tibble() %>%
+  pivot_longer(cols = everything(), names_to = "arm", values_to = "reward") %>%
+  group_by(arm) %>%
+  mutate(trial = 1:n())
+ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
+  geom_line()
+```
+
+
+## Q-learning
+
+Q-learning is a type of RL model where an agent learns the predictive value (in terms of future expected rewards) of taking a specific action (here, choosing on of the arm, $a$,  of the bandit) at a certain state (here at a given trial, $t$), denoted as $Q$. In a simplified model of Q-learning, $Q$ will look as follows
+
+- For $t >1$
+
+\begin{equation}
+Q_{t,a} = Q_{t-1, a} + \alpha \cdot (R_t - Q_{t, a})
+\end{equation}
+
+- Otherwise
+
+\begin{equation}
+Q_{1,a} = .5 
+\end{equation}
+
+
+where $\alpha$ is the learning rate, which determines the extent to which prediction error  will play a role in updating an action's value. This prediction error is quantified as the difference between the expected value of an action and the actual reward
+on a given trial, $(R_t - Q_{t, a})$.
+
+Higher values of $\alpha$ imply greater sensitivity to the most recent choice outcome, that is the most recent reward.
+
+
+The influence of $Q$ in the agent behavior is governed by an inverse temperature parameter
+ ($\beta$). Smaller values of $\beta$ lead to a more exploratory behavior.
+ 
+The idea will be that we obtain the probability, ($\theta$), of a specific action in a given trial (or state) based on two factors: that action's value, $Q$ in that context (learned
+through its reward history), and how influential this value will be in determining choice. 
+
+
+
+
+```{r}
+# True values
+alpha <- .3 # learning rate
+beta_0 <- 0.5 # bias to arm "b"
+beta_1 <- 3 # inverse temperature
+# True Q matrix
+Q <- matrix(nrow = N_trials, ncol = N_arms)
+Q[1, ] <- rep(.5, N_arms) # initial values for all Q
+for (t in 2:N_trials) {
+  for (a in 1:N_arms) {
+    Q[t, a] <- Q[t - 1, a] + alpha * (R[t - 1, a] - Q[t - 1, a])
+  }
+}
+```
+
+```{r}
+# probability of choosing arm_2
+theta <- plogis(beta_0 + beta_1 * (Q[, 2] - Q[, 1]))
+# What the synthethic subject would respond, with 0 indicating arm 1, and 1 indicating arm 2
+response <- rbern(N_trials, theta)
+```
+
+```{r}
+d_res <- tibble(arm = ifelse(response == 1, "arm_1", "arm_2"), trial = 1:N_trials) %>% left_join(d_exp)
+ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
+  geom_line() +
+  geom_point(data = d_res, aes(x = trial, y = reward), color = "black", shape = 1)
+```
+
+
+```{r}
+response_1subj <- function(
+                           alpha = .3,
+                           beta_0 = 0.5,
+                           beta_1 = 3){
+  Q <- matrix(nrow = N_trials, ncol = N_arms)
+  Q[1, ] <- rep(.5, N_arms) # initial values for all Q
+  for (t in 2:N_trials) {
+    for (a in 1:N_arms) {
+      Q[t, a] <- Q[t - 1, a] + alpha * (R[t - 1, a] - Q[t - 1, a])
+    }
+  }
+  
+  theta <- plogis(beta_0 + beta_1 * (Q[, 2] - Q[, 1]))
+  response <- rbern(N_trials, theta)
+  tibble(arm = ifelse(response == 1, "arm_1", "arm_2"), trial = 1:N_trials) %>% left_join(d_exp, by = c("arm", "trial")) %>%
+    mutate(alpha = alpha, beta_1 = beta_1)
+  
+}
+
+alphas <- seq(.2,.8,.2)
+betas_1 <- seq(-3, 3, 1)
+pars <- expand.grid(alphas, betas_1)
+
+d_res_all <- pmap_dfr(pars, ~ response_1subj(alpha = .x, beta_0 = .5, beta_1 = .y))
+
+ggplot(d_res_all, aes(x = trial, y = reward)) +
+    geom_line(data = d_exp, aes(x = trial, y = reward, color = arm)) +
+    geom_point( color = "black", shape = 1) +
+  facet_grid(rows = vars(alpha), cols = vars(beta_1))
+
+```
+
+
+
+
+```{r, message = FALSE, results = "hide"}
+m_ql <- cmdstan_model("qlearning.stan")
+fit_ql <- m_ql$sample(
+  data = list(
+    response = response,
+    N_trials = N_trials,
+    N_arms = N_arms,
+    R = R
+  ),
+  parallel_chains = 4
+)
+```
+```{r}
+fit_ql$summary(c("alpha", "beta_0", "beta_1"))
+```
+
+```{r, message = FALSE}
+mcmc_recover_hist(fit_ql$draws(c("alpha", "beta_0", "beta_1")), true = c(alpha, beta_0, beta_1))
+```
+
+## A hierarchical Q-learning model
+
+```{r}
+alpha <- .3 # learning rate
+tau_u_alpha <- .1
+beta_0 <- 0.5 # bias to arm "b"
+tau_u_beta_0 <- .15
+beta_1 <- 3 # inverse temperature
+tau_u_beta_1 <- .3
+N_adj <- 3
+
+# Experiment data
+N_subj <- 20
+subj <- rep(1:N_subj, each = nrow(R))
+# trial_ <- rep(1:nrow(R), times =N_subj)
+trial <- matrix(1:(N_trials * N_subj), ncol = N_trials, byrow = TRUE)
+# each column indicates in which rows of Q correspond to a given trial
+trial[, 1] # trial 1 happens int he following rows of Q
+# R
+
+tau_u <- c(tau_u_alpha, tau_u_beta_0, tau_u_beta_1)
+rho_u <- .3
+Cor_u <- matrix(rep(rho_u, N_adj^2), nrow = N_adj)
+diag(Cor_u) <- 1
+Sigma_u <- diag(tau_u, N_adj, N_adj) %*%
+  Cor_u %*%
+  diag(tau_u, N_adj, N_adj)
+u <- mvrnorm(n = N_subj, rep(0, N_adj), Sigma_u)
+
+Q <- matrix(nrow = N_trials * N_subj, ncol = N_arms)
+Q[trial[, 1], ] <- .5 # initial values for all Q
+
+for (t in 2:N_trials) {
+  for (a in 1:N_arms) {
+    Q[trial[, t], a] <- Q[trial[, t] - 1, a] + plogis(qlogis(alpha) + u[, 1]) * (R[t - 1, a] - Q[trial[, t] - 1, a])
+  }
+}
+
+
+# b is 1
+theta_b <- plogis(beta_0 + u[subj, 2] + (beta_1 + u[subj, 3]) * (Q[, 2] - Q[, 1]))
+
+# prob of choosing 1
+response <- rbern(N_trials * N_subj, theta_b)
+```
+
+```{r}
+data_h <- list(
+  N_subj = N_subj,
+  subj = subj,
+  trial = trial,
+  response = response,
+  N_trials = N_trials,
+  N_arms = N_arms,
+  R = R
+)
+```
+```{r, eval = !file.exists("fit_ql_h.RDS"), results = "hide"}
+m_ql_h <- cmdstan_model("qlearning_h.stan")
+fit_ql_h <- m_ql_h$sample(data_h,
+  parallel_chains = 4
+)
+```
+1199 s
+
+```{r, echo = FALSE}
+if(file.exists("fit_ql_h.RDS")){
+fit_ql_h <- readRDS("fit_ql_h.RDS")
+} else {
+fit_ql_h$save_object("fit_ql_h.RDS")
+}
+```
+
+```{r}
+fit_ql_h
+```
+
+
+
+## Session info ^[I used `r papaja::cite_r("r-references.bib")` to generate this document.]
+
+```{r, echo = FALSE}
+width <- getOption("width")
+options(width = 160)
+```
+
+```{r}
+sessionInfo()
+```
+
+
+## References

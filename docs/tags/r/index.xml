@@ -6,10 +6,508 @@
     <description>Recent content in r on Bruno Nicenboim</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 21 Mar 2021 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Mon, 29 Nov 2021 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/r/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Not a tutorial of a Bayesian implementation of a reinforcement learning model</title>
+      <link>/2021/11/29/bayesian-h-reinforcement-learning/</link>
+      <pubDate>Mon, 29 Nov 2021 00:00:00 +0000</pubDate>
+      
+      <guid>/2021/11/29/bayesian-h-reinforcement-learning/</guid><description>
+&lt;script src=&#34;/2021/11/29/bayesian-h-reinforcement-learning/index_files/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;&lt;span style=&#34;color: red;&#34;&gt;
+&lt;strong&gt;⚠️ This post is NOT about “Masheen Lurning”: I’m spelling it like this to avoid luring visitors into this post for the wrong reasons. In the context of “Masheen Lurning,” one teaches a “masheen” to make the most rewarding decisions. In contrast, this post is about fitting human (or possibly also animal) data with decisions made along a number of trials assuming that some type of reinforcement learning occurred.⚠️&lt;/strong&gt;
+&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;I’ll focus on a Bayesian implementation of Q-learning using &lt;a href=&#34;https://mc-stan.org/&#34;&gt;Stan&lt;/a&gt;. Q-learning is a specific type of reinforcement learning (RL) model that can explain how humans (and other organisms) learn behavioral policies (to make decisions) from rewards. &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-niv2009reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;Niv&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-niv2009reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;2009&lt;/a&gt;)&lt;/span&gt; presents a very extensive review of RL in the brain. Readers interested in The Book about RL should see &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-sutton2018reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;Sutton and Barto&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-sutton2018reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;I will &lt;em&gt;mostly&lt;/em&gt; follow the implementation of &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;van Geen and Gerraty&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;, who present a tutorial on a hierarchical Bayesian implementation of Q-learning. However, I think there are places where a different parametrization would be more appropriate. I will also model my own simulated data, especially because I wanted to check if I’m doing things right. Another useful tutorial about Bayesian modeling of RL is &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-ZhangEtAl2020&#34; role=&#34;doc-biblioref&#34;&gt;Zhang et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-ZhangEtAl2020&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;, however, that tutorial uses a Rescorla–Wagner model, rather than Q-learning. Before you continue reading, notice that if you just want to fit data using a RL model and don’t care about the nitty gritty details, you can just use the R package &lt;a href=&#34;https://ccs-lab.github.io/hBayesDM/articles/getting_started.html&#34;&gt;hBayesDM&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The rest of the post is about simulating one subject doing an experiment and fitting it with Stan, and then simulating several subjects doing the same experiment and fitting that data with Stan.&lt;/p&gt;
+&lt;p&gt;First, I’m going to load some R packages that will be useful throughout this post and set a seed, so that the simulated data will be always the same.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(dplyr) # Data manipulation
+library(tidyr) # To pivot the data
+library(purrr) # List manipulation
+library(ggplot2) # Nice plots
+library(extraDistr) # More distributions
+library(MASS) # Tu use the multinormal distribution
+library(cmdstanr) # Lightweight Stan interface
+library(bayesplot) # Nice Bayesian plots
+set.seed(123)&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;restless-bandits-or-slot-machines-with-non-fixed-probabilities-of-a-reward&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Restless bandits or slot machines with non-fixed probabilities of a reward&lt;/h1&gt;
+&lt;p&gt;I simulate data from a two-armed restless bandit, where the arms are independent. This is basically as if there were two slot machines that offer rewards with probabilities that vary with time following a random walk. I always wondered why so many researchers are modeling slot machines, but it turns out they can actually represent realistic options in life. There is a &lt;a href=&#34;https://speekenbrink-lab.github.io/modelling/2019/02/28/fit_kf_rl_1.html&#34;&gt;post from Speekenbrink lab&lt;/a&gt; that gives context to the restless bandits (and they also simulate data from a different RL algorithm).&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning/https://media.giphy.com/media/xT1XGOzcLKDYN2kxLW/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;I set up here a restless bandit with 2 arms that runs over 1000 trials. The reward, &lt;span class=&#34;math inline&#34;&gt;\(R_{t,a}\)&lt;/span&gt;, for the time step or trial &lt;span class=&#34;math inline&#34;&gt;\(t\)&lt;/span&gt; for the arm &lt;span class=&#34;math inline&#34;&gt;\(a\)&lt;/span&gt; follows a random walk and it’s defined as follows:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;For &lt;span class=&#34;math inline&#34;&gt;\(t =1\)&lt;/span&gt;,
+&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+R_{t,a} \sim \mathit{Normal}(0, \sigma)
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;For &lt;span class=&#34;math inline&#34;&gt;\(t &amp;gt;1\)&lt;/span&gt;,&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+R_{t,a} \sim \mathit{Normal}(R_{t-1,a}, \sigma)
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;with &lt;span class=&#34;math inline&#34;&gt;\(\sigma = .1\)&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;In R, this looks as follows.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# set up
+N_arms &amp;lt;- 2
+N_trials &amp;lt;- 1000
+sigma &amp;lt;- .1
+## Reward matrix:
+# First define a matrix with values sampled from Normal(0, sigma)
+R &amp;lt;- matrix(rnorm(N_trials * N_arms, mean = 0, sd = sigma), 
+            ncol = N_arms)
+# Then I do a cumulative sum over the rows (MARGIN = 2)
+R &amp;lt;- apply(R, MARGIN = 2, FUN = cumsum)
+colnames(R) &amp;lt;- paste0(&amp;quot;arm_&amp;quot;, 1:N_arms)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The first rows of the reward matrix will look like this:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;head(R)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;      arm_1 arm_2
+[1,] -0.056 -0.10
+[2,] -0.079 -0.20
+[3,]  0.077 -0.21
+[4,]  0.084 -0.22
+[5,]  0.097 -0.47
+[6,]  0.268 -0.37&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In this simulated experiment, a subject is presented at each trial with two choices, to either select arm one or arm two. Each time they’ll get a reward (or a negative reward, that is, a punisment) determined by a random walk simulated before in the matrix &lt;span class=&#34;math inline&#34;&gt;\(R\)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;Some &lt;code&gt;tidyr&lt;/code&gt; to plot the rewards.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;d_exp &amp;lt;- R %&amp;gt;%
+  as_tibble() %&amp;gt;%
+  pivot_longer(cols = everything(), 
+               names_to = &amp;quot;arm&amp;quot;, 
+               values_to = &amp;quot;reward&amp;quot;) %&amp;gt;%
+  group_by(arm) %&amp;gt;%
+  mutate(trial = 1:n())
+ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
+  geom_line()&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning//2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-4-1.png&#34; width=&#34;672&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;I see that the arm that will give better rewards depends on the trial, and that a subject should keep &lt;em&gt;exploring&lt;/em&gt; at least until trial ~650 to verify that they are not &lt;em&gt;exploiting&lt;/em&gt; the wrong arm. There are many, many variations of the bandits, some of them give a fixed reward with some probability based on the random walk, sometimes there are more arms, and all of them are presented as choices, and in some other tasks only a random subset of the arms are presented to the subject.&lt;/p&gt;
+&lt;div id=&#34;simulating-actions-using-q-learning&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Simulating actions using Q-learning&lt;/h2&gt;
+&lt;p&gt;There are also many, many RL models. Q-learning is a type of RL model where an agent (e.g., a human subject) learns the predictive value (in terms of future expected rewards) of taking a specific action (e.g., choosing arm one or two of the bandit) at a certain state (here, at a given trial), &lt;span class=&#34;math inline&#34;&gt;\(t\)&lt;/span&gt;. This predictive value is denoted as &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt;. In a simplified model of Q-learning, the actions of a subject will depend (to some extent) on &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;Let’s focus on the case of two arms:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;For &lt;span class=&#34;math inline&#34;&gt;\(t = 1\)&lt;/span&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In the first trial, &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; will be initialized with the same value for each action (e.g., &lt;span class=&#34;math inline&#34;&gt;\(0.5\)&lt;/span&gt;), and the subject will take an action with probability &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt; based on their bias to one of the arms. I use &lt;span class=&#34;math inline&#34;&gt;\(\beta_{0}\)&lt;/span&gt; as the bias to arm 2. This parameter can vary freely, &lt;span class=&#34;math inline&#34;&gt;\([-\infty,\infty]\)&lt;/span&gt;, and it’s converted to the &lt;span class=&#34;math inline&#34;&gt;\([0,1]\)&lt;/span&gt; range using &lt;span class=&#34;math inline&#34;&gt;\(logit^{-1}\)&lt;/span&gt;. If there are more arms presented one should use a &lt;span class=&#34;math inline&#34;&gt;\(softmax\)&lt;/span&gt; function instead.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+\begin{aligned}
+Q_{t=1,a = 1} &amp;amp;= .5 \\
+Q_{t=1,a = 2} &amp;amp;= .5 \\
+\theta &amp;amp;= logit^{-1}(\beta_0)
+\end{aligned}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Whether the subject decides arm 1 or arm 2 depends on &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+action \sim
+\begin{cases} 
+1 \text{ with probability } 1-\theta_t\\
+2 \text{ with probability } \theta_t
+\end{cases}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Now I update the &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; value that corresponds to the action taken for the next trial. Here, &lt;span class=&#34;math inline&#34;&gt;\(\alpha\)&lt;/span&gt;, the learning rate, determines the extent to which the prediction error will play a role in updating an action’s value. This prediction error is quantified as the difference between the expected value of an action and the actual reward
+on a given trial, &lt;span class=&#34;math inline&#34;&gt;\((R_t - Q_{t, a})\)&lt;/span&gt;.
+The parameter &lt;span class=&#34;math inline&#34;&gt;\(\alpha\)&lt;/span&gt; is bounded between &lt;span class=&#34;math inline&#34;&gt;\([0,1]\)&lt;/span&gt; to identify the model.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fn1&#34; class=&#34;footnote-ref&#34; id=&#34;fnref1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt; Higher values of &lt;span class=&#34;math inline&#34;&gt;\(\alpha\)&lt;/span&gt; imply greater sensitivity to the most recent choice outcome, that is the most recent reward.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+Q_{t + 1,action} = Q_{t, action} + \alpha \cdot (R_{t,action} - Q_{t, action})
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;For the action non taken, &lt;span class=&#34;math inline&#34;&gt;\(-action\)&lt;/span&gt;, the value of &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; remains the same (in the first trial, that would be 0.5):&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+Q_{t + 1, -action} = Q_{t, -action}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;For &lt;span class=&#34;math inline&#34;&gt;\(t &amp;gt;1\)&lt;/span&gt; things get more interesting: the influence of &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; in the agent behavior is governed by an inverse temperature parameter
+(&lt;span class=&#34;math inline&#34;&gt;\(\beta_1\)&lt;/span&gt;). Smaller values of &lt;span class=&#34;math inline&#34;&gt;\(\beta_1\)&lt;/span&gt; lead to a more exploratory behavior.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The idea will be that we obtain the probability, &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt;, of a specific action in a given trial based on two factors: that action’s value, &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; in that trial (learned through its reward history), and how influential this value will be in determining the action taken. Again, because there are only two choices we can use &lt;span class=&#34;math inline&#34;&gt;\(logit^-1\)&lt;/span&gt; function, if we had more choices we would use a &lt;span class=&#34;math inline&#34;&gt;\(softmax\)&lt;/span&gt; function.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+\theta_t = logit^{-1}(\beta_0 + \beta_1 \cdot (Q_{t,2} - Q_{t,1}))
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;Again, and for every trial, whether the subject decides arm 1 or arm 2 depends on &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt;:
+&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+action \sim 
+\begin{cases} 
+1 \text{ with probability } 1-\theta_t\\
+2 \text{ with probability } \theta_t
+\end{cases}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;And &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; gets updated for the next trial:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+\begin{aligned}
+Q_{t + 1,a = action} &amp;amp;= Q_{t, action} + \alpha \cdot (R_{t,action} - Q_{t, action})\\
+Q_{t + 1,a = -action} &amp;amp;= Q_{t, -action}
+\end{aligned}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;The following R code implements these equations:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# True values
+alpha &amp;lt;- .3 # learning rate
+beta_0 &amp;lt;- 0.5 # bias to arm &amp;quot;b&amp;quot;
+beta_1 &amp;lt;- 3 # inverse temperature
+# Q vector with the first value set at 0.5
+# True Q matrix, it has an extra row,
+# since it keeps updating also for trial N_trial + 1
+Q &amp;lt;- matrix(nrow = N_trials + 1, ncol = N_arms)
+Q[1, ] &amp;lt;- rep(.5, N_arms) # initial values for all Q
+action &amp;lt;- rep(NA, times = N_trials)
+theta &amp;lt;- rep(NA, times = N_trials)
+for (t in 1:N_trials) {
+  # probability of choosing arm_2
+  theta[t] &amp;lt;- plogis(beta_0 + beta_1 * (Q[t, 2] - Q[t, 1]))
+  # What the synthethic subject would respond, 
+  # with 1 indicating arm 1, and 2 indicating arm 2
+  action[t] &amp;lt;- rbern(1, theta[t]) + 1
+  Q[t + 1, action[t]] &amp;lt;- Q[t, action[t]] +
+    alpha * (R[t, action[t]] - Q[t, action[t]])
+  nonactions_t &amp;lt;- (1:N_arms)[-action[t]]
+  Q[t + 1, nonactions_t] &amp;lt;- Q[t, nonactions_t]
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This is what I’m generating trial by trial:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tibble(Q[1:N_trials, ], R, action)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# A tibble: 1,000 × 3
+   `Q[1:N_trials, ]`[,1]    [,2] R[,&amp;quot;arm_1&amp;quot;] [,&amp;quot;arm_2&amp;quot;] action
+                   &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt;       &amp;lt;dbl&amp;gt;      &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;
+ 1                 0.5    0.5        -0.0560    -0.0996      2
+ 2                 0.5    0.320      -0.0791    -0.204       1
+ 3                 0.326  0.320       0.0768    -0.205       2
+ 4                 0.326  0.162       0.0839    -0.219       1
+ 5                 0.254  0.162       0.0968    -0.474       2
+ 6                 0.254 -0.0283      0.268     -0.369       2
+ 7                 0.254 -0.131       0.314     -0.344       1
+ 8                 0.272 -0.131       0.188     -0.103       2
+ 9                 0.272 -0.122       0.119     -0.0344      1
+10                 0.226 -0.122       0.0746    -0.0791      1
+# … with 990 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let’s see what would this subject choose in each trial.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;d_res &amp;lt;- tibble(
+  arm = ifelse(action == 1, &amp;quot;arm_1&amp;quot;, &amp;quot;arm_2&amp;quot;),
+  trial = 1:N_trials
+) %&amp;gt;%
+  left_join(d_exp)
+ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
+  geom_line() +
+  geom_point(
+    data = d_res,
+    aes(x = trial, y = reward),
+    color = &amp;quot;black&amp;quot;,
+    shape = 1
+  )&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning//2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-7-1.png&#34; width=&#34;672&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;It’s interesting that there is a point (around the trial 650), where the second arm is so clearly better than the first arm, that it makes almost no sense to keep exploring.&lt;/p&gt;
+&lt;p&gt;What will be the reward of this subject?&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sum(d_res$reward)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;[1] 1788&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;What will be the maximum possible reward?&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sum(apply(R, MARGIN = 1, FUN = max))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;[1] 1846&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now let’s fit the model in Stan. A major difference with the R code is that I don’t keep track of all the Q values. I just keep track of one Q value for each arm, and I update them at the end of every trial. Also I store the difference between them in the vector &lt;code&gt;Q_diff&lt;/code&gt;.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;  vector[N_arms] Q = [.5, .5]&amp;#39;;
+  vector[N_trials] Q_diff;
+  for(t in 1:N_trials){
+    Q_diff[t] = Q[2] - Q[1];
+    Q[action[t]] += alpha * (R[t, action[t]] - Q[action[t]]);
+  }&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The complete code is shown below.&lt;/p&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;data {
+  int&amp;lt;lower=0&amp;gt; N_trials;
+  int action[N_trials];
+  int N_arms;
+  matrix[N_trials,N_arms] R;
+}
+transformed data {
+  int response[N_trials];
+  for(n in 1:N_trials)
+    response[n] = action[n] - 1;
+}
+parameters {
+  real&amp;lt;lower = 0, upper = 1&amp;gt; alpha;
+  real beta_0;
+  real beta_1;
+}
+model {
+  vector[N_arms] Q = [.5, .5]&amp;#39;;
+  vector[N_trials] Q_diff;
+  for(t in 1:N_trials){
+    Q_diff[t] = Q[2] - Q[1];
+    Q[action[t]] += alpha * (R[t, action[t]] - Q[action[t]]);
+  }
+  target += beta_lpdf(alpha | 1, 1);
+  target += normal_lpdf(beta_0 | 2, 5);
+  target += normal_lpdf(beta_1 | 0, 1);
+  target += bernoulli_logit_lpmf(response | beta_0 + beta_1 * Q_diff);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I compile the model and fit it.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;m_ql &amp;lt;- cmdstan_model(&amp;quot;qlearning.stan&amp;quot;)
+fit_ql &amp;lt;- m_ql$sample(
+  data = list(
+    action = action,
+    N_trials = N_trials,
+    N_arms = N_arms,
+    R = R
+  ),
+  parallel_chains = 4
+)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The sampling is super fast, just a couple of seconds. In this case, compiling the model was slower than sampling.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fit_ql$summary(c(&amp;quot;alpha&amp;quot;, &amp;quot;beta_0&amp;quot;, &amp;quot;beta_1&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# A tibble: 3 × 10
+  variable  mean median     sd    mad    q5   q95  rhat ess_bulk ess_tail
+  &amp;lt;chr&amp;gt;    &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
+1 alpha    0.266  0.260 0.0498 0.0477 0.196 0.357  1.00    2714.    1922.
+2 beta_0   0.589  0.588 0.121  0.121  0.393 0.788  1.00    2998.    2964.
+3 beta_1   2.98   2.97  0.249  0.245  2.58  3.41   1.00    2605.    2370.&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The recovery of the parameters seems fine.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;mcmc_recover_hist(fit_ql$draws(c(&amp;quot;alpha&amp;quot;, &amp;quot;beta_0&amp;quot;, &amp;quot;beta_1&amp;quot;)),
+  true = c(alpha, beta_0, beta_1)
+)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning//2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-14-1.png&#34; width=&#34;672&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Either my Stan model was correct or I made the same mistakes in the R code and in the Stan model.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fn2&#34; class=&#34;footnote-ref&#34; id=&#34;fnref2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;a-hierarchical-q-learning-model&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;A hierarchical Q-learning model&lt;/h2&gt;
+&lt;p&gt;Now let’s try to implement this hierarchically. I have several subjects (&lt;code&gt;N_subj&lt;/code&gt;), they all have their own bias, their own learning rate, and their own inverse temperature, but these values are not that different from subject to subject (there is shrinkage). I also assume that somehow these three parameters are mildly correlated, people with more bias also have a stronger learning rate and inverse temperature.&lt;/p&gt;
+&lt;p&gt;Here, I diverge a bit from the model of &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;van Geen and Gerraty&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;. I just assume that all the individual differences are generated from the same multinormal distribution. This allows me to model the variance (or SD) of the parameters and to assume that they could be correlated (or not).&lt;/p&gt;
+&lt;p&gt;This means that in the hierarchical model, rather than &lt;span class=&#34;math inline&#34;&gt;\(\alpha\)&lt;/span&gt; I use &lt;span class=&#34;math inline&#34;&gt;\(\alpha + u_{i,1}\)&lt;/span&gt;, rather than &lt;span class=&#34;math inline&#34;&gt;\(\beta_0\)&lt;/span&gt;, &lt;span class=&#34;math inline&#34;&gt;\(\beta_0 + u_{i,2}\)&lt;/span&gt;, and rather than &lt;span class=&#34;math inline&#34;&gt;\(\beta_1\)&lt;/span&gt;, &lt;span class=&#34;math inline&#34;&gt;\(beta_1 + u_{i,3}\)&lt;/span&gt;. Where &lt;span class=&#34;math inline&#34;&gt;\(u\)&lt;/span&gt; is a matrix generated as follows.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+    {\begin{pmatrix}
+    u_{i,1} \\
+    u_{i,2} \\
+    u_{i,3}
+    \end{pmatrix}}
+   \sim {\mathcal {N}}
+    \left(
+   {\begin{pmatrix}
+    0\\
+    0\\
+    0
+   \end{pmatrix}}
+ ,\boldsymbol{\Sigma_u} \right)
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;with &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt; indexing subjects.&lt;/p&gt;
+&lt;p&gt;I simulate all this below with the following parameters. More details about how this works can be found in &lt;a href=&#34;https://vasishth.github.io/bayescogsci/book/ch-complexstan.html&#34;&gt;chapter 11 of the book about Bayesian modeling&lt;/a&gt; that I’m writting with Daniel Schad and Shravan Vasishth.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;alpha &amp;lt;- .3 # learning rate
+tau_u_alpha &amp;lt;- .1 # by-subj SD in the learning rate
+beta_0 &amp;lt;- 0.5 # bias to arm &amp;quot;b&amp;quot;
+tau_u_beta_0 &amp;lt;- .15  # by-subj SD in the bias
+beta_1 &amp;lt;- 3 # inverse temperature
+tau_u_beta_1 &amp;lt;- .3 # by-subj SD in the inverse temperature
+N_adj &amp;lt;- 3 # number of &amp;quot;random effects&amp;quot; or by-subj adjustments
+N_subj &amp;lt;- 20
+tau_u &amp;lt;- c(tau_u_alpha, tau_u_beta_0, tau_u_beta_1)
+rho_u &amp;lt;- .3 # corr between adjustments
+Cor_u &amp;lt;- matrix(rep(rho_u, N_adj^2), nrow = N_adj)
+diag(Cor_u) &amp;lt;- 1
+Sigma_u &amp;lt;- diag(tau_u, N_adj, N_adj) %*%
+  Cor_u %*%
+  diag(tau_u, N_adj, N_adj)
+u &amp;lt;- mvrnorm(n = N_subj, rep(0, N_adj), Sigma_u)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now I have that each subject has it’s own &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt;, call it &lt;code&gt;Q_i&lt;/code&gt;. Rather than using vectors as I did when there was only one subject, in the next piece of code I use lists of everything: each element of a list corresponds to one subject. The logic is analogous to the simulation of one subject, but with an extra loop.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;Q_i &amp;lt;- matrix(.5, nrow = (N_trials + 1), ncol = N_arms)
+Q &amp;lt;- rep(list(Q_i), N_subj)
+theta &amp;lt;- rep(list(rep(NA, N_trials)), N_subj)
+action &amp;lt;- rep(list(rep(NA, N_trials)), N_subj)
+for (i in 1:N_subj) {
+  for (t in 1:N_trials) {
+    theta[[i]][t] &amp;lt;- plogis(beta_0 + u[i, 2] + 
+                     (beta_1 + u[i, 3]) * (Q[[i]][t, 2] - Q[[i]][t, 1]))
+    action[[i]][t] &amp;lt;- rbern(1, theta[[i]][t]) + 1
+    alpha_i &amp;lt;- plogis(qlogis(alpha) + u[i, 1])
+    Q[[i]][t + 1, action[[i]][t]] &amp;lt;- 
+              Q[[i]][t, action[[i]][t]] +
+              alpha_i * (R[t, action[[i]][t]] - Q[[i]][t, action[[i]][t]])
+    nonactions_t &amp;lt;- (1:N_arms)[-action[[i]][t]]
+    Q[[i]][t + 1, nonactions_t] &amp;lt;- Q[[i]][t, nonactions_t]
+  }
+}
+# Convert the actions taken by subjects into a matrix
+action_matrix &amp;lt;- matrix(as.integer(unlist(action)), ncol = N_subj)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I store everything in a list as Stan likes it:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;data_h &amp;lt;- list(
+  N_subj = N_subj,
+  action = action_matrix,
+  N_trials = N_trials,
+  N_arms = N_arms,
+  R = R
+)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The Stan code for the hierarchical model is a straightforward extension of the non-hierarchical version with one extra loop. A small difference here is that I calculate the log-likelihood inside the loop for each subject and then I add all those values together outside the loop for extra efficiency. Rather than using a multinormal distribution, I generate the &lt;code&gt;u&lt;/code&gt; values using a Cholesky factorization, details about this can also be found in &lt;a href=&#34;https://vasishth.github.io/bayescogsci/book/ch-complexstan.html&#34;&gt;the same chapter 11&lt;/a&gt;.&lt;/p&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;data {
+  int&amp;lt;lower = 0&amp;gt; N_trials;
+  int&amp;lt;lower = 0&amp;gt; N_subj;
+  int&amp;lt;lower = 0&amp;gt; N_arms;
+  matrix[N_trials, N_arms] R;
+  int action[N_trials, N_subj];
+}
+transformed data{
+  int N_adj = 3;
+  int response[N_trials, N_subj];
+    for(i in 1:N_subj)
+      for(n in 1:N_trials)
+        response[n,i] = action[n,i] - 1;
+}
+parameters {
+  real&amp;lt;lower = 0, upper = 1&amp;gt; alpha;
+  real beta_0;
+  real beta_1;
+  vector&amp;lt;lower = 0&amp;gt;[N_adj] tau_u;
+  matrix[N_adj, N_subj] z_u;
+  cholesky_factor_corr[N_adj] L_u;
+}
+transformed parameters{
+  matrix[N_subj, N_adj] u = (diag_pre_multiply(tau_u, L_u) * z_u)&amp;#39;;
+}
+model {
+  matrix[N_arms, N_subj] Q = rep_matrix(.5,N_arms, N_subj);
+  matrix[N_trials, N_subj] Q_diff;
+  vector[N_subj] log_lik;
+  for(i in 1:N_subj){
+    real alpha_i = inv_logit(logit(alpha) + u[i, 1]);
+    for(t in 1:N_trials){
+      Q_diff[t, i] = Q[2, i] - Q[1, i];
+      Q[action[t, i], i] += alpha_i * 
+                        (R[t, action[t, i]] - Q[action[t, i], i]);
+    }
+    log_lik[i] = bernoulli_logit_lpmf(response[ ,i] | 
+              beta_0 + u[i, 2] + (beta_1 + u[i, 3]) * Q_diff[,i]);
+  }
+  target += beta_lpdf(alpha | 1, 1);
+  target += normal_lpdf(beta_0 | 2, 5);
+  target += normal_lpdf(beta_1 | 0, 1);
+  target += normal_lpdf(tau_u | .1, .5)
+            - N_adj * normal_lccdf(0 | .1, .5);
+  target += lkj_corr_cholesky_lpdf(L_u | 2);
+  target += std_normal_lpdf(to_vector(z_u));
+  target += sum(log_lik);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I fit the model below.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;m_ql_h &amp;lt;- cmdstan_model(&amp;quot;qlearning_h.stan&amp;quot;)
+fit_ql_h &amp;lt;- m_ql_h$sample(
+  data = data_h,
+  parallel_chains = 4
+)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;It took 7 minutes in my computer.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fit_ql_h&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt; variable     mean   median   sd  mad       q5      q95 rhat ess_bulk ess_tail
+ lp__     -4956.49 -4956.23 7.49 7.51 -4969.52 -4944.79 1.00      883     1950
+ alpha        0.29     0.29 0.01 0.01     0.27     0.32 1.00     3257     2670
+ beta_0       0.46     0.46 0.05 0.05     0.38     0.54 1.00     2563     2825
+ beta_1       2.86     2.86 0.09 0.09     2.71     3.00 1.00     2518     2751
+ tau_u[1]     0.11     0.10 0.08 0.08     0.01     0.27 1.00     1326     1474
+ tau_u[2]     0.18     0.18 0.05 0.04     0.11     0.26 1.00     2025     2351
+ tau_u[3]     0.31     0.31 0.08 0.08     0.19     0.45 1.00     1781     2078
+ z_u[1,1]    -0.21    -0.21 0.85 0.82    -1.59     1.25 1.00     3810     2686
+ z_u[2,1]    -0.33    -0.32 0.67 0.64    -1.44     0.73 1.00     3351     2839
+ z_u[3,1]     0.43     0.42 0.77 0.75    -0.81     1.69 1.00     4149     2744
+
+ # showing 10 of 136 rows (change via &amp;#39;max_rows&amp;#39; argument or &amp;#39;cmdstanr_max_rows&amp;#39; option)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let’s check if I could recover the parameters.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;mcmc_recover_hist(fit_ql_h$draws(
+  c(&amp;quot;alpha&amp;quot;, &amp;quot;beta_0&amp;quot;, &amp;quot;beta_1&amp;quot;, &amp;quot;tau_u&amp;quot;)
+),
+true = c(alpha, beta_0, beta_1, tau_u)
+)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning//2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-22-1.png&#34; width=&#34;672&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;It seems relatively good, but I should probably check it with simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-taltsValidatingBayesianInference2018&#34; role=&#34;doc-biblioref&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;where-do-we-go-from-here&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Where do we go from here?&lt;/h2&gt;
+&lt;p&gt;One could compare the fit and the predictions of this flavor of Q-learning with another flavor, or with another RL model. The idea would be that each model reflects different theoretical assumptions. It’s also possible to use posterior predictive checks to investigate where the a specific RL model fails and how it should be modified. Finally, RL could be part of a larger model, as in the case of &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-pedersen2017drift&#34; role=&#34;doc-biblioref&#34;&gt;Pedersen, Frank, and Biele&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-pedersen2017drift&#34; role=&#34;doc-biblioref&#34;&gt;2017&lt;/a&gt;)&lt;/span&gt;, who combined drift diffusion with RL.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;session-info&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Session info&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fn3&#34; class=&#34;footnote-ref&#34; id=&#34;fnref3&#34;&gt;&lt;sup&gt;3&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sessionInfo()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;R version 4.1.1 (2021-08-10)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 20.04.3 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=nl_NL.UTF-8   
+ [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=nl_NL.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bayesplot_1.8.1     cmdstanr_0.4.0.9000 MASS_7.3-54         extraDistr_1.9.1    ggplot2_3.3.5       purrr_0.3.4         tidyr_1.1.4        
+[8] dplyr_1.0.7        
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_1.0.7           lubridate_1.8.0      ps_1.6.0             assertthat_0.2.1     digest_0.6.28        utf8_1.2.2           R6_2.5.1            
+ [8] plyr_1.8.6           ggridges_0.5.3       backports_1.2.1      evaluate_0.14        highr_0.9            blogdown_1.5.2       pillar_1.6.4        
+[15] rlang_0.4.12         rstudioapi_0.13      data.table_1.14.2    jquerylib_0.1.4      checkmate_2.0.0      rmarkdown_2.11       labeling_0.4.2      
+[22] stringr_1.4.0        munsell_0.5.0        compiler_4.1.1       xfun_0.26            pkgconfig_2.0.3      papaja_0.1.0.9997    htmltools_0.5.2     
+[29] tidyselect_1.1.1     tibble_3.1.5         tensorA_0.36.2       bookdown_0.22        matrixStats_0.60.1   emo_0.0.0.9000       fansi_0.5.0         
+[36] crayon_1.4.2         withr_2.4.2          grid_4.1.1           distributional_0.2.2 jsonlite_1.7.2       gtable_0.3.0         lifecycle_1.0.1     
+[43] DBI_1.1.1            magrittr_2.0.1       posterior_1.1.0      scales_1.1.1         cli_3.1.0            stringi_1.7.6        reshape2_1.4.4      
+[50] farver_2.1.0         bslib_0.3.0          ellipsis_0.3.2       generics_0.1.1       vctrs_0.3.8          tools_4.1.1          glue_1.5.1          
+[57] processx_3.5.2       abind_1.4-5          fastmap_1.1.0        yaml_2.2.1           colorspace_2.0-2     knitr_1.36           sass_0.4.0          &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;references&#34; class=&#34;section level2 unnumbered&#34;&gt;
+&lt;h2&gt;References&lt;/h2&gt;
+&lt;div id=&#34;refs&#34; class=&#34;references csl-bib-body hanging-indent&#34;&gt;
+&lt;div id=&#34;ref-R-cmdstanr&#34; class=&#34;csl-entry&#34;&gt;
+Gabry, Jonah, and Rok Češnovar. 2021. &lt;em&gt;Cmdstanr: R Interface to ’CmdStan’&lt;/em&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-bayesplot&#34; class=&#34;csl-entry&#34;&gt;
+Gabry, Jonah, Daniel Simpson, Aki Vehtari, Michael Betancourt, and Andrew Gelman. 2019. &lt;span&gt;“Visualization in Bayesian Workflow.”&lt;/span&gt; &lt;em&gt;J. R. Stat. Soc. A&lt;/em&gt; 182: 389–402. &lt;a href=&#34;https://doi.org/10.1111/rssa.12378&#34;&gt;https://doi.org/10.1111/rssa.12378&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-purrr&#34; class=&#34;csl-entry&#34;&gt;
+Henry, Lionel, and Hadley Wickham. 2020. &lt;em&gt;Purrr: Functional Programming Tools&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=purrr&#34;&gt;https://CRAN.R-project.org/package=purrr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-rcorpora&#34; class=&#34;csl-entry&#34;&gt;
+Kazemi, Darius, Cole Willsea, Serin Delaunay, Karl Swedberg, Matthew Rothenberg, Greg Kennedy, Nathaniel Mitchell, et al. 2018. &lt;em&gt;Rcorpora: A Collection of Small Text Corpora of Interesting Data&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=rcorpora&#34;&gt;https://CRAN.R-project.org/package=rcorpora&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-niv2009reinforcement&#34; class=&#34;csl-entry&#34;&gt;
+Niv, Yael. 2009. &lt;span&gt;“Reinforcement Learning in the Brain.”&lt;/span&gt; &lt;em&gt;Journal of Mathematical Psychology&lt;/em&gt; 53 (3): 139–54.
+&lt;/div&gt;
+&lt;div id=&#34;ref-pedersen2017drift&#34; class=&#34;csl-entry&#34;&gt;
+Pedersen, Mads Lund, Michael J Frank, and Guido Biele. 2017. &lt;span&gt;“The Drift Diffusion Model as the Choice Rule in Reinforcement Learning.”&lt;/span&gt; &lt;em&gt;Psychonomic Bulletin &amp;amp; Review&lt;/em&gt; 24 (4): 1234–51.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-base&#34; class=&#34;csl-entry&#34;&gt;
+R Core Team. 2021. &lt;em&gt;R: A Language and Environment for Statistical Computing&lt;/em&gt;. Vienna, Austria: R Foundation for Statistical Computing. &lt;a href=&#34;https://www.R-project.org/&#34;&gt;https://www.R-project.org/&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-sutton2018reinforcement&#34; class=&#34;csl-entry&#34;&gt;
+Sutton, Richard S, and Andrew G Barto. 2018. &lt;em&gt;Reinforcement Learning: An Introduction&lt;/em&gt;. MIT press.
+&lt;/div&gt;
+&lt;div id=&#34;ref-taltsValidatingBayesianInference2018&#34; class=&#34;csl-entry&#34;&gt;
+Talts, Sean, Michael Betancourt, Daniel Simpson, Aki Vehtari, and Andrew Gelman. 2018. &lt;span&gt;“Validating &lt;span&gt;Bayesian Inference Algorithms&lt;/span&gt; with &lt;span&gt;Simulation&lt;/span&gt;-&lt;span&gt;Based Calibration&lt;/span&gt;,”&lt;/span&gt; April. &lt;a href=&#34;http://arxiv.org/abs/1804.06788&#34;&gt;http://arxiv.org/abs/1804.06788&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-vanGeenGerraty2021&#34; class=&#34;csl-entry&#34;&gt;
+van Geen, Camilla, and Raphael T. Gerraty. 2021. &lt;span&gt;“Hierarchical &lt;span&gt;Bayesian&lt;/span&gt; Models of Reinforcement Learning: &lt;span&gt;Introduction&lt;/span&gt; and Comparison to Alternative Methods.”&lt;/span&gt; &lt;em&gt;Journal of Mathematical Psychology&lt;/em&gt; 105: 102602. https://doi.org/&lt;a href=&#34;https://doi.org/10.1016/j.jmp.2021.102602&#34;&gt;https://doi.org/10.1016/j.jmp.2021.102602&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-ggplot2&#34; class=&#34;csl-entry&#34;&gt;
+Wickham, Hadley. 2016. &lt;em&gt;Ggplot2: Elegant Graphics for Data Analysis&lt;/em&gt;. Springer-Verlag New York. &lt;a href=&#34;https://ggplot2.tidyverse.org&#34;&gt;https://ggplot2.tidyverse.org&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-dplyr&#34; class=&#34;csl-entry&#34;&gt;
+Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. &lt;em&gt;Dplyr: A Grammar of Data Manipulation&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=dplyr&#34;&gt;https://CRAN.R-project.org/package=dplyr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-extraDistr&#34; class=&#34;csl-entry&#34;&gt;
+Wolodzko, Tymoteusz. 2020. &lt;em&gt;extraDistr: Additional Univariate and Multivariate Distributions&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=extraDistr&#34;&gt;https://CRAN.R-project.org/package=extraDistr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-ZhangEtAl2020&#34; class=&#34;csl-entry&#34;&gt;
+Zhang, Lei, Lukas Lengersdorff, Nace Mikus, Jan Gläscher, and Claus Lamm. 2020. &lt;span&gt;“&lt;span class=&#34;nocase&#34;&gt;Using reinforcement learning models in social neuroscience: frameworks, pitfalls and suggestions of best practices&lt;/span&gt;.”&lt;/span&gt; &lt;em&gt;Social Cognitive and Affective Neuroscience&lt;/em&gt; 15 (6): 695–707. &lt;a href=&#34;https://doi.org/10.1093/scan/nsaa089&#34;&gt;https://doi.org/10.1093/scan/nsaa089&lt;/a&gt;.
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;footnotes&#34;&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;I actually forgot to bound the parameter at one point, and I could verify that the chains of the MCMC sampler got stuck at different modes.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;A &lt;a href=&#34;https://xkcd.com/2303/&#34;&gt;Type-V Error&lt;/a&gt;.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&#34;fn3&#34;&gt;&lt;p&gt;I used R [Version 4.1.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;R Core Team&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;] and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; [Version 1.8.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;Gabry et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;2019&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;cmdstanr&lt;/em&gt; [Version 0.4.0.9000; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;Gabry and Češnovar&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;dplyr&lt;/em&gt; [Version 1.0.7; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;Wickham et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;extraDistr&lt;/em&gt; [Version 1.9.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;Wolodzko&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;ggplot2&lt;/em&gt; [Version 3.3.5; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;2016&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;purrr&lt;/em&gt; [Version 0.3.4; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;Henry and Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], and &lt;em&gt;rcorpora&lt;/em&gt; [Version 2.0.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;Kazemi et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;] to generate this document.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref3&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+    </item>
     
     <item>
       <title>A simple way to model rankings with Stan</title>
