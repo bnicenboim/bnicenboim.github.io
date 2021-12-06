@@ -1,0 +1,530 @@
+---
+title: 'Not a tutorial of a Bayesian implementation of a reinforcement learning model'
+author: Bruno Nicenboim
+date: '2021-11-29'
+slug: Bayesian-h-Reinforcement-Learning
+categories: ["stats"]
+bibliography: ["../biblio.bib","r-references.bib"]
+tags: ["stan", "Bayesian", "r"]
+draft: false 
+---
+
+```{r setup, include = FALSE}
+papaja::r_refs("r-references.bib")
+
+## Global options
+options( # max.print="75",
+  width = 80,
+  tibble.width = 75,
+  digits = 2
+)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  cache = FALSE,
+  prompt = FALSE,
+  tidy = FALSE,
+  comment = NA,
+  message = FALSE,
+  warning = TRUE,
+  fig.align = "center"
+)
+knitr::opts_knit$set(width = 80)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+
+# folding:
+local({
+  hook_source <- knitr::knit_hooks$get("source")
+  knitr::knit_hooks$set(source = function(x, options) {
+    fold <- options$fold
+    if (is.null(fold)) fold <- FALSE
+    if (fold == TRUE) {
+      if (knitr::is_html_output()) {
+        # fold code here
+        foldb <- ""
+        folde <- ""
+        options$class.source <- "fold-hide"
+        hook_source(c(foldb, x, folde), options)
+      } else {
+        # empty code for pdf
+      }
+    } else {
+      # regular output elsewhere:
+      hook_source(x, options)
+    }
+  })
+})
+```
+
+
+<span style="color: red;">
+**`r emo::ji("warning")` This post is NOT about "Masheen Lurning": I'm spelling it like this to avoid luring visitors into this post for the wrong reasons. In the context of "Masheen Lurning", one teaches a "masheen" to make the most rewarding decisions. In contrast, this post is about fitting human (or possibly also animal) data with decisions made along a number of trials assuming that some type of reinforcement learning occurred.`r emo::ji("warning")`**
+</span>
+
+
+I'll focus on a Bayesian implementation of Q-learning using [Stan](https://mc-stan.org/). Q-learning is a specific type of reinforcement learning (RL) model that can explain how humans (and other organisms) learn behavioral policies (to make decisions) from rewards. @niv2009reinforcement presents a very extensive review of RL in the brain. Readers interested in The Book about RL should see @sutton2018reinforcement.
+
+I will *mostly* follow the implementation of @vanGeenGerraty2021, who present a tutorial on a hierarchical Bayesian implementation of Q-learning. However, I think there are places where a different parametrization would be more appropriate.  I will also model my own simulated data, especially because I wanted to check if I'm doing things right. Another useful tutorial about Bayesian modeling of RL is @ZhangEtAl2020, however, that tutorial uses a Rescorla–Wagner model, rather than Q-learning. Before you continue reading, notice that if you just want to fit data using a RL model and don't care about the nitty gritty details, you can just use the R package [hBayesDM]( https://ccs-lab.github.io/hBayesDM/articles/getting_started.html).
+
+The rest of the post is about simulating one subject doing an experiment and fitting it with Stan, and then simulating several subjects doing the same experiment and fitting that data with Stan.
+
+First, I'm going to load some R packages that will be useful throughout this post and set a seed, so that the simulated data will be always the same.
+
+```{r}
+library(dplyr) # Data manipulation
+library(tidyr) # To pivot the data
+library(purrr) # List manipulation
+library(ggplot2) # Nice plots
+library(extraDistr) # More distributions
+library(MASS) # Tu use the multinormal distribution
+library(cmdstanr) # Lightweight Stan interface
+library(bayesplot) # Nice Bayesian plots
+set.seed(123)
+```
+
+# Restless bandits or slot machines with non-fixed probabilities of a reward
+  
+I simulate data from a two-armed restless bandit, where the arms are independent. This is basically as if there were two slot machines that offer rewards with probabilities that vary with time following a random walk. I always wondered why so many researchers are modeling slot machines, but it turns out they can actually represent realistic options in life. There is a [post from Speekenbrink lab](https://speekenbrink-lab.github.io/modelling/2019/02/28/fit_kf_rl_1.html) that gives context to the restless bandits (and they also simulate data from a different RL algorithm).
+
+![](https://media.giphy.com/media/xT1XGOzcLKDYN2kxLW/giphy.gif)
+
+
+I set up here a restless bandit with 2 arms that runs over 1000 trials. The reward, $R_{t,a}$, for the time step or trial $t$ for the arm $a$ follows a random walk and it's defined as follows:
+
+- For $t =1$,
+\begin{equation}
+R_{t,a} \sim \mathit{Normal}(0, \sigma)
+\end{equation}
+
+- For $t >1$,
+
+\begin{equation}
+R_{t,a} \sim \mathit{Normal}(R_{t-1,a}, \sigma)
+\end{equation}
+
+with $\sigma = .1$
+
+In R, this looks as follows.
+
+```{r}
+# set up
+N_arms <- 2
+N_trials <- 1000
+sigma <- .1
+## Reward matrix:
+# First define a matrix with values sampled from Normal(0, sigma)
+R <- matrix(rnorm(N_trials * N_arms, mean = 0, sd = sigma), 
+            ncol = N_arms)
+# Then I do a cumulative sum over the rows (MARGIN = 2)
+R <- apply(R, MARGIN = 2, FUN = cumsum)
+colnames(R) <- paste0("arm_", 1:N_arms)
+```
+
+The first rows of the reward matrix will look like this:
+
+```{r}
+head(R)
+```
+
+In this simulated experiment, a subject is presented at each trial with two choices, to either select arm one or arm two. Each time they'll get a reward (or a negative reward, that is, a punisment) determined by a random walk  simulated before in the matrix $R$. 
+
+
+Some `tidyr` to plot the rewards.
+
+```{r}
+d_exp <- R %>%
+  as_tibble() %>%
+  pivot_longer(cols = everything(), 
+               names_to = "arm", 
+               values_to = "reward") %>%
+  group_by(arm) %>%
+  mutate(trial = 1:n())
+ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
+  geom_line()
+```
+
+I see that the arm that will give better rewards depends on the trial, and that a subject should keep *exploring* at least until trial ~650 to verify that they are not *exploiting* the wrong arm. There are many, many variations of the bandits, some of them give a fixed reward with some probability based on the random walk, sometimes there are more arms, and all of them are presented as choices, and in some other tasks only a random subset of the arms are presented to the subject.
+
+## Simulating actions using Q-learning
+
+There are also many, many RL models. Q-learning is a type of RL model where an agent (e.g., a human subject) learns the predictive value (in terms of future expected rewards) of taking a specific action (e.g., choosing arm one or two of the bandit) at a certain state (here, at a given trial), $t$. This predictive value is denoted as $Q$. In a simplified model of Q-learning, the actions of a subject will depend (to some extent) on $Q$.
+
+Let's focus on the case of two arms:
+
+- For $t = 1$
+
+ In the first trial, $Q$ will be initialized with the same value for each action (e.g., $0.5$), and the subject will take an action with probability $\theta$ based on their bias to one of the arms. I use  $\beta_{0}$ as the bias to arm 2. This parameter can vary freely, $[-\infty,\infty]$, and it's converted to the $[0,1]$ range using $logit^{-1}$. If there are more arms presented one should use a $softmax$ function instead.
+
+\begin{equation}
+\begin{aligned}
+Q_{t=1,a = 1} &= .5 \\
+Q_{t=1,a = 2} &= .5 \\
+\theta &= logit^{-1}(\beta_0)
+\end{aligned}
+\end{equation}
+
+Whether the subject decides arm 1 or arm 2 depends on $\theta$:
+
+\begin{equation}
+action \sim
+\begin{cases} 
+1 \text{ with probability } 1-\theta_t\\
+2 \text{ with probability } \theta_t
+\end{cases}
+\end{equation}
+
+Now I update the $Q$ value that corresponds to the action taken for the next trial. Here,  $\alpha$,  the learning rate, determines the extent to which the prediction error  will play a role in updating an action's value. This prediction error is quantified as the difference between the expected value of an action and the actual reward
+on a given trial, $(R_t - Q_{t, a})$.
+The parameter $\alpha$ is bounded between $[0,1]$ to identify the model.^[I actually forgot to bound the parameter at one point, and I could verify that the chains of the MCMC sampler got stuck at different modes.] Higher values of $\alpha$ imply greater sensitivity to the most recent choice outcome, that is the most recent reward.
+
+
+\begin{equation}
+Q_{t + 1,action} = Q_{t, action} + \alpha \cdot (R_{t,action} - Q_{t, action})
+\end{equation}
+
+For the action non taken, $-action$, the value of $Q$ remains the same (in the first trial, that would be 0.5):
+
+\begin{equation}
+Q_{t + 1, -action} = Q_{t, -action}
+\end{equation}
+
+- For $t >1$ things get more interesting: the influence of $Q$ in the agent behavior is governed by an inverse temperature parameter
+ ($\beta_1$). Smaller values of $\beta_1$ lead to a more exploratory behavior.
+ 
+The idea will be that we obtain the probability, $\theta$, of a specific action in a given trial  based on two factors: that action's value, $Q$ in that trial (learned through its reward history), and how influential this value will be in determining the action taken. Again, because there are only two choices we can use $logit^-1$ function, if we had more choices we would use a $softmax$ function.
+
+
+\begin{equation}
+\theta_t = logit^{-1}(\beta_0 + \beta_1 \cdot (Q_{t,2} - Q_{t,1}))
+\end{equation}
+
+Again, and for every trial, whether the subject decides arm 1 or arm 2 depends on $\theta$:
+\begin{equation}
+action \sim 
+\begin{cases} 
+1 \text{ with probability } 1-\theta_t\\
+2 \text{ with probability } \theta_t
+\end{cases}
+\end{equation}
+
+
+And $Q$ gets updated for the next trial:
+
+\begin{equation}
+\begin{aligned}
+Q_{t + 1,a = action} &= Q_{t, action} + \alpha \cdot (R_{t,action} - Q_{t, action})\\
+Q_{t + 1,a = -action} &= Q_{t, -action}
+\end{aligned}
+\end{equation}
+
+
+The following R code implements these equations:
+
+```{r}
+# True values
+alpha <- .3 # learning rate
+beta_0 <- 0.5 # bias to arm "b"
+beta_1 <- 3 # inverse temperature
+# Q vector with the first value set at 0.5
+# True Q matrix, it has an extra row,
+# since it keeps updating also for trial N_trial + 1
+Q <- matrix(nrow = N_trials + 1, ncol = N_arms)
+Q[1, ] <- rep(.5, N_arms) # initial values for all Q
+action <- rep(NA, times = N_trials)
+theta <- rep(NA, times = N_trials)
+for (t in 1:N_trials) {
+  # probability of choosing arm_2
+  theta[t] <- plogis(beta_0 + beta_1 * (Q[t, 2] - Q[t, 1]))
+  # What the synthethic subject would respond, 
+  # with 1 indicating arm 1, and 2 indicating arm 2
+  action[t] <- rbern(1, theta[t]) + 1
+  Q[t + 1, action[t]] <- Q[t, action[t]] +
+    alpha * (R[t, action[t]] - Q[t, action[t]])
+  nonactions_t <- (1:N_arms)[-action[t]]
+  Q[t + 1, nonactions_t] <- Q[t, nonactions_t]
+}
+```
+
+This is what I'm generating trial by trial:
+
+```{r}
+tibble(Q[1:N_trials, ], R, action)
+```
+
+
+
+Let's see what would this subject choose in each trial.
+
+```{r}
+d_res <- tibble(
+  arm = ifelse(action == 1, "arm_1", "arm_2"),
+  trial = 1:N_trials
+) %>%
+  left_join(d_exp)
+ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
+  geom_line() +
+  geom_point(
+    data = d_res,
+    aes(x = trial, y = reward),
+    color = "black",
+    shape = 1
+  )
+```
+
+It's interesting that there is a point (around the trial 650), where the second arm is so clearly better than the first arm, that it makes almost no sense to keep exploring.
+
+What will be the reward of this subject?
+
+```{r}
+sum(d_res$reward)
+```
+
+What will be the maximum possible reward? 
+
+```{r}
+sum(apply(R, MARGIN = 1, FUN = max))
+```
+
+
+
+```{r, fold = TRUE, out.width="120%", out.height="120%", echo = FALSE, eval = FALSE}
+How would subjects with different $\alpha$ and $\beta_1$ values behave?
+response_1subj <- function(alpha = .3,
+                           beta_0 = 0.5,
+                           beta_1 = 3) {
+  Q <- matrix(nrow = N_trials + 1, ncol = N_arms)
+  Q[1, ] <- rep(.5, N_arms)
+  action <- rep(NA, times = N_trials)
+  theta <- rep(NA, times = N_trials)
+  for (t in 1:N_trials) {
+    theta[t] <- plogis(beta_0 + beta_1 * (Q[t, 2] - Q[t, 1]))
+    action[t] <- rbern(1, theta[t]) + 1
+    Q[t + 1, action[t]] <- Q[t, action[t]] +
+      alpha * (R[t, action[t]] - Q[t, action[t]])
+    nonactions_t <- (1:N_arms)[-action[t]]
+    Q[t + 1, nonactions_t] <- Q[t, nonactions_t]
+  }
+  tibble(
+    arm = ifelse(action == 1, "arm_1", "arm_2"),
+    trial = 1:N_trials
+  ) %>%
+    left_join(d_exp, by = c("arm", "trial")) %>%
+    mutate(alpha = alpha, beta_1 = beta_1)
+}
+
+alphas <- seq(.1, .9, .2)
+betas_1 <- seq(1, 9, 2)
+pars <- expand.grid(alphas, betas_1)
+
+d_res_all <- pmap_dfr(pars, ~
+response_1subj(
+  alpha = .x,
+  beta_0 = .5,
+  beta_1 = .y
+))
+
+ggplot(d_res_all, aes(x = trial, y = reward)) +
+  geom_line(data = d_exp, aes(x = trial, y = reward, color = arm)) +
+  geom_point(color = "black", shape = 1) +
+  facet_grid(
+    rows = vars(alpha),
+    cols = vars(beta_1),
+    labeller = label_both
+  )
+```
+
+
+Now let's fit the model in Stan. A major difference with the R code is that I don't keep track of all the Q values. I just keep track of one Q value for each arm, and I update them at the end of every trial.  Also I store the difference between them in the vector `Q_diff`.
+
+```
+  vector[N_arms] Q = [.5, .5]';
+  vector[N_trials] Q_diff;
+  for(t in 1:N_trials){
+    Q_diff[t] = Q[2] - Q[1];
+    Q[action[t]] += alpha * (R[t, action[t]] - Q[action[t]]);
+  }
+```
+
+The complete code is shown below.
+
+```{stan output.var = "qlearning", code = readLines("qlearning.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+I compile the model and fit it. 
+
+```{r, message = FALSE, results = "hide"}
+m_ql <- cmdstan_model("qlearning.stan")
+fit_ql <- m_ql$sample(
+  data = list(
+    action = action,
+    N_trials = N_trials,
+    N_arms = N_arms,
+    R = R
+  ),
+  parallel_chains = 4
+)
+```
+
+The sampling is super fast, just a couple of seconds. In this case, compiling the model was slower than sampling.
+
+```{r}
+fit_ql$summary(c("alpha", "beta_0", "beta_1"))
+```
+
+The recovery of the parameters seems fine.
+
+```{r, message = FALSE}
+mcmc_recover_hist(fit_ql$draws(c("alpha", "beta_0", "beta_1")),
+  true = c(alpha, beta_0, beta_1)
+)
+```
+
+Either my Stan model was correct or I made the same mistakes in the R code and in the Stan model.^[A [Type-V Error](https://xkcd.com/2303/).]
+
+## A hierarchical Q-learning model
+
+Now let's try to implement this hierarchically. I have several subjects (`N_subj`), they all have their own bias, their own learning rate, and their own inverse temperature, but these values are not that different from subject to subject (there is shrinkage). I also assume that somehow these three parameters are mildly correlated, people with more bias also have a stronger learning rate and inverse temperature. 
+
+Here, I diverge a bit from the model of @vanGeenGerraty2021. I just assume that all the individual differences are generated from the same multinormal distribution. This allows me to model the variance (or SD) of the parameters and to assume that they could be correlated (or not).
+
+This means that in the hierarchical model, rather than $\alpha$ I use $\alpha + u_{i,1}$, rather than $\beta_0$, $\beta_0 + u_{i,2}$, and rather than $\beta_1$, $beta_1 + u_{i,3}$. Where $u$ is a matrix generated as follows.
+
+\begin{equation}
+    {\begin{pmatrix}
+    u_{i,1} \\
+    u_{i,2} \\
+    u_{i,3}
+    \end{pmatrix}}
+   \sim {\mathcal {N}}
+    \left(
+   {\begin{pmatrix}
+    0\\
+    0\\
+    0
+   \end{pmatrix}}
+ ,\boldsymbol{\Sigma_u} \right)
+\end{equation}
+
+with $i$ indexing subjects.
+
+
+I simulate all this below with the following parameters. More details about how this works can be found in [chapter 11 of the book about Bayesian modeling](https://vasishth.github.io/bayescogsci/book/ch-complexstan.html) that I'm writting with Daniel Schad and Shravan Vasishth.
+
+
+
+```{r}
+alpha <- .3 # learning rate
+tau_u_alpha <- .1 # by-subj SD in the learning rate
+beta_0 <- 0.5 # bias to arm "b"
+tau_u_beta_0 <- .15  # by-subj SD in the bias
+beta_1 <- 3 # inverse temperature
+tau_u_beta_1 <- .3 # by-subj SD in the inverse temperature
+N_adj <- 3 # number of "random effects" or by-subj adjustments
+N_subj <- 20
+tau_u <- c(tau_u_alpha, tau_u_beta_0, tau_u_beta_1)
+rho_u <- .3 # corr between adjustments
+Cor_u <- matrix(rep(rho_u, N_adj^2), nrow = N_adj)
+diag(Cor_u) <- 1
+Sigma_u <- diag(tau_u, N_adj, N_adj) %*%
+  Cor_u %*%
+  diag(tau_u, N_adj, N_adj)
+u <- mvrnorm(n = N_subj, rep(0, N_adj), Sigma_u)
+```
+
+Now I have that each subject has it's own $Q$, call it `Q_i`. Rather than using vectors as I did when there was only one subject, in the next piece of code I use lists of everything:  each element of a list corresponds to one subject. The logic is analogous to the simulation of one subject, but with an extra loop.
+
+```{r}
+Q_i <- matrix(.5, nrow = (N_trials + 1), ncol = N_arms)
+Q <- rep(list(Q_i), N_subj)
+theta <- rep(list(rep(NA, N_trials)), N_subj)
+action <- rep(list(rep(NA, N_trials)), N_subj)
+for (i in 1:N_subj) {
+  for (t in 1:N_trials) {
+    theta[[i]][t] <- plogis(beta_0 + u[i, 2] + 
+                     (beta_1 + u[i, 3]) * (Q[[i]][t, 2] - Q[[i]][t, 1]))
+    action[[i]][t] <- rbern(1, theta[[i]][t]) + 1
+    alpha_i <- plogis(qlogis(alpha) + u[i, 1])
+    Q[[i]][t + 1, action[[i]][t]] <- 
+              Q[[i]][t, action[[i]][t]] +
+              alpha_i * (R[t, action[[i]][t]] - Q[[i]][t, action[[i]][t]])
+    nonactions_t <- (1:N_arms)[-action[[i]][t]]
+    Q[[i]][t + 1, nonactions_t] <- Q[[i]][t, nonactions_t]
+  }
+}
+# Convert the actions taken by subjects into a matrix
+action_matrix <- matrix(as.integer(unlist(action)), ncol = N_subj)
+```
+
+I store everything in a list as Stan likes it:
+
+
+```{r}
+data_h <- list(
+  N_subj = N_subj,
+  action = action_matrix,
+  N_trials = N_trials,
+  N_arms = N_arms,
+  R = R
+)
+```
+
+
+The Stan code for the hierarchical model is a straightforward extension of the non-hierarchical version with one extra loop. A small difference here is that I calculate the log-likelihood inside the loop for each subject and then I add all those values together outside the loop for extra efficiency. Rather than using a multinormal distribution, I generate the `u` values using a Cholesky factorization, details about this can also be found in [the same chapter 11](https://vasishth.github.io/bayescogsci/book/ch-complexstan.html).
+
+
+```{stan output.var = "qlearning_h", code = readLines("qlearning_h.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+I fit the model below.
+
+```{r, eval = !file.exists("fit_ql_h.RDS"), results = "hide"}
+m_ql_h <- cmdstan_model("qlearning_h.stan")
+fit_ql_h <- m_ql_h$sample(
+  data = data_h,
+  parallel_chains = 4
+)
+```
+
+
+```{r, echo = FALSE}
+if (file.exists("fit_ql_h.RDS")) {
+  fit_ql_h <- readRDS("fit_ql_h.RDS")
+} else {
+  fit_ql_h$save_object("fit_ql_h.RDS")
+}
+```
+
+It took 7 minutes in my computer.
+
+```{r}
+fit_ql_h
+```
+
+Let's check if I could recover the parameters.
+
+```{r, message = FALSE}
+mcmc_recover_hist(fit_ql_h$draws(
+  c("alpha", "beta_0", "beta_1", "tau_u")
+),
+true = c(alpha, beta_0, beta_1, tau_u)
+)
+```
+
+It seems relatively good, but I should probably check it with  simulation based calibration [@taltsValidatingBayesianInference2018].
+
+## Where do we go from here? 
+
+One could compare the fit and the predictions of this flavor of Q-learning with another flavor, or with another RL model. The idea would be that each model reflects different theoretical assumptions. It's also possible to use posterior predictive checks to investigate where the a specific RL model fails and how it should be modified. Finally, RL could be part of a larger model, as in the case of @pedersen2017drift, who combined drift diffusion with RL. 
+
+## Session info ^[I used `r papaja::cite_r("r-references.bib")` to generate this document.]
+
+```{r, echo = FALSE}
+width <- getOption("width")
+options(width = 160)
+```
+
+```{r}
+sessionInfo()
+```
+
+
+## References

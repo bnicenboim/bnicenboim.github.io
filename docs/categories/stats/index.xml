@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>stats on Bruno Nicenboim</title>
@@ -7,7 +8,7 @@
     <language>en-us</language>
     <lastBuildDate>Sun, 21 Mar 2021 00:00:00 +0000</lastBuildDate>
     
-        <atom:link href="/categories/stats/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="/categories/stats/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -15,8 +16,7 @@
       <link>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</link>
       <pubDate>Sun, 21 Mar 2021 00:00:00 +0000</pubDate>
       
-      <guid>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</guid>
-      <description>
+      <guid>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</guid><description>
 &lt;script src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
 
 
@@ -30,8 +30,8 @@
 &lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;If I understand you correctly, the situation is similar to a (literal) horse-race, as modeled here: &lt;a href=&#34;https://t.co/TGGS1h4xxe&#34;&gt;https://t.co/TGGS1h4xxe&lt;/a&gt;&lt;/p&gt;&amp;mdash; Pavel Logačev (@pavellogacev) &lt;a href=&#34;https://twitter.com/pavellogacev/status/1369226616312901637?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
 &lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
 &lt;/p&gt;
-&lt;p&gt;It turns out that the distribution that I was describing is in general used for rankings or ordered data and it is called an &lt;a href=&#34;https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit&#34;&gt;&lt;em&gt;exploded logit distribution&lt;/em&gt;&lt;/a&gt;.&lt;a href=&#34;#fn1&#34; class=&#34;footnote-ref&#34; id=&#34;fnref1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://media.giphy.com/media/3osxYCsLd9qgsgqpwI/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;It turns out that the distribution that I was describing is in general used for rankings or ordered data and it is called an &lt;a href=&#34;https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit&#34;&gt;&lt;em&gt;exploded logit distribution&lt;/em&gt;&lt;/a&gt;.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fn1&#34; class=&#34;footnote-ref&#34; id=&#34;fnref1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/3osxYCsLd9qgsgqpwI/giphy.gif&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;In this post, I’ll show how this model can be fit in the probabilistic programming language &lt;a href=&#34;https://mc-stan.org/&#34;&gt;Stan&lt;/a&gt;, and how it can be used to describe the underlying order of ranking data.&lt;/p&gt;
 &lt;p&gt;I’m going to load some R packages that will be useful throughout this post.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(dplyr) # Data manipulation
@@ -44,11 +44,11 @@ library(bayesplot) # Nice Bayesian plots&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 &lt;div id=&#34;ranking-data&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;Ranking data&lt;/h2&gt;
-&lt;p&gt;Ranking data appear when we care about the &lt;em&gt;underlying&lt;/em&gt; order that certain elements have. We might want to know which are the best horses after looking at several races &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-gakisetal2018&#34; role=&#34;doc-biblioref&#34;&gt;Gakis et al. 2018&lt;/a&gt;)&lt;/span&gt;, which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.&lt;/p&gt;
-&lt;p&gt;One way to get a ranking of exemplars of a category, for example, is to present them to participants and ask them to order all (or a subset) of them &lt;span class=&#34;citation&#34;&gt;(see &lt;a href=&#34;#ref-Barsalou1985&#34; role=&#34;doc-biblioref&#34;&gt;Barsalou 1985&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;Ranking data appear when we care about the &lt;em&gt;underlying&lt;/em&gt; order that certain elements have. We might want to know which are the best horses after looking at several races &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-gakisetal2018&#34; role=&#34;doc-biblioref&#34;&gt;Gakis et al. 2018&lt;/a&gt;)&lt;/span&gt;, which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.&lt;/p&gt;
+&lt;p&gt;One way to get a ranking of exemplars of a category, for example, is to present them to participants and ask them to order all (or a subset) of them &lt;span class=&#34;citation&#34;&gt;(see &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Barsalou1985&#34; role=&#34;doc-biblioref&#34;&gt;Barsalou 1985&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
 &lt;div id=&#34;a-ranking-simulation-using-pizza-toppings&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;A ranking simulation using pizza toppings&lt;/h3&gt;
-&lt;p&gt;&lt;img src=&#34;https://media.giphy.com/media/3oEjHZhG9COPG6XjzO/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/3oEjHZhG9COPG6XjzO/giphy.gif&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;Let’s consider the following 25 pizza toppings:&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;toppings &amp;lt;- corpora(&amp;quot;foods/pizzaToppings&amp;quot;)$pizzaToppings
 N_toppings &amp;lt;- length(toppings)
@@ -190,7 +190,7 @@ res[[1]]&lt;/code&gt;&lt;/pre&gt;
 [4] breakfast bacon  chicken          pepperoni       
 [7] anchovies       
 25 Levels: breakfast bacon chicken feta ... green peppers&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/subjects.gif&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan//2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/subjects.gif&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;We have simulated ranking data of pizza toppings, can we recover the original probability values and “discover” the underlying order?&lt;/p&gt;
 &lt;/div&gt;
 &lt;/div&gt;
@@ -285,8 +285,8 @@ f_exploded&lt;/code&gt;&lt;/pre&gt;
                   facet_args =
                     list(scales = &amp;quot;fixed&amp;quot;, ncol = 3)) +
   theme(legend.position=&amp;quot;bottom&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/unnamed-chunk-10-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;It looks reasonable. However, if we really want to be sure that this is working, we should probably use simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-taltsValidatingBayesianInference2018&#34; role=&#34;doc-biblioref&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan//2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/unnamed-chunk-10-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;It looks reasonable. However, if we really want to be sure that this is working, we should probably use simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-taltsValidatingBayesianInference2018&#34; role=&#34;doc-biblioref&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&#34;what-is-this-good-for&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;What is this good for?&lt;/h2&gt;
@@ -294,10 +294,10 @@ f_exploded&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 &lt;div id=&#34;could-this-be-used-as-a-cognitive-model-of-peoples-rankings&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;Could this be used as a cognitive model of people’s rankings?&lt;/h2&gt;
-&lt;p&gt;&lt;img src=&#34;https://media.giphy.com/media/dXcwxFuXCd8sI3VcFb/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/dXcwxFuXCd8sI3VcFb/giphy.gif&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;Maybe. And I enter here in the realm of half baked research, ideal for a blog post.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;Lee, Steyvers, and Miller&lt;/a&gt; (&lt;a href=&#34;#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;2014&lt;/a&gt;)&lt;/span&gt; show the implementation of a cognitive model for rank order data from the latent knowledge of participants, which is
-based on Thurstonian models &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-thurstone1927law&#34; role=&#34;doc-biblioref&#34;&gt;Thurstone 1927&lt;/a&gt;, &lt;a href=&#34;#ref-thurstone1931rank&#34; role=&#34;doc-biblioref&#34;&gt;1931&lt;/a&gt;)&lt;/span&gt; fitted with Bayesian methods in JAGS &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-Johnson2013&#34; role=&#34;doc-biblioref&#34;&gt;Johnson and Kuhn 2013&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;Lee, Steyvers, and Miller&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;2014&lt;/a&gt;)&lt;/span&gt; show the implementation of a cognitive model for rank order data from the latent knowledge of participants, which is
+based on Thurstonian models &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1927law&#34; role=&#34;doc-biblioref&#34;&gt;Thurstone 1927&lt;/a&gt;, &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1931rank&#34; role=&#34;doc-biblioref&#34;&gt;1931&lt;/a&gt;)&lt;/span&gt; fitted with Bayesian methods in JAGS &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Johnson2013&#34; role=&#34;doc-biblioref&#34;&gt;Johnson and Kuhn 2013&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
 &lt;p&gt;The exploded logit model seems to be closely related to the Thurstonian model. The Thurstonian model assumes that each participant assigns an underlying score to each item of a set, which is drawn from a true score with normally distributed error. The score determines the order that the participant gives. We can think about the exploded logit similarly. While I modeled the underlying ranking based on probability values, one could assume that each participant &lt;span class=&#34;math inline&#34;&gt;\(s\)&lt;/span&gt; had their own score &lt;span class=&#34;math inline&#34;&gt;\(mu_{is}\)&lt;/span&gt; for each item (or pizza topping) &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;, which is built as a common score &lt;span class=&#34;math inline&#34;&gt;\(mu_i\)&lt;/span&gt; together with some individual deviation &lt;span class=&#34;math inline&#34;&gt;\(\epsilon_{is}\)&lt;/span&gt;:&lt;/p&gt;
 &lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:muis&#34;&gt;\[\begin{equation} 
 \mu_{is}  = \mu_i + \epsilon_{is}
@@ -315,10 +315,10 @@ P(i,j,\ldots) = \frac{\exp(\mu_j)}{\sum \exp(\mu_{[-i]} )}
 \tag{8}
 \end{equation}\]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;and so forth.&lt;/p&gt;
-&lt;p&gt;These last equations are essentially the same categorical distributions that I used before in &lt;a href=&#34;#eq:probi&#34;&gt;(2)&lt;/a&gt; and &lt;a href=&#34;#eq:probj&#34;&gt;(3)&lt;/a&gt;, but the softmax function converts the unbounded scores into probabilities first. However, with the exploded logit, the error term goes away leading to a more tractable model. This is not the case for the Thurstonian model. The Thurstonian model is more complex, but at the same time we gain more flexibility. With the error term, the Thurstonian model can incorporate the reliability of the participants’ judgments and even correlations, which, as far as I know, can’t be included in the exploded logit model.&lt;/p&gt;
+&lt;p&gt;These last equations are essentially the same categorical distributions that I used before in &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#eq:probi&#34;&gt;(2)&lt;/a&gt; and &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#eq:probj&#34;&gt;(3)&lt;/a&gt;, but the softmax function converts the unbounded scores into probabilities first. However, with the exploded logit, the error term goes away leading to a more tractable model. This is not the case for the Thurstonian model. The Thurstonian model is more complex, but at the same time we gain more flexibility. With the error term, the Thurstonian model can incorporate the reliability of the participants’ judgments and even correlations, which, as far as I know, can’t be included in the exploded logit model.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&#34;session-info&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Session info&lt;a href=&#34;#fn2&#34; class=&#34;footnote-ref&#34; id=&#34;fnref2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
+&lt;h2&gt;Session info&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fn2&#34; class=&#34;footnote-ref&#34; id=&#34;fnref2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sessionInfo()&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;R version 4.1.1 (2021-08-10)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -418,21 +418,11 @@ Yutani, Hiroaki. 2021. &lt;em&gt;Mediumr: R Interface to ’Medium’ API&lt;/em
 &lt;div class=&#34;footnotes&#34;&gt;
 &lt;hr /&gt;
 &lt;ol&gt;
-&lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;This model is also called the &lt;em&gt;rank ordered logit model&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-BEGGS19811&#34; role=&#34;doc-biblioref&#34;&gt;Beggs, Cardell, and Hausman 1981&lt;/a&gt;)&lt;/span&gt; or Plackett–Luce model due to &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;Plackett&lt;/a&gt; (&lt;a href=&#34;#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;1975&lt;/a&gt;)&lt;/span&gt; and &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;Luce&lt;/a&gt; (&lt;a href=&#34;#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;1959&lt;/a&gt;)&lt;/span&gt;, but I liked the explosion part more.&lt;a href=&#34;#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;I used R [Version 4.1.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;R Core Team&lt;/a&gt; (&lt;a href=&#34;#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;] and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; [Version 1.8.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;Gabry et al.&lt;/a&gt; (&lt;a href=&#34;#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;2019&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;cmdstanr&lt;/em&gt; [Version 0.4.0.9000; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;Gabry and Češnovar&lt;/a&gt; (&lt;a href=&#34;#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;dplyr&lt;/em&gt; [Version 1.0.7; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;Wickham et al.&lt;/a&gt; (&lt;a href=&#34;#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;extraDistr&lt;/em&gt; [Version 1.9.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;Wolodzko&lt;/a&gt; (&lt;a href=&#34;#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;ggplot2&lt;/em&gt; [Version 3.3.5; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;Wickham&lt;/a&gt; (&lt;a href=&#34;#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;2016&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;mediumr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;#ref-R-mediumr&#34; role=&#34;doc-biblioref&#34;&gt;Yutani 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;purrr&lt;/em&gt; [Version 0.3.4; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;Henry and Wickham&lt;/a&gt; (&lt;a href=&#34;#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;rcorpora&lt;/em&gt; [Version 2.0.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;Kazemi et al.&lt;/a&gt; (&lt;a href=&#34;#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;], and &lt;em&gt;shiny&lt;/em&gt; [Version 1.6.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;Chang et al.&lt;/a&gt; (&lt;a href=&#34;#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;] to generate this document.&lt;a href=&#34;#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;This model is also called the &lt;em&gt;rank ordered logit model&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-BEGGS19811&#34; role=&#34;doc-biblioref&#34;&gt;Beggs, Cardell, and Hausman 1981&lt;/a&gt;)&lt;/span&gt; or Plackett–Luce model due to &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;Plackett&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;1975&lt;/a&gt;)&lt;/span&gt; and &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;Luce&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;1959&lt;/a&gt;)&lt;/span&gt;, but I liked the explosion part more.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;I used R [Version 4.1.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;R Core Team&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;] and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; [Version 1.8.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;Gabry et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;2019&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;cmdstanr&lt;/em&gt; [Version 0.4.0.9000; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;Gabry and Češnovar&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;dplyr&lt;/em&gt; [Version 1.0.7; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;Wickham et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;extraDistr&lt;/em&gt; [Version 1.9.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;Wolodzko&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;ggplot2&lt;/em&gt; [Version 3.3.5; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;2016&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;mediumr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-mediumr&#34; role=&#34;doc-biblioref&#34;&gt;Yutani 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;purrr&lt;/em&gt; [Version 0.3.4; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;Henry and Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;rcorpora&lt;/em&gt; [Version 2.0.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;Kazemi et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;], and &lt;em&gt;shiny&lt;/em&gt; [Version 1.6.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;Chang et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;] to generate this document.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 &lt;/div&gt;
 </description>
-      
-            <category>stan</category>
-      
-            <category>Bayesian</category>
-      
-            <category>r</category>
-      
-      
-            <category>stats</category>
-      
     </item>
     
   </channel>

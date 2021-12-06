@@ -6,16 +6,423 @@
     <description>Recent content on Bruno Nicenboim</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 21 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 21 Mar 2021 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    
+    
     <item>
       <title>A simple way to model rankings with Stan</title>
       <link>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</link>
       <pubDate>Sun, 21 Mar 2021 00:00:00 +0000</pubDate>
       
-      <guid>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</guid>
-      <description>The initial problem I wrote what I thought it was the generative process for some modeling work, and it looked too common to not have a name, so I started to ask around in Twitter:
-Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2
-2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1</description>
+      <guid>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</guid><description>
+&lt;script src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
+
+
+&lt;div id=&#34;the-initial-problem&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;The initial problem&lt;/h2&gt;
+&lt;p&gt;I wrote what I thought it was the generative process for some modeling work, and it looked too common to not have a name, so I started to ask around in Twitter:&lt;/p&gt;
+&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? &lt;br&gt;Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2&lt;br&gt;2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1&lt;br&gt;3rd, y ~ categorical(p3/(p3+p4),p4/(p3+p4)); y =3&lt;br&gt;4th, it&amp;#39;s y =4&lt;/p&gt;&amp;mdash; Bruno Nicenboim (@bruno_nicenboim) &lt;a href=&#34;https://twitter.com/bruno_nicenboim/status/1369217174699732995?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/p&gt;
+&lt;p&gt;One useful clue was this one:&lt;/p&gt;
+&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;If I understand you correctly, the situation is similar to a (literal) horse-race, as modeled here: &lt;a href=&#34;https://t.co/TGGS1h4xxe&#34;&gt;https://t.co/TGGS1h4xxe&lt;/a&gt;&lt;/p&gt;&amp;mdash; Pavel Logačev (@pavellogacev) &lt;a href=&#34;https://twitter.com/pavellogacev/status/1369226616312901637?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
+&lt;/p&gt;
+&lt;p&gt;It turns out that the distribution that I was describing is in general used for rankings or ordered data and it is called an &lt;a href=&#34;https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit&#34;&gt;&lt;em&gt;exploded logit distribution&lt;/em&gt;&lt;/a&gt;.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fn1&#34; class=&#34;footnote-ref&#34; id=&#34;fnref1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/3osxYCsLd9qgsgqpwI/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;In this post, I’ll show how this model can be fit in the probabilistic programming language &lt;a href=&#34;https://mc-stan.org/&#34;&gt;Stan&lt;/a&gt;, and how it can be used to describe the underlying order of ranking data.&lt;/p&gt;
+&lt;p&gt;I’m going to load some R packages that will be useful throughout this post.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(dplyr) # Data manipulation
+library(purrr) # List manipulation
+library(ggplot2) # Nice plots
+library(extraDistr) # More distributions
+library(rcorpora) # Get random words
+library(cmdstanr) # Lightweight Stan interface
+library(bayesplot) # Nice Bayesian plots&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;ranking-data&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Ranking data&lt;/h2&gt;
+&lt;p&gt;Ranking data appear when we care about the &lt;em&gt;underlying&lt;/em&gt; order that certain elements have. We might want to know which are the best horses after looking at several races &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-gakisetal2018&#34; role=&#34;doc-biblioref&#34;&gt;Gakis et al. 2018&lt;/a&gt;)&lt;/span&gt;, which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.&lt;/p&gt;
+&lt;p&gt;One way to get a ranking of exemplars of a category, for example, is to present them to participants and ask them to order all (or a subset) of them &lt;span class=&#34;citation&#34;&gt;(see &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Barsalou1985&#34; role=&#34;doc-biblioref&#34;&gt;Barsalou 1985&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;div id=&#34;a-ranking-simulation-using-pizza-toppings&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;A ranking simulation using pizza toppings&lt;/h3&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/3oEjHZhG9COPG6XjzO/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Let’s consider the following 25 pizza toppings:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;toppings &amp;lt;- corpora(&amp;quot;foods/pizzaToppings&amp;quot;)$pizzaToppings
+N_toppings &amp;lt;- length(toppings)
+toppings&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt; [1] &amp;quot;anchovies&amp;quot;        &amp;quot;artichoke&amp;quot;       
+ [3] &amp;quot;bacon&amp;quot;            &amp;quot;breakfast bacon&amp;quot; 
+ [5] &amp;quot;Canadian bacon&amp;quot;   &amp;quot;cheese&amp;quot;          
+ [7] &amp;quot;chicken&amp;quot;          &amp;quot;chili peppers&amp;quot;   
+ [9] &amp;quot;feta&amp;quot;             &amp;quot;garlic&amp;quot;          
+[11] &amp;quot;green peppers&amp;quot;    &amp;quot;grilled onions&amp;quot;  
+[13] &amp;quot;ground beef&amp;quot;      &amp;quot;ham&amp;quot;             
+[15] &amp;quot;hot sauce&amp;quot;        &amp;quot;meatballs&amp;quot;       
+[17] &amp;quot;mushrooms&amp;quot;        &amp;quot;olives&amp;quot;          
+[19] &amp;quot;onions&amp;quot;           &amp;quot;pepperoni&amp;quot;       
+[21] &amp;quot;pineapple&amp;quot;        &amp;quot;sausage&amp;quot;         
+[23] &amp;quot;spinach&amp;quot;          &amp;quot;sun-dried tomato&amp;quot;
+[25] &amp;quot;tomatoes&amp;quot;        &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let’s say that we want to know the underlying order of pizza toppings. For the modeling, I’m going to assume that the toppings are ordered according to an underlying value, which also represents how likely it is for each topping to be &lt;em&gt;the&lt;/em&gt; exemplar of their category.&lt;/p&gt;
+&lt;p&gt;To get a known ground truth for the ranking, I’m going to simulate an order of pizza toppings. I assign probabilities that sum up to one to the toppings by drawing a random sample from a &lt;a href=&#34;https://en.wikipedia.org/wiki/Dirichlet_distribution&#34;&gt;Dirichlet distribution&lt;/a&gt;. The Dirichlet distribution is the generalization of the Beta distribution. It has a concentration parameter, usually &lt;span class=&#34;math inline&#34;&gt;\(\boldsymbol{\alpha}\)&lt;/span&gt;, which is a vector as long as the probabilities we are sampling (25 here). When the vector is full of ones, the distribution is uniform: All probabilities are equally likely, so on average each one is &lt;span class=&#34;math inline&#34;&gt;\(\frac{1}{vector \text{  } length}\)&lt;/span&gt; (&lt;span class=&#34;math inline&#34;&gt;\(\frac{1}{25}\)&lt;/span&gt; here). By setting all the concentration parameters below one (namely &lt;span class=&#34;math inline&#34;&gt;\(.2\)&lt;/span&gt;), I’m enforcing sparsity in the random values that I’m generating, that is, many probability values close to zero.&lt;/p&gt;
+&lt;p&gt;These is the true order that I’m assuming here:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# all elements of the vector are .5
+alpha &amp;lt;- rep(.2, N_toppings)
+# Generate one draw from a Dirichlet distribution
+P_toppings &amp;lt;- c(rdirichlet(1, alpha)) %&amp;gt;%
+  # Add names
+  setNames(toppings) %&amp;gt;%
+  # Sort from the best exemplar
+  sort(decreasing = TRUE)
+P_toppings %&amp;gt;%
+  round(3)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt; breakfast bacon          chicken             feta 
+           0.294            0.241            0.087 
+       anchovies sun-dried tomato           olives 
+           0.087            0.077            0.057 
+       pepperoni        artichoke           cheese 
+           0.056            0.049            0.010 
+  Canadian bacon            bacon              ham 
+           0.008            0.008            0.006 
+       meatballs    chili peppers           garlic 
+           0.004            0.004            0.004 
+     ground beef         tomatoes        hot sauce 
+           0.003            0.003            0.002 
+          onions          sausage        pineapple 
+           0.000            0.000            0.000 
+         spinach        mushrooms   grilled onions 
+           0.000            0.000            0.000 
+   green peppers 
+           0.000 &lt;/code&gt;&lt;/pre&gt;
+&lt;ul&gt;
+&lt;li&gt;Given these values, if I were to ask a participant “What’s the most appropriate topping for a pizza?” I would assume that 29.37 percent of the time, I would get &lt;em&gt;breakfast bacon&lt;/em&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Essentially, we expect something like this to be happening.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probicat&#34;&gt;\[\begin{equation} 
+response \sim Categorical(\Theta_{toppings})
+\tag{1}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;With &lt;span class=&#34;math inline&#34;&gt;\(\Theta_{toppings}\)&lt;/span&gt; representing the different probabilities for each topping. The probability mass function of the categorical distribution is absurdly simple: It’s just the probability of the outcome.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi&#34;&gt;\[\begin{equation} 
+p(x = i) = \Theta_i
+\tag{2}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(i = \{\)&lt;/span&gt;breakfast bacon, chicken, feta, anchovies, sun-dried tomato, olives, pepperoni, artichoke, cheese, Canadian bacon, bacon, ham, meatballs, chili peppers, garlic, ground beef, tomatoes, hot sauce, onions, sausage, pineapple, spinach, mushrooms, grilled onions, green peppers&lt;span class=&#34;math inline&#34;&gt;\(\}\)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;We can simulate this with 100 participants as follows:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;response &amp;lt;- rcat(100, P_toppings, names(P_toppings))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And this should match approximately &lt;code&gt;P_toppings&lt;/code&gt;.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;table(response)/100&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;response
+ breakfast bacon          chicken             feta 
+            0.26             0.19             0.16 
+       anchovies sun-dried tomato           olives 
+            0.07             0.15             0.06 
+       pepperoni        artichoke           cheese 
+            0.01             0.08             0.00 
+  Canadian bacon            bacon              ham 
+            0.02             0.00             0.00 
+       meatballs    chili peppers           garlic 
+            0.00             0.00             0.00 
+     ground beef         tomatoes        hot sauce 
+            0.00             0.00             0.00 
+          onions          sausage        pineapple 
+            0.00             0.00             0.00 
+         spinach        mushrooms   grilled onions 
+            0.00             0.00             0.00 
+   green peppers 
+            0.00 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;It seems that by only asking participants to give the best topping we could already deduce the underlying order…&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;True, but one motivation for considering ranking data is the amount of information that we gather with a list due to their combinatorial nature. If we ask participants to rank &lt;span class=&#34;math inline&#34;&gt;\(n\)&lt;/span&gt; items, an answer consists in making a single selection out of &lt;span class=&#34;math inline&#34;&gt;\(n!\)&lt;/span&gt; possibilities. Ordering 7 pizza toppings, for example, constitutes making a single selection out of 5040 possibilities!&lt;/p&gt;
+&lt;p&gt;If we don’t relay on lists and there is sparcity, it requires a large number of participants until we get answers of low probability. (For example, we’ll need a very large number of participants until we hear something else but &lt;em&gt;hammer&lt;/em&gt; as an exemplar of tools).&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Now, what happens if we ask about the second most appropriate topping for a pizza?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now we need to exclude the first topping that was given, and draw another sample from a categorical distribution. (We don’t allow the participant to repeat toppings, that is, to say that the best topping is pineapple and the second best is also pineapple). This means that now the probability of the topping already given is zero, and that we need to normalize our original probability values by dividing them by the new total probability (which will be lower than 1).&lt;/p&gt;
+&lt;p&gt;Here, the probability of getting the element &lt;span class=&#34;math inline&#34;&gt;\(j\)&lt;/span&gt; (where &lt;span class=&#34;math inline&#34;&gt;\(j \neq i\)&lt;/span&gt;) is&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probj&#34;&gt;\[\begin{equation}
+p(x = j) = \frac{\Theta_j}{\sum \Theta_{[-i]}}
+\tag{3}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(\Theta_{[-i]}\)&lt;/span&gt; represents the probabilities of all the outcomes except of &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;, which was the first one.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;We can go on with the third best topping, where we need to normalize the remaining probabilities by dividing by the new sum of probabilities.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probk&#34;&gt;\[\begin{equation}
+p(x = k) = \frac{\Theta_k}{\sum \Theta_{[-i,-j]}}
+\tag{4}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;We can do this until we get to the last element, which will be drawn with probability 1.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;And this is the exploded logit distribution.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;This process can be simulated in R as follows:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;rexploded &amp;lt;-  function(n, ranked = 3, prob, labels = NULL){
+  #run n times
+  lapply(1:n, function(nn){
+    res &amp;lt;- rep(NA,ranked)
+    if(!is.null(labels)){
+      res &amp;lt;- factor(res, labels)
+    } else {
+      # if there are no labels, just 1,2,3,...
+      labels &amp;lt;- seq_along(prob)
+    }
+  for(i in 1:ranked){
+    # normalize the probability so that it sums to 1
+    prob &amp;lt;- prob/sum(prob)
+    res[i] &amp;lt;- rcat(1, prob = prob, labels = labels)
+    # remove the choice from the set:
+    prob[res[i]] &amp;lt;- 0
+  }
+    res
+  })
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If we would like to simulate 50 subjects creating a ranking of the best 7 toppings, we would do the following:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;res &amp;lt;- rexploded(n = 50,
+                 ranked = 7,
+                 prob = P_toppings,
+                 labels = names(P_toppings))
+# subject 1:
+res[[1]]&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;[1] sun-dried tomato artichoke        olives          
+[4] breakfast bacon  chicken          pepperoni       
+[7] anchovies       
+25 Levels: breakfast bacon chicken feta ... green peppers&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan//2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/subjects.gif&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;We have simulated ranking data of pizza toppings, can we recover the original probability values and “discover” the underlying order?&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;fitting-the-exploded-logistic-distribution-in-stan&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Fitting the exploded logistic distribution in Stan&lt;/h2&gt;
+&lt;p&gt;To fit the model in Stan, I’m going to create a custom probability mass function that takes an array of integers, &lt;code&gt;x&lt;/code&gt;, which represents a set of rankings, and a vector of probability values, &lt;code&gt;theta&lt;/code&gt;, that sums up to one.&lt;/p&gt;
+&lt;p&gt;The logic of this function is that the probability mass function of a ranking &lt;span class=&#34;math inline&#34;&gt;\(\{i,j,k, \ldots, N \}\)&lt;/span&gt; can be written as a product of normalized categorical distributions (where the first one is just divided by 1).&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probijk&#34;&gt;\[\begin{equation}
+p(x = \{i,j,k,\ldots\}) = \frac{\Theta_i}{\sum \Theta} \cdot \frac{\Theta_j}{\sum \Theta_{[-i]}} \cdot \frac{\Theta_k}{\sum \Theta_{[-i, -j]}} \ldots
+\tag{5}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;For Stan, we need the log-PDF. In log-space, products become sums, and divisions differences, and the log of &lt;span class=&#34;math inline&#34;&gt;\(\sum \Theta\)&lt;/span&gt; will be zero:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probijk&#34;&gt;\[\begin{equation}
+\begin{aligned}
+log(p(x = \{i,j,k,\ldots\})) =&amp;amp; \log(\Theta_i) - log(\sum \Theta) \\
+&amp;amp; + \log(\Theta_j) -  \log(\sum \Theta_{[-i]}) \\
+&amp;amp;+ \log(\Theta_k) -\log(\sum \Theta_{[-i, -j]}) \\
+&amp;amp; + \ldots
+\end{aligned}
+\tag{5}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;The following Stan custom function follows this logic but iterating over the rankings. In each iteration, it aggregates in the variable &lt;code&gt;out&lt;/code&gt; the addends of the log probability mass function, and turns the probability of selecting again the already ranked element to zero.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; real exploded_lpmf(int[] x, vector Theta){
+    real out = 0;
+    vector[num_elements(Theta)] thetar = Theta;
+    for(pos in x){
+      out += log(thetar[pos]) - log(sum(thetar));
+      thetar[pos] = 0;
+      }
+     return(out);
+ }&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The whole model named &lt;code&gt;exploded.stan&lt;/code&gt; includes the usual data declaration, the parameter &lt;code&gt;Theta&lt;/code&gt; declared as a simplex (i.e., it sums to one), and a uniform Dirichlet prior for &lt;code&gt;Theta&lt;/code&gt;. (I’m assuming that I don’t know how sparse the probabilities are).&lt;/p&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;functions {
+ real exploded_lpmf(int[] x, vector Theta){
+    real out = 0;
+    vector[num_elements(Theta)] thetar = Theta;
+    for(pos in x){
+      out += log(thetar[pos]) - log(sum(thetar));
+      thetar[pos] = 0;
+      }
+     return(out);
+ }
+}
+data{
+  int N_ranking; //total times the choices were ranked
+  int N_ranked; //total choices ranked
+  int N_options; //total options
+  int res[N_ranking, N_ranked];
+}
+parameters {
+  simplex[N_options] Theta;
+}
+model {
+  target += dirichlet_lpdf(Theta| rep_vector(1, N_options));
+  for(r in 1:N_ranking){
+    target += exploded_lpmf(res[r]|Theta);
+  }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let’s see if I can recover the parameter values.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# Makethe list of lists into a matrix
+res_matrix &amp;lt;- t(sapply(res, as.numeric))
+ldata &amp;lt;- list(res = res_matrix, 
+              N_ranked = length(res[[1]]), 
+              N_options = length(P_toppings), 
+              N_ranking = length(res)) 
+
+m_expl &amp;lt;- cmdstan_model(&amp;quot;./exploded.stan&amp;quot;)
+
+f_exploded &amp;lt;- m_expl$sample(
+  data = ldata,
+  seed = 123,
+  parallel_chains = 4
+)
+
+f_exploded&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt; variable    mean  median   sd  mad      q5     q95 rhat ess_bulk ess_tail
+ lp__     -724.91 -724.59 3.59 3.49 -731.39 -719.59 1.00     1262     2290
+ Theta[1]    0.29    0.29 0.04 0.04    0.23    0.35 1.00     5575     2538
+ Theta[2]    0.27    0.27 0.04 0.04    0.21    0.33 1.00     5320     3114
+ Theta[3]    0.08    0.08 0.01 0.01    0.06    0.10 1.00     6830     3167
+ Theta[4]    0.09    0.08 0.01 0.01    0.06    0.11 1.00     5790     2746
+ Theta[5]    0.07    0.07 0.01 0.01    0.05    0.09 1.00     6440     3142
+ Theta[6]    0.05    0.04 0.01 0.01    0.03    0.06 1.00     6608     3177
+ Theta[7]    0.04    0.04 0.01 0.01    0.03    0.06 1.00     6373     2697
+ Theta[8]    0.05    0.05 0.01 0.01    0.03    0.06 1.00     5620     2863
+ Theta[9]    0.01    0.01 0.00 0.00    0.00    0.01 1.00     7235     2664
+
+ # showing 10 of 26 rows (change via &amp;#39;max_rows&amp;#39; argument or &amp;#39;cmdstanr_max_rows&amp;#39; option)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I plot the posterior distributions of the probability values and the true probability values below.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;mcmc_recover_hist(f_exploded$draws(&amp;quot;Theta&amp;quot;),
+                  P_toppings,
+                  facet_args =
+                    list(scales = &amp;quot;fixed&amp;quot;, ncol = 3)) +
+  theme(legend.position=&amp;quot;bottom&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan//2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/unnamed-chunk-10-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;It looks reasonable. However, if we really want to be sure that this is working, we should probably use simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-taltsValidatingBayesianInference2018&#34; role=&#34;doc-biblioref&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;what-is-this-good-for&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;What is this good for?&lt;/h2&gt;
+&lt;p&gt;This super simple example shows how to get an underlying ranking based on a set of responses from a number of subjects. It’s straightforward to adapt this model to data from participants ranking elements from different sets of the &lt;em&gt;same size&lt;/em&gt; (e.g., 7 out of 25 toppings, 7 out of 25 tools). It’s a little less straightforward if the sets are of different sizes, e.g., rank 7 toppings out 25, but 7 tools out 50. This is just because Stan doesn’t allow ragged arrays. See &lt;a href=&#34;https://discourse.mc-stan.org/t/ragged-array-of-simplexes/1382/31&#34;&gt;here&lt;/a&gt; some tips for implementing the latter model.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;could-this-be-used-as-a-cognitive-model-of-peoples-rankings&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Could this be used as a cognitive model of people’s rankings?&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/dXcwxFuXCd8sI3VcFb/giphy.gif&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;Maybe. And I enter here in the realm of half baked research, ideal for a blog post.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;Lee, Steyvers, and Miller&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;2014&lt;/a&gt;)&lt;/span&gt; show the implementation of a cognitive model for rank order data from the latent knowledge of participants, which is
+based on Thurstonian models &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1927law&#34; role=&#34;doc-biblioref&#34;&gt;Thurstone 1927&lt;/a&gt;, &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1931rank&#34; role=&#34;doc-biblioref&#34;&gt;1931&lt;/a&gt;)&lt;/span&gt; fitted with Bayesian methods in JAGS &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Johnson2013&#34; role=&#34;doc-biblioref&#34;&gt;Johnson and Kuhn 2013&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;The exploded logit model seems to be closely related to the Thurstonian model. The Thurstonian model assumes that each participant assigns an underlying score to each item of a set, which is drawn from a true score with normally distributed error. The score determines the order that the participant gives. We can think about the exploded logit similarly. While I modeled the underlying ranking based on probability values, one could assume that each participant &lt;span class=&#34;math inline&#34;&gt;\(s\)&lt;/span&gt; had their own score &lt;span class=&#34;math inline&#34;&gt;\(mu_{is}\)&lt;/span&gt; for each item (or pizza topping) &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;, which is built as a common score &lt;span class=&#34;math inline&#34;&gt;\(mu_i\)&lt;/span&gt; together with some individual deviation &lt;span class=&#34;math inline&#34;&gt;\(\epsilon_{is}\)&lt;/span&gt;:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:muis&#34;&gt;\[\begin{equation} 
+\mu_{is}  = \mu_i + \epsilon_{is}
+\tag{6}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;If we assume that &lt;span class=&#34;math inline&#34;&gt;\(\epsilon_{is}\)&lt;/span&gt; has a &lt;a href=&#34;https://en.wikipedia.org/wiki/Gumbel_distribution&#34;&gt;Gumbel&lt;/a&gt; distribution, then the probability of &lt;span class=&#34;math inline&#34;&gt;\(\mu_{is}\)&lt;/span&gt; being ranked first out of N options is determined by a softmax function:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi2&#34;&gt;\[\begin{equation} 
+P(i) = \frac{\exp(\mu_i)}{\sum \exp(\mu)}
+\tag{7}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(\mu\)&lt;/span&gt; is the vector of scores for all elements of the set.&lt;/p&gt;
+&lt;p&gt;And the probability of ordering &lt;span class=&#34;math inline&#34;&gt;\(j\)&lt;/span&gt; second is:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probj2&#34;&gt;\[\begin{equation} 
+P(i,j,\ldots) = \frac{\exp(\mu_j)}{\sum \exp(\mu_{[-i]} )}
+\tag{8}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;and so forth.&lt;/p&gt;
+&lt;p&gt;These last equations are essentially the same categorical distributions that I used before in &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#eq:probi&#34;&gt;(2)&lt;/a&gt; and &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#eq:probj&#34;&gt;(3)&lt;/a&gt;, but the softmax function converts the unbounded scores into probabilities first. However, with the exploded logit, the error term goes away leading to a more tractable model. This is not the case for the Thurstonian model. The Thurstonian model is more complex, but at the same time we gain more flexibility. With the error term, the Thurstonian model can incorporate the reliability of the participants’ judgments and even correlations, which, as far as I know, can’t be included in the exploded logit model.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;session-info&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Session info&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fn2&#34; class=&#34;footnote-ref&#34; id=&#34;fnref2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sessionInfo()&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;R version 4.1.1 (2021-08-10)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 20.04.3 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=nl_NL.UTF-8   
+ [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=nl_NL.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bayesplot_1.8.1     cmdstanr_0.4.0.9000 rcorpora_2.0.0      extraDistr_1.9.1    ggplot2_3.3.5       purrr_0.3.4         dplyr_1.0.7        
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.1.1     xfun_0.26            bslib_0.3.0          reshape2_1.4.4       colorspace_2.0-2     vctrs_0.3.8          generics_0.1.1      
+ [8] htmltools_0.5.2      yaml_2.2.1           utf8_1.2.2           rlang_0.4.12         jquerylib_0.1.4      pillar_1.6.4         glue_1.5.1          
+[15] withr_2.4.2          DBI_1.1.1            distributional_0.2.2 matrixStats_0.60.1   lifecycle_1.0.1      plyr_1.8.6           stringr_1.4.0       
+[22] posterior_1.1.0      munsell_0.5.0        blogdown_1.5.2       gtable_0.3.0         evaluate_0.14        labeling_0.4.2       papaja_0.1.0.9997   
+[29] knitr_1.36           fastmap_1.1.0        ps_1.6.0             fansi_0.5.0          highr_0.9            Rcpp_1.0.7           scales_1.1.1        
+[36] backports_1.2.1      checkmate_2.0.0      jsonlite_1.7.2       abind_1.4-5          farver_2.1.0         tensorA_0.36.2       digest_0.6.28       
+[43] stringi_1.7.6        processx_3.5.2       bookdown_0.22        grid_4.1.1           tools_4.1.1          magrittr_2.0.1       sass_0.4.0          
+[50] tibble_3.1.5         crayon_1.4.2         pkgconfig_2.0.3      ellipsis_0.3.2       data.table_1.14.2    ggridges_0.5.3       assertthat_0.2.1    
+[57] rmarkdown_2.11       R6_2.5.1             compiler_4.1.1      &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;references&#34; class=&#34;section level2 unnumbered&#34;&gt;
+&lt;h2&gt;References&lt;/h2&gt;
+&lt;div id=&#34;refs&#34; class=&#34;references csl-bib-body hanging-indent&#34;&gt;
+&lt;div id=&#34;ref-Barsalou1985&#34; class=&#34;csl-entry&#34;&gt;
+Barsalou, Lawrence W. 1985. &lt;span&gt;“Ideals, Central Tendency, and Frequency of Instantiation as Determinants of Graded Structure in Categories.”&lt;/span&gt; &lt;em&gt;Journal of Experimental Psychology: Learning, Memory, and Cognition&lt;/em&gt; 11 (4): 629.
+&lt;/div&gt;
+&lt;div id=&#34;ref-BEGGS19811&#34; class=&#34;csl-entry&#34;&gt;
+Beggs, S, S Cardell, and J Hausman. 1981. &lt;span&gt;“Assessing the Potential Demand for Electric Cars.”&lt;/span&gt; &lt;em&gt;Journal of Econometrics&lt;/em&gt; 17 (1): 1–19. https://doi.org/&lt;a href=&#34;https://doi.org/10.1016/0304-4076(81)90056-7&#34;&gt;https://doi.org/10.1016/0304-4076(81)90056-7&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-shiny&#34; class=&#34;csl-entry&#34;&gt;
+Chang, Winston, Joe Cheng, JJ Allaire, Carson Sievert, Barret Schloerke, Yihui Xie, Jeff Allen, Jonathan McPherson, Alan Dipert, and Barbara Borges. 2021. &lt;em&gt;Shiny: Web Application Framework for r&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=shiny&#34;&gt;https://CRAN.R-project.org/package=shiny&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-cmdstanr&#34; class=&#34;csl-entry&#34;&gt;
+Gabry, Jonah, and Rok Češnovar. 2020. &lt;em&gt;Cmdstanr: R Interface to ’CmdStan’&lt;/em&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-bayesplot&#34; class=&#34;csl-entry&#34;&gt;
+Gabry, Jonah, Daniel Simpson, Aki Vehtari, Michael Betancourt, and Andrew Gelman. 2019. &lt;span&gt;“Visualization in Bayesian Workflow.”&lt;/span&gt; &lt;em&gt;J. R. Stat. Soc. A&lt;/em&gt; 182: 389–402. &lt;a href=&#34;https://doi.org/10.1111/rssa.12378&#34;&gt;https://doi.org/10.1111/rssa.12378&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-gakisetal2018&#34; class=&#34;csl-entry&#34;&gt;
+Gakis, Konstantinos, Panos Pardalos, Chang-Hwan Choi, Jae-Hyeon Park, and Jiwun Yoon. 2018. &lt;span&gt;“Simulation of a Probabilistic Model for Multi-Contestant Races.”&lt;/span&gt; &lt;em&gt;Athens Journal of Sports&lt;/em&gt; 5 (2): 95–114.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-purrr&#34; class=&#34;csl-entry&#34;&gt;
+Henry, Lionel, and Hadley Wickham. 2020. &lt;em&gt;Purrr: Functional Programming Tools&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=purrr&#34;&gt;https://CRAN.R-project.org/package=purrr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Johnson2013&#34; class=&#34;csl-entry&#34;&gt;
+Johnson, Timothy R., and Kristine M. Kuhn. 2013. &lt;span&gt;“Bayesian &lt;span&gt;Thurstonian&lt;/span&gt; Models for Ranking Data Using &lt;span&gt;JAGS&lt;/span&gt;.”&lt;/span&gt; &lt;em&gt;Behavior Research Methods&lt;/em&gt; 45 (3): 857–72. &lt;a href=&#34;https://doi.org/10.3758/s13428-012-0300-3&#34;&gt;https://doi.org/10.3758/s13428-012-0300-3&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-rcorpora&#34; class=&#34;csl-entry&#34;&gt;
+Kazemi, Darius, Cole Willsea, Serin Delaunay, Karl Swedberg, Matthew Rothenberg, Greg Kennedy, Nathaniel Mitchell, et al. 2018. &lt;em&gt;Rcorpora: A Collection of Small Text Corpora of Interesting Data&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=rcorpora&#34;&gt;https://CRAN.R-project.org/package=rcorpora&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Lee2014&#34; class=&#34;csl-entry&#34;&gt;
+Lee, Michael D., Mark Steyvers, and Brent Miller. 2014. &lt;span&gt;“A Cognitive Model for Aggregating People’s Rankings.”&lt;/span&gt; &lt;em&gt;PLOS ONE&lt;/em&gt; 9 (5): e96431. &lt;a href=&#34;https://doi.org/10.1371/journal.pone.0096431&#34;&gt;https://doi.org/10.1371/journal.pone.0096431&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Luce1959&#34; class=&#34;csl-entry&#34;&gt;
+Luce, R. Duncan. 1959. &lt;em&gt;Individual Choice Behavior : A Theoretical Analysis&lt;/em&gt;. Book. Wiley N.Y.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Plackett&#34; class=&#34;csl-entry&#34;&gt;
+Plackett, R. L. 1975. &lt;span&gt;“The Analysis of Permutations.”&lt;/span&gt; &lt;em&gt;Journal of the Royal Statistical Society. Series C (Applied Statistics)&lt;/em&gt; 24 (2): 193–202. &lt;a href=&#34;http://www.jstor.org/stable/2346567&#34;&gt;http://www.jstor.org/stable/2346567&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-base&#34; class=&#34;csl-entry&#34;&gt;
+R Core Team. 2020. &lt;em&gt;R: A Language and Environment for Statistical Computing&lt;/em&gt;. Vienna, Austria: R Foundation for Statistical Computing. &lt;a href=&#34;https://www.R-project.org/&#34;&gt;https://www.R-project.org/&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-taltsValidatingBayesianInference2018&#34; class=&#34;csl-entry&#34;&gt;
+Talts, Sean, Michael Betancourt, Daniel Simpson, Aki Vehtari, and Andrew Gelman. 2018. &lt;span&gt;“Validating &lt;span&gt;Bayesian Inference Algorithms&lt;/span&gt; with &lt;span&gt;Simulation&lt;/span&gt;-&lt;span&gt;Based Calibration&lt;/span&gt;,”&lt;/span&gt; April. &lt;a href=&#34;http://arxiv.org/abs/1804.06788&#34;&gt;http://arxiv.org/abs/1804.06788&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-thurstone1927law&#34; class=&#34;csl-entry&#34;&gt;
+Thurstone, Louis L. 1927. &lt;span&gt;“A Law of Comparative Judgement.”&lt;/span&gt; &lt;em&gt;Psychological Reviews&lt;/em&gt; 34: 273–86.
+&lt;/div&gt;
+&lt;div id=&#34;ref-thurstone1931rank&#34; class=&#34;csl-entry&#34;&gt;
+———. 1931. &lt;span&gt;“Rank Order as a Psycho-Physical Method.”&lt;/span&gt; &lt;em&gt;Journal of Experimental Psychology&lt;/em&gt; 14 (3): 187.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-ggplot2&#34; class=&#34;csl-entry&#34;&gt;
+Wickham, Hadley. 2016. &lt;em&gt;Ggplot2: Elegant Graphics for Data Analysis&lt;/em&gt;. Springer-Verlag New York. &lt;a href=&#34;https://ggplot2.tidyverse.org&#34;&gt;https://ggplot2.tidyverse.org&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-dplyr&#34; class=&#34;csl-entry&#34;&gt;
+Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. &lt;em&gt;Dplyr: A Grammar of Data Manipulation&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=dplyr&#34;&gt;https://CRAN.R-project.org/package=dplyr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-extraDistr&#34; class=&#34;csl-entry&#34;&gt;
+Wolodzko, Tymoteusz. 2020. &lt;em&gt;extraDistr: Additional Univariate and Multivariate Distributions&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=extraDistr&#34;&gt;https://CRAN.R-project.org/package=extraDistr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-mediumr&#34; class=&#34;csl-entry&#34;&gt;
+Yutani, Hiroaki. 2021. &lt;em&gt;Mediumr: R Interface to ’Medium’ API&lt;/em&gt;.
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class=&#34;footnotes&#34;&gt;
+&lt;hr /&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;This model is also called the &lt;em&gt;rank ordered logit model&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-BEGGS19811&#34; role=&#34;doc-biblioref&#34;&gt;Beggs, Cardell, and Hausman 1981&lt;/a&gt;)&lt;/span&gt; or Plackett–Luce model due to &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;Plackett&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;1975&lt;/a&gt;)&lt;/span&gt; and &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;Luce&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;1959&lt;/a&gt;)&lt;/span&gt;, but I liked the explosion part more.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;I used R [Version 4.1.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;R Core Team&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;] and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; [Version 1.8.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;Gabry et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;2019&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;cmdstanr&lt;/em&gt; [Version 0.4.0.9000; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;Gabry and Češnovar&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;dplyr&lt;/em&gt; [Version 1.0.7; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;Wickham et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;extraDistr&lt;/em&gt; [Version 1.9.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;Wolodzko&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;ggplot2&lt;/em&gt; [Version 3.3.5; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;2016&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;mediumr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-mediumr&#34; role=&#34;doc-biblioref&#34;&gt;Yutani 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;purrr&lt;/em&gt; [Version 0.3.4; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;Henry and Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;rcorpora&lt;/em&gt; [Version 2.0.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;Kazemi et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;], and &lt;em&gt;shiny&lt;/em&gt; [Version 1.6.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;Chang et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;] to generate this document.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
     </item>
     
     <item>
@@ -23,9 +430,710 @@ Prob q: Is there a name for a categorical distribution that whenever you get an 
       <link>/cv_to_pdf/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/cv_to_pdf/</guid>
-      <description>Contact Information   Email: B.Nicenboim@tilburguniversity.edu  Office: D108, Dante Building, Tilburg University  Address: Department of Cognitive Science and Artificial Intelligence   Tilburg University   PO Box 90153   5000 LE Tilburg   The Netherlands     
- Education     2011–2017 PhD in Cognitive Science, University of Potsdam   Topic: Dependency resolution as a retrieval process   Supervisors: Prof.</description>
+      <guid>/cv_to_pdf/</guid><description>
+
+
+&lt;div id=&#34;contact-information&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Contact Information&lt;/h1&gt;
+&lt;table&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;Email:&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;a href=&#34;mailto:B.Nicenboim@tilburguniversity.edu&#34; class=&#34;email&#34;&gt;B.Nicenboim@tilburguniversity.edu&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;Office:&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;D108, Dante Building, Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;Address:&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Department of Cognitive Science and Artificial Intelligence&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;PO Box 90153&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;5000 LE Tilburg&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;The Netherlands&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;education&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Education&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;26%&#34; /&gt;
+&lt;col width=&#34;73%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2011–2017&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;PhD in Cognitive Science, University of Potsdam&lt;/strong&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Topic: Dependency resolution as a retrieval process&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Supervisors: Prof. Dr. Shravan Vasishth and Prof. Dr. Reinhold Kliegl&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Grade: &lt;em&gt;summa cum laude&lt;/em&gt; &lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2010&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;M.A. in Linguistics, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Topic: Processing Complex NP Islands in Hebrew&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Supervisors: Prof. Dr. Julia Horvath and Prof. Dr. Tal Siloni&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Grade: &lt;em&gt;summa cum laude&lt;/em&gt; &lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2009&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;B.A Double Major, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Linguistics. Grade: &lt;em&gt;summa cum laude&lt;/em&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Sociology and Anthropology. Grade: very good&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;academic-related-work&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Academic-related work&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;26%&#34; /&gt;
+&lt;col width=&#34;73%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020–&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Assistant professor&lt;/strong&gt; (tenure track) at the department of Cognitive Science and AI of Tilburg University, the Netherlands.&lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020–&lt;/td&gt;
+&lt;td&gt;Guest researcher at the Department of Linguistics of the University of Potsdam, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2017–2020&lt;/td&gt;
+&lt;td&gt;Postdoctoral Researcher, University of Potsdam.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;PIs: Shravan Vasishth, Frank Rösler &lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2016–2017&lt;/td&gt;
+&lt;td&gt;Coordinator of the Master in Cognitive Systems, University of Potsdam &lt;br/&gt;&lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2009–2009&lt;/td&gt;
+&lt;td&gt;Research assistant, Tel Aviv University. Syntax and Lexicon interface.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;Supervisors: Prof. Dr. Tal Siloni and Prof. Dr. Julia Horvath &lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2008–2009&lt;/td&gt;
+&lt;td&gt;Research assistant, Tel Aviv University. Psycholinguistics.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;Assistance in experiments using E-prime and CHILDES software.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;Supervisor: Prof. Dr. Ruth Berman&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;articles&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Articles&lt;/h1&gt;
+&lt;div id=&#34;published-or-accepted-in-peer-reviewed-journals&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Published or accepted in peer-reviewed journals&lt;/h2&gt;
+&lt;p&gt;
+Lisson, P., D. Pregla, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, D. Paape, M. L. van het Nederend, F. Burchert, N. Stadie, D. Caplan, and S. Vasishth (2021). “A computational evaluation of two models of retrieval processes in sentence processing in aphasia”. In: &lt;em&gt;Cognitive Science&lt;/em&gt; 45.4. DOI: &lt;a href=&#34;https://doi.org/10.1111/cogs.12956&#34;&gt;10.1111/cogs.12956&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and F. Rösler (2020). “Are words pre-activated probabilistically during sentence comprehension? Evidence from new data and a Bayesian random-effects meta-analysis using publicly available data”. In: &lt;em&gt;Neuropsychologia&lt;/em&gt; 142, p. 107427. ISSN: 0028-3932. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.neuropsychologia.2020.107427&#34;&gt;10.1016/j.neuropsychologia.2020.107427&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, F. Engelmann, and F. Burchert (2019). “Computational models of retrieval processes in sentence processing”. In: &lt;em&gt;Trends in Cognitive Sciences&lt;/em&gt; 23.11, pp. 968 - 982. ISSN: 1364-6613. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.tics.2019.09.003&#34;&gt;10.1016/j.tics.2019.09.003&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, F. Engelmann, and K. Suckow (2018). “Exploratory and confirmatory analyses in sentence processing: A case study of number interference in German”. In: &lt;em&gt;Cognitive Science&lt;/em&gt; 42.S4, pp. 1075–1100. DOI: &lt;a href=&#34;https://doi.org/10.1111/cogs.12589&#34;&gt;10.1111/cogs.12589&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, T. B. Roettger, and S. Vasishth (2018). “Using meta-analysis for evidence synthesis: The case of incomplete neutralization in German”. In: &lt;em&gt;Journal of Phonetics&lt;/em&gt; 70, pp. 39–55. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.wocn.2018.06.001&#34;&gt;10.1016/j.wocn.2018.06.001&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, M. E. Beckman, F. Li, and E. Kong (2018). “Bayesian data analysis in the phonetic sciences: A tutorial introduction”. In: &lt;em&gt;Journal of Phonetics&lt;/em&gt; 71, pp. 147–161. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.wocn.2018.07.008&#34;&gt;10.1016/j.wocn.2018.07.008&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2018). “Models of Retrieval in Sentence Comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: &lt;em&gt;Journal of Memory and Language&lt;/em&gt; 99, pp. 1 –34. ISSN: 0749-596X. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.jml.2017.08.004&#34;&gt;10.1016/j.jml.2017.08.004&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Paape, D., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and S. Vasishth (2017). “Does antecedent complexity affect ellipsis processing? An empirical investigation”. In: &lt;em&gt;Glossa: A journal of general linguistics. &lt;/em&gt; 2.1, p. 71. DOI: &lt;a href=&#34;https://doi.org/10.5334/gjgl.290&#34;&gt;10.5334/gjgl.290&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logačev, C. Gattei, and S. Vasishth (2016). “When high-capacity readers slow down and low-capacity readers speed up: Working memory and locality effects”. In: &lt;em&gt;Frontiers in Psychology &lt;/em&gt; 7.280. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2016.00280&#34;&gt;10.3389/fpsyg.2016.00280 &lt;/a&gt;. eprint: &lt;a href=&#34;https://www.frontiersin.org/articles/10.3389/fpsyg.2016.00280/full&#34; class=&#34;uri&#34;&gt;https://www.frontiersin.org/articles/10.3389/fpsyg.2016.00280/full&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2016). “Statistical methods for linguistic research: Foundational Ideas - Part II”. In: &lt;em&gt;Language and Linguistics Compass&lt;/em&gt; 10.11, pp. 591–613. ISSN: 1749-818X. DOI: &lt;a href=&#34;https://doi.org/10.1111/lnc3.12207&#34;&gt;10.1111/lnc3.12207&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2016). “Statistical Methods for Linguistic Research: Foundational Ideas - Part I”. In: &lt;em&gt;Language and Linguistics Compass&lt;/em&gt; 10.8, pp. 349–369. ISSN: 1749-818X. DOI: &lt;a href=&#34;https://doi.org/10.1111/lnc3.12201&#34;&gt;10.1111/lnc3.12201&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, C. Gattei, M. Sigman, and R. Kliegl (2015). “Working memory differences in long-distance dependency resolution”. In: &lt;em&gt;Frontiers in Psychology&lt;/em&gt; 6.312. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2015.00312&#34;&gt;10.3389/fpsyg.2015.00312&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;unpublished-manuscripts&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Unpublished manuscripts&lt;/h2&gt;
+&lt;p&gt;
+Vasishth, S., H. Yadav, D. Schad, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2021). “Sample size determination for Bayesian hierarchical models commonly used in psycholinguistics”. DOI: &lt;a href=&#34;https://doi.org/10.31234/osf.io/u8yvc&#34;&gt;10.31234/osf.io/u8yvc&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. Chopin, and R. Ryder “Bayesian hierarchical finite mixture models of reading times: A case study”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.17605/OSF.IO/FWX3S&#34;&gt;10.17605/OSF.IO/FWX3S&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; “The double life of language systems: Modelling sonority with complementary symbol and signal based models”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.31234/osf.io/kvqy5&#34;&gt;10.31234/osf.io/kvqy5&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Schad, D. J., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, P. Bürkner, M. Betancourt, and S. Vasishth (2021). “Workflow Techniques for the Robust Use of Bayes Factors”. unpublished.
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;short-peer-reviewed-papers-in-conferences&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Short peer-reviewed papers in conferences&lt;/h2&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2018). “The implementation of a model of choice: The (truncated) linear ballistic accumulator”. In: &lt;em&gt;StanCon&lt;/em&gt;. Aalto University, Helsinki, Finland. DOI: &lt;a href=&#34;https://doi.org/10.5281/zenodo.1465990&#34;&gt;10.5281/zenodo.1465990&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., N. Chopin, R. Ryder, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Modelling dependency completion in sentence comprehension as a Bayesian hierarchical mixture process: A case study involving Chinese relative clauses”. In: &lt;em&gt;Proceedings of Cognitive Science Conference&lt;/em&gt;. London, UK.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., L. Jaeger, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Feature overwriting as a finite mixture process: Evidence from comprehension data”. In: &lt;em&gt;Proceedings of MathPsych/ICCM Conference&lt;/em&gt;. Warwick, UK.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2017). “Models of Retrieval in Sentence Comprehension”. In: &lt;em&gt;StanCon&lt;/em&gt;. (superseeded by 10.1016/j.jml.2017.08.004). Columbia University New York, NY.
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;book-in-preparation&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Book in preparation&lt;/h1&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, D. Schad, and S. Vasishth &lt;em&gt;An Introduction to Bayesian Data Analysis for Cognitive Science&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://vasishth.github.io/bayescogsci/book/&#34; class=&#34;uri&#34;&gt;https://vasishth.github.io/bayescogsci/book/&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;conferences&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Conferences&lt;/h1&gt;
+&lt;div id=&#34;section&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2021&lt;/h3&gt;
+&lt;p&gt;
+Stone, K., S. Vasishth, F. Rösler, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2021). “Maximising ERP Resources Using a Sequential Bayes Factor Approach to Sample Size”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Université de Paris, France.
+&lt;/p&gt;
+&lt;p&gt;
+Patterson, C., P. B. Schumacher, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, J. Hagen, and A. Kehler (2021). “German pronoun use follows Bayesian principles”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference, University of Pennsylvania&lt;/em&gt;.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-1&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2020&lt;/h3&gt;
+&lt;p&gt;
+Lisson, P., D. Pregla, D. Paape, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. Stadie, F. Burchert, and S. Vasishth (2020). “Computational models of retrieval processes in sentence comprehension in aphasia”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. University of Potsdam, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2020). “Incorporating continuity in phonological models of the syllable using NAP”. In: &lt;em&gt;LabPhon17&lt;/em&gt;.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-2&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2019&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2019). “Bayesian inference: Obstacles and opportunities”. In: &lt;em&gt;8th Biennial International Conference on the Linguistics of Contemporary English (BICLCE), Bamberg, Germany&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Lisson, P., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, S. Vasishth, and D. Paape (2019). “Models of retrieval in sentence comprehension in aphasia”. In: &lt;em&gt;StanCon&lt;/em&gt;. Cambridge, UK.
+&lt;/p&gt;
+&lt;p&gt;
+Lisson, P., M. van het Nederend, D. Pregla, S. Vasishth, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and D. Paape (2019). “Competing models of retrieval in sentence processing: The case of aphasia”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Institute of Cognitive Neuroscience and Centre for Language and Brain, Higher School of Economics, Russia.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-3&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2018&lt;/h3&gt;
+&lt;p&gt;
+Guerra, E., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and A. V. Helo (2018). “A crack in the crystall ball: Evidence against pre-activation of gender features in sentence comprehension”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Titanic Hotel Chaussee Berlin, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2018). “Bayesian cognitive models of memory retrieval processes: A case study”. In: &lt;em&gt;51. Kongress der Deutschen Gesellschaft für Psychologie. Bayesian statistics as a coherent approach to psychologists’ statistical and methodological problems&lt;/em&gt;. Goethe-Universität Frankfurt, Germany.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-4&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2017&lt;/h3&gt;
+&lt;p&gt;
+Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Linking sonority with periodic energy: Preliminary findings from production and perception”. In: &lt;em&gt;3rd International Workshop on Dynamic Modeling, Cologne, Germany&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2017). “Models of retrieval in sentence comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: &lt;em&gt;Proceedings of the Annual CUNY Sentence Processing Conference&lt;/em&gt;. Massachusetts Institute of Technology, Boston, MA, USA.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-5&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2016&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, F. Engelmann, K. Suckow, and S. Vasishth (2016). “Number interference as predicted by cue-based retrieval”. In: &lt;em&gt; Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Bilbao, Spain.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-6&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2015&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, F. Engelmann, K. Suckow, and S. Vasishth (2015). “Fail fast or succeed slowly: Good-enough processing can mask interference effects”. In: &lt;em&gt;International Conference on Cognitive Modeling (ICCM)&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logacev, C. Gattei, and S. Vasishth (2015). “When high-capacity readers slow down and low-capacity readers speed up: Working memory differences in unbounded dependencies”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. University of Southern California, Los Angeles, CA.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, K. Suckow, and S. Vasishth (2015). “Good-enough processing can mask interference effects”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. University of Southern California, Los Angeles, CA.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-7&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2014&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logacev, C. Gattei, and S. Vasishth (2014). “When high-capacity readers slow down and low-capacity readers speed up: Working memory differences in unbounded dependencies for German and Spanish readers”. In: &lt;em&gt;Mental Architecture for Processing and Learning of Language (MAPLL)&lt;/em&gt;. Tokyo, Japan.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and R. Kliegl (2014). “Readers with less cognitive control are more affected by surprising content: Evidence from a self-paced reading experiment in German”. In: &lt;em&gt;Mental Architecture for Processing and Learning of Language (MAPLL)&lt;/em&gt;. Tokyo, Japan.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and R. Kliegl (2014). “Readers with less cognitive control are more affected by surprising content”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Edinburgh, UK.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, R. Kliegl, C. Gattei, and M. Sigman (2014). “Working-memory capacity modulates antilocality effects in syntactic dependencies”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. The Ohio State University, Columbus, OH.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-8&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2013&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, C. Gattei, P. Logačev, and M. Sigman (2013). “The effect of distance on unbounded dependencies: An individual differences perspective”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Aix-Marseille Université, Marseille, France.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-9&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2012&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2012). “Processing of filler-gap dependencies in Complex NP islands: Evidence from Hebrew”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference, New York, NY&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2012). “Processing Complex NP islands in Hebrew”. In: &lt;em&gt;Proceedings of Generative Linguistics in the Old World Conference (GLOW), Potsdam, Germany&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;invited-talks&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Invited talks&lt;/h1&gt;
+&lt;div id=&#34;section-10&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2019&lt;/h3&gt;
+&lt;p&gt;
+Bayesian models of memory retrieval in sentence comprehension (2019). Institute of Cognitive Science, University of Osnabrueck, Germany.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-11&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2018&lt;/h3&gt;
+&lt;p&gt;
+Memory in sentence comprehension (2018). Job Talk at the Department of Cognitive and Brain Sciences, University of Ben Gurion, Israel.
+&lt;/p&gt;
+&lt;p&gt;
+A comparison of race and mixture models for explaining memory processes in sentence comprehension (2018). Stan user group in Berlin, Germany.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-12&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2017&lt;/h3&gt;
+&lt;p&gt;
+Bayesian models in psycholinguistics (2017). Institut für Linguistik - Phonetik, University of Cologne, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+Models of retrieval in sentence comprehension: A computational evaluation using Bayesian hierarchical modeling (2017). Colloquium of the HLP Lab at University of Rochester, NY, USA.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-13&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2015&lt;/h3&gt;
+&lt;p&gt;
+Fail fast or succeed slowly: Good-enough processing can mask interference effects (2015). Center for Research in Language at University of San Diego, California, USA.
+&lt;/p&gt;
+&lt;p&gt;
+Hierarchical multinomial processing tree models (2015). Research Seminar in Cognitive Psychology, University of Potsdam, Germany.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-14&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2013&lt;/h3&gt;
+&lt;p&gt;
+Speed-up does not necessarily mean facilitation: Working memory differences in long-distance dependency resolution (2013). Research Seminar in Cognitive Psychology, University of Potsdam, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+The Effect of Distance on Long-Distance Dependencies. An Individual Differences Perspective (2013). Research Seminar in Cognitive Psychology, University of Potsdam, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+The Effect of Distance on Long-Distance Dependencies. An Individual Differences Perspective (2013). Interdisciplinary Colloquium of the Linguistic Department, Tel Aviv University, Israel.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-15&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2012&lt;/h3&gt;
+&lt;p&gt;
+The Effect of Distance on Unbounded Dependencies. An Individual Differences Perspective (2012). Psycholinguistic Seminar, Institute of Linguistics, University of Buenos Aires, Argentina.
+&lt;/p&gt;
+&lt;p&gt;
+The Effect of Distance on Unbounded (Linguistic) Dependencies. An Individual Differences Perspective (2012). Seminar, Laboratory of Integrative Neuroscience, University of Buenos Aires, Argentina.
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;honors-and-grants&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Honors and grants&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;12%&#34; /&gt;
+&lt;col width=&#34;87%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2012–2018&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Potsdam Graduate School (PoGS) Travel Grants&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2014&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Kommission für Forschung und wissenschaftlichen Nachwuchs (FNK, University of Potsdam) Travel Grant&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2014&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Potsdam Graduate School (PoGS) PhD Completion Scholarship (5 months)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2013&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Minerva Fellowship Extension for Doctoral Research (1 year)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2011&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Minerva Fellowship for Doctoral Research (2 years)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2009&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Posis Scholarship from the School of Cultural Studies, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2008&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Faculty of Humanities Scholarship for Achievements in M.A. studies, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2006&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Dean’s Award for Achievements in Linguistics, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+&lt;div id=&#34;teaching-experience&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Teaching experience&lt;/h1&gt;
+&lt;div id=&#34;workshops-and-summer-schools&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Workshops and summer schools&lt;/h2&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;12%&#34; /&gt;
+&lt;col width=&#34;87%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2017-2021&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Bayesian methods”, Yearly Summer School on Statistical Methods for Linguistics and Psychology, University of Potsdam, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020-2021&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Introduction to computational Bayesian methods using brms”, Physalia courses, Berlin, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Methods in Advanced Statistics”, with Shravan Vasishth 2020 Winter School organized by Netherlands Graduate School in Linguistics (LOT), Tilburg, Netherlands&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2019&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Introduction to Bayesian statistics using brms”, University of Cologne, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2019&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Introduction to Bayesian statistics using brms”, University of Edinburgh, UK&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2018&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Talk:“Cognitive models of memory processes in sentence comprehension: A case study using Bayesian hierarchical modeling” Masterclass in Bayesian Statistics, Research school, CIRM (Marseille Luminy, France)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2017&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Introduction to Bayesian Modeling using Stan”, 13. Tagung der Fachgruppe Methoden und Evaluation der Deutschen Gesellschaft für Psychologie, Tübingen, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+&lt;div id=&#34;courses&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Courses&lt;/h2&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;12%&#34; /&gt;
+&lt;col width=&#34;87%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020–2021&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Bayesian Cognitive Processes”, Master in Cognitive Science &amp;amp; AI. Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020–2021&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Research Skills: Programming with R”, Master in Data Science &amp;amp; Society. Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020–2021&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Methodology for Premasters Data Science &amp;amp; Society”. Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2015–2017 (Winter)&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Advanced Data Analysis”. University of Potsdam&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2016 (Summer)&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Predictions in Language Processing”. University of Potsdam&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2015–2016 (Winter)&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Individual Differences in Sentence Processing”. University of Potsdam&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2015 (Summer)&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Predictions in Language Processing”. University of Potsdam&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2008–2010&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;Teaching assistant&lt;/strong&gt; in “Syntax Beginners” and “Foundations of Theoretical Linguistics” Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;!-- # Supervising --&gt;
+&lt;!-- ------------------------  ----------------------------------------------------------------------- --&gt;
+&lt;!-- 2019                     Chiara Tschirner (co-supervision with Prof. Dr. Vasishth), Master Thesis.  --&gt;
+&lt;!-- 2018                      Eva-Maria Fey (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: &#34;The effect of individual differences and the functional organisation of the human brain in joke comprehension based on left- and right-handedness&#34; --&gt;
+&lt;!-- 2016                      Daniel Grünke (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: &#34;Der Zusammenhang zwischen Arbeitsgedächtnis und Satzverarbeitung&#34;  --&gt;
+&lt;!-- 2015                      Lisa Münchberger (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: &#34;Unflüssigkeiten und Hemmungen in der Sprachverarbeitung im Deutschen&#34;  --&gt;
+&lt;!-- ------------------------  ----------------------------------------------------------------------- --&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;open-software&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Open software&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://bnicenboim.github.io/eeguana/&#34;&gt;eeguana&lt;/a&gt;. An R package for flexible manipulation of EEG data. &lt;strong&gt;Author&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://cran.r-project.org/web/packages/loo/&#34;&gt;loo&lt;/a&gt;. Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models. &lt;strong&gt;Contributor&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;academic-related-training&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Academic-related training&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;12%&#34; /&gt;
+&lt;col width=&#34;87%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2016&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Groningen Spring School on Cognitive Modeling, the Netherlands&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2015–2016&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;International Teaching Professionals, University of Potsdam, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2013&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Autumn School Methods in Language Comprehension, Rovereto (TN), Italy&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2012&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Eye-tracking-while-reading at Laboratory of Integrative Neuroscience, University of Buenos Aires (3 months). Host: Dr. Mariano Sigman&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;reviewing&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Reviewing&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;Cognitive Psychology&lt;/li&gt;
+&lt;li&gt;Journal of Experimental Psychology: Learning, Memory, and Cognition&lt;/li&gt;
+&lt;li&gt;Neuropsychologia&lt;/li&gt;
+&lt;li&gt;Lingua&lt;/li&gt;
+&lt;li&gt;Phonological Data and Analysis&lt;/li&gt;
+&lt;li&gt;Language, Cognition and Neuroscience&lt;/li&gt;
+&lt;li&gt;Routledge Manuscript&lt;/li&gt;
+&lt;li&gt;Journal of Memory and Language&lt;/li&gt;
+&lt;li&gt;Quarterly Journal of Experimental Psychology&lt;/li&gt;
+&lt;li&gt;Journal of Cognitive Psychology&lt;/li&gt;
+&lt;li&gt;Journal of Phonetics&lt;/li&gt;
+&lt;li&gt;CUNY Conference&lt;/li&gt;
+&lt;li&gt;Quantitative approaches in corpus linguistics and psycholinguistics, Paris, France&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;languages&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Languages&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;Spanish (Mother tongue)&lt;/li&gt;
+&lt;li&gt;English (Fluent)&lt;/li&gt;
+&lt;li&gt;Hebrew (Fluent)&lt;/li&gt;
+&lt;li&gt;German (Advanced)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;non-academic-professional-experience&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Non-academic professional experience&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;12%&#34; /&gt;
+&lt;col width=&#34;87%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2009–2011&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;QA engineer: NLP Testing at Clearforest. Testing rules and heuristics for identifying semantic entities and relations in English, Spanish and French texts.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2007–2009&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Content Specialist position at Celebros. Organization, analysis and categorization of data of Spanish and U.S. clients’ databases.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;!-- 
+    \section*{Summer schools and workshops}
+    \begin{tabular}{L!{\VRule}R}
+ 
+    
+    \end{tabular}
+
+    
+\section*{Languages}
+\begin{tabular}{L!{\VRule}R}
+Spanish &amp; Mother tongue\\
+English &amp; Fluent \\
+Hebrew &amp; Fluent\\
+German &amp; Intermediate (B2)\\
+\end{tabular}
+ 
+\section*{Formal Languages  }
+\begin{tabular}{L!{\VRule}R}
+    R &amp; Advanced\\
+    Python &amp; Advanced\\
+    Groovy (Java)&amp; Advanced\\
+    LateX &amp; Advanced\\
+\end{tabular}
+
+
+
+\section*{Non-academic Professional Experience}
+\begin{tabular}{L!{\VRule}R}
+2009--2011&amp; \textbf{QA engineer} -- NLP Testing at Clearforest. Testing rules and heuristics for identifying semantic entities and relations in English, Spanish and French texts. Programming scripts, writing of QA documentation. \\[2pt]
+
+2007--2009&amp; \textbf{Content Specialist} position at Celebros. Organization, analysis and categorization of data of Spanish and U.S. clients&#39; databases. \\[2pt]
+
+2006--2007  &amp;\textbf{Freelance translation} from English and Hebrew to Spanish. \\[2pt]
+
+2006 &amp;  \textbf{Translation} from English and Hebrew to Spanish for Media Vision Company. Part of the website and manuals http://www.handwallet.com/spanish/ \\[2pt]
+\end{tabular}
+
+\section*{Places of residence}
+ \begin{tabular}{L!{\VRule}R}
+  2011--Now &amp; Germany\\[2pt]
+ 2003--2011 &amp; Israel\\[2pt]
+ 1981--2003 &amp; Argentina\\[2pt]
+ \end{tabular}
+ 
+\end{document} --&gt;
+&lt;/div&gt;
+</description>
     </item>
     
     <item>
@@ -33,8 +1141,859 @@ Prob q: Is there a name for a categorical distribution that whenever you get an 
       <link>/cv/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/cv/</guid>
-      <description>Contact Information Education Academic-related work Articles  Published or accepted in peer-reviewed journals Unpublished manuscripts Short peer-reviewed papers in conferences  Book in preparation Conferences  2021 2020 2019 2018 2017 2016 2015 2014 2013 2012  Invited talks  2019 2018 2017 2015 2013 2012  Honors and grants Teaching experience  Workshops and summer schools Courses  Open software Academic-related training Reviewing Languages Non-academic professional experience   Contact Information   Email: [initial].</description>
+      <guid>/cv/</guid><description>
+&lt;script src=&#34;/rmarkdown-libs/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
+
+&lt;div id=&#34;TOC&#34;&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#contact-information&#34;&gt;Contact Information&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#education&#34;&gt;Education&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#academic-related-work&#34;&gt;Academic-related work&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#articles&#34;&gt;Articles&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#published-or-accepted-in-peer-reviewed-journals&#34;&gt;Published or accepted in peer-reviewed journals&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#unpublished-manuscripts&#34;&gt;Unpublished manuscripts&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#short-peer-reviewed-papers-in-conferences&#34;&gt;Short peer-reviewed papers in conferences&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#book-in-preparation&#34;&gt;Book in preparation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#conferences&#34;&gt;Conferences&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section&#34;&gt;2021&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-1&#34;&gt;2020&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-2&#34;&gt;2019&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-3&#34;&gt;2018&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-4&#34;&gt;2017&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-5&#34;&gt;2016&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-6&#34;&gt;2015&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-7&#34;&gt;2014&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-8&#34;&gt;2013&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-9&#34;&gt;2012&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#invited-talks&#34;&gt;Invited talks&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-10&#34;&gt;2019&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-11&#34;&gt;2018&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-12&#34;&gt;2017&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-13&#34;&gt;2015&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-14&#34;&gt;2013&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#section-15&#34;&gt;2012&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#honors-and-grants&#34;&gt;Honors and grants&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#teaching-experience&#34;&gt;Teaching experience&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#workshops-and-summer-schools&#34;&gt;Workshops and summer schools&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#courses&#34;&gt;Courses&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#open-software&#34;&gt;Open software&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#academic-related-training&#34;&gt;Academic-related training&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#reviewing&#34;&gt;Reviewing&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#languages&#34;&gt;Languages&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/cv/#non-academic-professional-experience&#34;&gt;Non-academic professional experience&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+
+&lt;div id=&#34;contact-information&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Contact Information&lt;/h1&gt;
+&lt;table&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;Email:&lt;/td&gt;
+&lt;td&gt;[initial].[lastname] [at] tilburguniversity.edu&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;Office:&lt;/td&gt;
+&lt;td&gt;D108, Dante Building, Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;Address:&lt;/td&gt;
+&lt;td&gt;Department of Cognitive Science and Artificial Intelligence&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;PO Box 90153&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;5000 LE Tilburg&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;The Netherlands&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;education&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Education&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;26%&#34; /&gt;
+&lt;col width=&#34;73%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2011–2017&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;strong&gt;PhD in Cognitive Science, University of Potsdam&lt;/strong&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Topic: Dependency resolution as a retrieval process&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Supervisors: Prof. Dr. Shravan Vasishth and Prof. Dr. Reinhold Kliegl&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Grade: &lt;em&gt;summa cum laude&lt;/em&gt; &lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2010&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;M.A. in Linguistics, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Topic: Processing Complex NP Islands in Hebrew&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Supervisors: Prof. Dr. Julia Horvath and Prof. Dr. Tal Siloni&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Grade: &lt;em&gt;summa cum laude&lt;/em&gt; &lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2009&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;B.A Double Major, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Linguistics. Grade: &lt;em&gt;summa cum laude&lt;/em&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Sociology and Anthropology. Grade: very good&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;academic-related-work&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Academic-related work&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;26%&#34; /&gt;
+&lt;col width=&#34;73%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020–&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Assistant professor&lt;/strong&gt; (tenure track) at the department of Cognitive Science and AI of Tilburg University, the Netherlands.&lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020–&lt;/td&gt;
+&lt;td&gt;Guest researcher at the Department of Linguistics of the University of Potsdam, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2017–2020&lt;/td&gt;
+&lt;td&gt;Postdoctoral Researcher, University of Potsdam.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;PIs: Shravan Vasishth, Frank Rösler &lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2016–2017&lt;/td&gt;
+&lt;td&gt;Coordinator of the Master in Cognitive Systems, University of Potsdam &lt;br/&gt;&lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2009–2009&lt;/td&gt;
+&lt;td&gt;Research assistant, Tel Aviv University. Syntax and Lexicon interface.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;Supervisors: Prof. Dr. Tal Siloni and Prof. Dr. Julia Horvath &lt;br/&gt; &lt;br/&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2008–2009&lt;/td&gt;
+&lt;td&gt;Research assistant, Tel Aviv University. Psycholinguistics.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;Assistance in experiments using E-prime and CHILDES software.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td&gt;Supervisor: Prof. Dr. Ruth Berman&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;articles&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Articles&lt;/h1&gt;
+&lt;div id=&#34;published-or-accepted-in-peer-reviewed-journals&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Published or accepted in peer-reviewed journals&lt;/h2&gt;
+&lt;p&gt;
+Schad, D. J., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, P. Bürkner, M. Betancourt, and S. Vasishth (2021). “Workflow Techniques for the Robust Use of Bayes Factors”. In: &lt;em&gt;Psychological Methods&lt;/em&gt;. in Press.
+&lt;/p&gt;
+&lt;p&gt;
+Lisson, P., D. Pregla, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, D. Paape, M. L. van het Nederend, F. Burchert, N. Stadie, D. Caplan, and S. Vasishth (2021). “A computational evaluation of two models of retrieval processes in sentence processing in aphasia”. In: &lt;em&gt;Cognitive Science&lt;/em&gt; 45.4. DOI: &lt;a href=&#34;https://doi.org/10.1111/cogs.12956&#34;&gt;10.1111/cogs.12956&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and F. Rösler (2020). “Are words pre-activated probabilistically during sentence comprehension? Evidence from new data and a Bayesian random-effects meta-analysis using publicly available data”. In: &lt;em&gt;Neuropsychologia&lt;/em&gt; 142, p. 107427. ISSN: 0028-3932. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.neuropsychologia.2020.107427&#34;&gt;10.1016/j.neuropsychologia.2020.107427&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, F. Engelmann, and F. Burchert (2019). “Computational models of retrieval processes in sentence processing”. In: &lt;em&gt;Trends in Cognitive Sciences&lt;/em&gt; 23.11, pp. 968 - 982. ISSN: 1364-6613. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.tics.2019.09.003&#34;&gt;10.1016/j.tics.2019.09.003&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, F. Engelmann, and K. Suckow (2018). “Exploratory and confirmatory analyses in sentence processing: A case study of number interference in German”. In: &lt;em&gt;Cognitive Science&lt;/em&gt; 42.S4, pp. 1075–1100. DOI: &lt;a href=&#34;https://doi.org/10.1111/cogs.12589&#34;&gt;10.1111/cogs.12589&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, T. B. Roettger, and S. Vasishth (2018). “Using meta-analysis for evidence synthesis: The case of incomplete neutralization in German”. In: &lt;em&gt;Journal of Phonetics&lt;/em&gt; 70, pp. 39–55. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.wocn.2018.06.001&#34;&gt;10.1016/j.wocn.2018.06.001&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, M. E. Beckman, F. Li, and E. Kong (2018). “Bayesian data analysis in the phonetic sciences: A tutorial introduction”. In: &lt;em&gt;Journal of Phonetics&lt;/em&gt; 71, pp. 147–161. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.wocn.2018.07.008&#34;&gt;10.1016/j.wocn.2018.07.008&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2018). “Models of Retrieval in Sentence Comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: &lt;em&gt;Journal of Memory and Language&lt;/em&gt; 99, pp. 1 –34. ISSN: 0749-596X. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.jml.2017.08.004&#34;&gt;10.1016/j.jml.2017.08.004&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Paape, D., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and S. Vasishth (2017). “Does antecedent complexity affect ellipsis processing? An empirical investigation”. In: &lt;em&gt;Glossa: A journal of general linguistics. &lt;/em&gt; 2.1, p. 71. DOI: &lt;a href=&#34;https://doi.org/10.5334/gjgl.290&#34;&gt;10.5334/gjgl.290&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logačev, C. Gattei, and S. Vasishth (2016). “When high-capacity readers slow down and low-capacity readers speed up: Working memory and locality effects”. In: &lt;em&gt;Frontiers in Psychology &lt;/em&gt; 7.280. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2016.00280&#34;&gt;10.3389/fpsyg.2016.00280 &lt;/a&gt;. eprint: &lt;a href=&#34;https://www.frontiersin.org/articles/10.3389/fpsyg.2016.00280/full&#34; class=&#34;uri&#34;&gt;https://www.frontiersin.org/articles/10.3389/fpsyg.2016.00280/full&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2016). “Statistical methods for linguistic research: Foundational Ideas - Part II”. In: &lt;em&gt;Language and Linguistics Compass&lt;/em&gt; 10.11, pp. 591–613. ISSN: 1749-818X. DOI: &lt;a href=&#34;https://doi.org/10.1111/lnc3.12207&#34;&gt;10.1111/lnc3.12207&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2016). “Statistical Methods for Linguistic Research: Foundational Ideas - Part I”. In: &lt;em&gt;Language and Linguistics Compass&lt;/em&gt; 10.8, pp. 349–369. ISSN: 1749-818X. DOI: &lt;a href=&#34;https://doi.org/10.1111/lnc3.12201&#34;&gt;10.1111/lnc3.12201&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, C. Gattei, M. Sigman, and R. Kliegl (2015). “Working memory differences in long-distance dependency resolution”. In: &lt;em&gt;Frontiers in Psychology&lt;/em&gt; 6.312. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2015.00312&#34;&gt;10.3389/fpsyg.2015.00312&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;unpublished-manuscripts&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Unpublished manuscripts&lt;/h2&gt;
+&lt;p&gt;
+Vasishth, S., H. Yadav, D. Schad, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2021). “Sample size determination for Bayesian hierarchical models commonly used in psycholinguistics”. DOI: &lt;a href=&#34;https://doi.org/10.31234/osf.io/u8yvc&#34;&gt;10.31234/osf.io/u8yvc&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. Chopin, and R. Ryder “Bayesian hierarchical finite mixture models of reading times: A case study”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.17605/OSF.IO/FWX3S&#34;&gt;10.17605/OSF.IO/FWX3S&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; “The double life of language systems: Modelling sonority with complementary symbol and signal based models”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.31234/osf.io/kvqy5&#34;&gt;10.31234/osf.io/kvqy5&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;short-peer-reviewed-papers-in-conferences&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Short peer-reviewed papers in conferences&lt;/h2&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2018). “The implementation of a model of choice: The (truncated) linear ballistic accumulator”. In: &lt;em&gt;StanCon&lt;/em&gt;. Aalto University, Helsinki, Finland. DOI: &lt;a href=&#34;https://doi.org/10.5281/zenodo.1465990&#34;&gt;10.5281/zenodo.1465990&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., N. Chopin, R. Ryder, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Modelling dependency completion in sentence comprehension as a Bayesian hierarchical mixture process: A case study involving Chinese relative clauses”. In: &lt;em&gt;Proceedings of Cognitive Science Conference&lt;/em&gt;. London, UK.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., L. Jaeger, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Feature overwriting as a finite mixture process: Evidence from comprehension data”. In: &lt;em&gt;Proceedings of MathPsych/ICCM Conference&lt;/em&gt;. Warwick, UK.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2017). “Models of Retrieval in Sentence Comprehension”. In: &lt;em&gt;StanCon&lt;/em&gt;. (superseeded by 10.1016/j.jml.2017.08.004). Columbia University New York, NY.
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;book-in-preparation&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Book in preparation&lt;/h1&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, D. Schad, and S. Vasishth &lt;em&gt;An Introduction to Bayesian Data Analysis for Cognitive Science&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;conferences&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Conferences&lt;/h1&gt;
+&lt;div id=&#34;section&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2021&lt;/h3&gt;
+&lt;p&gt;
+Stone, K., S. Vasishth, F. Rösler, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2021). “Maximising ERP Resources Using a Sequential Bayes Factor Approach to Sample Size”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Université de Paris, France.
+&lt;/p&gt;
+&lt;p&gt;
+Patterson, C., P. B. Schumacher, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, J. Hagen, and A. Kehler (2021). “German pronoun use follows Bayesian principles”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference, University of Pennsylvania&lt;/em&gt;.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-1&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2020&lt;/h3&gt;
+&lt;p&gt;
+Lisson, P., D. Pregla, D. Paape, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. Stadie, F. Burchert, and S. Vasishth (2020). “Computational models of retrieval processes in sentence comprehension in aphasia”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. University of Potsdam, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2020). “Incorporating continuity in phonological models of the syllable using NAP”. In: &lt;em&gt;LabPhon17&lt;/em&gt;.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-2&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2019&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2019). “Bayesian inference: Obstacles and opportunities”. In: &lt;em&gt;8th Biennial International Conference on the Linguistics of Contemporary English (BICLCE), Bamberg, Germany&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Lisson, P., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, S. Vasishth, and D. Paape (2019). “Models of retrieval in sentence comprehension in aphasia”. In: &lt;em&gt;StanCon&lt;/em&gt;. Cambridge, UK.
+&lt;/p&gt;
+&lt;p&gt;
+Lisson, P., M. van het Nederend, D. Pregla, S. Vasishth, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and D. Paape (2019). “Competing models of retrieval in sentence processing: The case of aphasia”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Institute of Cognitive Neuroscience and Centre for Language and Brain, Higher School of Economics, Russia.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-3&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2018&lt;/h3&gt;
+&lt;p&gt;
+Guerra, E., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and A. V. Helo (2018). “A crack in the crystall ball: Evidence against pre-activation of gender features in sentence comprehension”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Titanic Hotel Chaussee Berlin, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2018). “Bayesian cognitive models of memory retrieval processes: A case study ”. In: &lt;em&gt;51. Kongress der Deutschen Gesellschaft für Psychologie. Bayesian statistics as a coherent approach to psychologists’ statistical and methodological problems&lt;/em&gt;. Goethe-Universität Frankfurt, Germany.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-4&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2017&lt;/h3&gt;
+&lt;p&gt;
+Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Linking sonority with periodic energy: Preliminary findings from production and perception”. In: &lt;em&gt;3rd International Workshop on Dynamic Modeling, Cologne, Germany&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2017). “Models of retrieval in sentence comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: &lt;em&gt;Proceedings of the Annual CUNY Sentence Processing Conference&lt;/em&gt;. Massachusetts Institute of Technology, Boston, MA, USA.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-5&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2016&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, F. Engelmann, K. Suckow, and S. Vasishth (2016). “Number interference as predicted by cue-based retrieval”. In: &lt;em&gt; Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Bilbao, Spain.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-6&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2015&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, F. Engelmann, K. Suckow, and S. Vasishth (2015). “Fail fast or succeed slowly: Good-enough processing can mask interference effects”. In: &lt;em&gt;International Conference on Cognitive Modeling (ICCM)&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logacev, C. Gattei, and S. Vasishth (2015). “When high-capacity readers slow down and low-capacity readers speed up: Working memory differences in unbounded dependencies”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. University of Southern California, Los Angeles, CA.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, K. Suckow, and S. Vasishth (2015). “Good-enough processing can mask interference effects”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. University of Southern California, Los Angeles, CA.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-7&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2014&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logacev, C. Gattei, and S. Vasishth (2014). “When high-capacity readers slow down and low-capacity readers speed up: Working memory differences in unbounded dependencies for German and Spanish readers”. In: &lt;em&gt;Mental Architecture for Processing and Learning of Language (MAPLL)&lt;/em&gt;. Tokyo, Japan.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and R. Kliegl (2014). “Readers with less cognitive control are more affected by surprising content: Evidence from a self-paced reading experiment in German”. In: &lt;em&gt;Mental Architecture for Processing and Learning of Language (MAPLL)&lt;/em&gt;. Tokyo, Japan.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and R. Kliegl (2014). “Readers with less cognitive control are more affected by surprising content”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Edinburgh, UK.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, R. Kliegl, C. Gattei, and M. Sigman (2014). “Working-memory capacity modulates antilocality effects in syntactic dependencies”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. The Ohio State University, Columbus, OH.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-8&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2013&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, C. Gattei, P. Logačev, and M. Sigman (2013). “The effect of distance on unbounded dependencies: An individual differences perspective”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Aix-Marseille Université, Marseille, France.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-9&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2012&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2012). “Processing of filler-gap dependencies in Complex NP islands: Evidence from Hebrew”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference, New York, NY&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2012). “Processing Complex NP islands in Hebrew”. In: &lt;em&gt;Proceedings of Generative Linguistics in the Old World Conference (GLOW), Potsdam, Germany&lt;/em&gt;.
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;invited-talks&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Invited talks&lt;/h1&gt;
+&lt;div id=&#34;section-10&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2019&lt;/h3&gt;
+&lt;p&gt;
+Bayesian models of memory retrieval in sentence comprehension (2019). Institute of Cognitive Science, University of Osnabrueck, Germany.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-11&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2018&lt;/h3&gt;
+&lt;p&gt;
+Memory in sentence comprehension (2018). Job Talk at the Department of Cognitive and Brain Sciences, University of Ben Gurion, Israel.
+&lt;/p&gt;
+&lt;p&gt;
+A comparison of race and mixture models for explaining memory processes in sentence comprehension (2018). Stan user group in Berlin, Germany.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-12&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2017&lt;/h3&gt;
+&lt;p&gt;
+Bayesian models in psycholinguistics (2017). Institut für Linguistik - Phonetik, University of Cologne, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+Models of retrieval in sentence comprehension: A computational evaluation using Bayesian hierarchical modeling (2017). Colloquium of the HLP Lab at University of Rochester, NY, USA.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-13&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2015&lt;/h3&gt;
+&lt;p&gt;
+Fail fast or succeed slowly: Good-enough processing can mask interference effects (2015). Center for Research in Language at University of San Diego, California, USA.
+&lt;/p&gt;
+&lt;p&gt;
+Hierarchical multinomial processing tree models (2015). Research Seminar in Cognitive Psychology, University of Potsdam, Germany.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-14&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2013&lt;/h3&gt;
+&lt;p&gt;
+Speed-up does not necessarily mean facilitation: Working memory differences in long-distance dependency resolution (2013). Research Seminar in Cognitive Psychology, University of Potsdam, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+The Effect of Distance on Long-Distance Dependencies. An Individual Differences Perspective (2013). Research Seminar in Cognitive Psychology, University of Potsdam, Germany.
+&lt;/p&gt;
+&lt;p&gt;
+The Effect of Distance on Long-Distance Dependencies. An Individual Differences Perspective (2013). Interdisciplinary Colloquium of the Linguistic Department, Tel Aviv University, Israel.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-15&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2012&lt;/h3&gt;
+&lt;p&gt;
+The Effect of Distance on Unbounded Dependencies. An Individual Differences Perspective (2012). Psycholinguistic Seminar, Institute of Linguistics, University of Buenos Aires, Argentina.
+&lt;/p&gt;
+&lt;p&gt;
+The Effect of Distance on Unbounded (Linguistic) Dependencies. An Individual Differences Perspective (2012). Seminar, Laboratory of Integrative Neuroscience, University of Buenos Aires, Argentina.
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;honors-and-grants&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Honors and grants&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;26%&#34; /&gt;
+&lt;col width=&#34;73%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2012–2018&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Potsdam Graduate School (PoGS) Travel Grants&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2014&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Kommission für Forschung und wissenschaftlichen Nachwuchs (FNK, University of Potsdam) Travel Grant&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2014&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Potsdam Graduate School (PoGS) PhD Completion Scholarship (5 months)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2013&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Minerva Fellowship Extension for Doctoral Research (1 year)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2011&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Minerva Fellowship for Doctoral Research (2 years)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2009&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Posis Scholarship from the School of Cultural Studies, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2008&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Faculty of Humanities Scholarship for Achievements in M.A. studies, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2006&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Dean’s Award for Achievements in Linguistics, Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;teaching-experience&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Teaching experience&lt;/h1&gt;
+&lt;div id=&#34;workshops-and-summer-schools&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Workshops and summer schools&lt;/h2&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;26%&#34; /&gt;
+&lt;col width=&#34;73%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2017-2021&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Bayesian methods”,&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Yearly Summer School on Statistical Methods for Linguistics and Psychology,&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;University of Potsdam, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020-2021&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Introduction to computational Bayesian methods using Stan”,
+Physalia courses,&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Berlin, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Methods in Advanced Statistics”, with Shravan Vasishth&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;2020 Winter School organized by Netherlands Graduate School in Linguistics (LOT),&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Tilburg, Netherlands&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2019&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Introduction to Bayesian statistics using brms”,&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;University of Cologne, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2019&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Introduction to Bayesian statistics using brms”,&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;University of Edinburgh, UK&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2018&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Talk:“Cognitive models of memory processes in sentence comprehension: A case study using Bayesian hierarchical modeling”&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Masterclass in Bayesian Statistics, Research school,&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;CIRM (Marseille Luminy, France)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2017&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;“Introduction to Bayesian Modeling using Stan”,&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;13. Tagung der Fachgruppe Methoden und Evaluation der Deutschen Gesellschaft für Psychologie,&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Tübingen, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;/div&gt;
+&lt;div id=&#34;courses&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Courses&lt;/h2&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;26%&#34; /&gt;
+&lt;col width=&#34;73%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2021&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Bayesian Models of Cognitive Processes”, Master in Cogntive Science &amp;amp; AI. Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020-2021&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Research skill: Programing with R”, Data Science &amp;amp; Society. Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2020-2021&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Methodology for Premasters Data Science &amp;amp; Society”. Tilburg University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2015–2017 (Winter)&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Advanced Data Analysis”. University of Potsdam&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2016 (Summer)&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Predictions in Language Processing”. University of Potsdam&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2015–2016 (Winter)&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Individual Differences in Sentence Processing”. University of Potsdam&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2015 (Summer)&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Lecturer&lt;/strong&gt; in “Predictions in Language Processing”. University of Potsdam&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2008–2010&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;Teaching assistant&lt;/strong&gt; in “Syntax Beginners” and “Foundations of Theoretical Linguistics” Tel Aviv University&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;!-- # Supervising --&gt;
+&lt;!-- ------------------------  ----------------------------------------------------------------------- --&gt;
+&lt;!-- 2019                     Chiara Tschirner (co-supervision with Prof. Dr. Vasishth), Master Thesis.  --&gt;
+&lt;!-- 2018                      Eva-Maria Fey (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: &#34;The effect of individual differences and the functional organisation of the human brain in joke comprehension based on left- and right-handedness&#34; --&gt;
+&lt;!-- 2016                      Daniel Grünke (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: &#34;Der Zusammenhang zwischen Arbeitsgedächtnis und Satzverarbeitung&#34;  --&gt;
+&lt;!-- 2015                      Lisa Münchberger (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: &#34;Unflüssigkeiten und Hemmungen in der Sprachverarbeitung im Deutschen&#34;  --&gt;
+&lt;!-- ------------------------  ----------------------------------------------------------------------- --&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;open-software&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Open software&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://bnicenboim.github.io/eeguana/&#34;&gt;eeguana&lt;/a&gt;. An R package for flexible manipulation of EEG data. &lt;strong&gt;Author&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://cran.r-project.org/web/packages/loo/&#34;&gt;loo&lt;/a&gt;. Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models. &lt;strong&gt;Contributor&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;academic-related-training&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Academic-related training&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;26%&#34; /&gt;
+&lt;col width=&#34;73%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2016&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Groningen Spring School on Cognitive Modeling, the Netherlands&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2015–2016&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;International Teaching Professionals, University of Potsdam, Germany&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2013&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Autumn School Methods in Language Comprehension, Rovereto (TN), Italy&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2012&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Eye-tracking-while-reading at Laboratory of Integrative Neuroscience, University of Buenos Aires (3 months). Host: Dr. Mariano Sigman&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;reviewing&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Reviewing&lt;/h1&gt;
+&lt;table&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Cognitive Psychology&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Journal of Experimental Psychology: Learning, Memory, and Cognition&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Neuropsychologia&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Lingua&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Phonological Data and Analysis&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Language, Cognition and Neuroscience&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Routledge Manuscript&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Journal of Memory and Language&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Quarterly Journal of Experimental Psychology&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Journal of Cognitive Psychology&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Journal of Phonetics&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;CUNY Conference&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Quantitative approaches in corpus linguistics and psycholinguistics, Paris, France&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;languages&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Languages&lt;/h1&gt;
+&lt;table&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Spanish (Mother tongue)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;English (Fluent)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;Hebrew (Fluent)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td&gt;*&lt;/td&gt;
+&lt;td align=&#34;left&#34;&gt;German (Advanced)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;non-academic-professional-experience&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Non-academic professional experience&lt;/h1&gt;
+&lt;table&gt;
+&lt;colgroup&gt;
+&lt;col width=&#34;26%&#34; /&gt;
+&lt;col width=&#34;73%&#34; /&gt;
+&lt;/colgroup&gt;
+&lt;tbody&gt;
+&lt;tr class=&#34;odd&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2009–2011&lt;/td&gt;
+&lt;td&gt;QA engineer: NLP Testing at Clearforest. Testing rules and heuristics for identifying semantic entities and relations in English, Spanish and French texts.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr class=&#34;even&#34;&gt;
+&lt;td align=&#34;left&#34;&gt;2007–2009&lt;/td&gt;
+&lt;td&gt;Content Specialist position at Celebros. Organization, analysis and categorization of data of Spanish and U.S. clients’ databases.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;!-- 
+    \section*{Summer schools and workshops}
+    \begin{tabular}{L!{\VRule}R}
+ 
+    
+    \end{tabular}
+
+    
+\section*{Languages}
+\begin{tabular}{L!{\VRule}R}
+Spanish &amp; Mother tongue\\
+English &amp; Fluent \\
+Hebrew &amp; Fluent\\
+German &amp; Intermediate (B2)\\
+\end{tabular}
+ 
+\section*{Formal Languages  }
+\begin{tabular}{L!{\VRule}R}
+    R &amp; Advanced\\
+    Python &amp; Advanced\\
+    Groovy (Java)&amp; Advanced\\
+    LateX &amp; Advanced\\
+\end{tabular}
+
+
+
+\section*{Non-academic Professional Experience}
+\begin{tabular}{L!{\VRule}R}
+2009--2011&amp; \textbf{QA engineer} -- NLP Testing at Clearforest. Testing rules and heuristics for identifying semantic entities and relations in English, Spanish and French texts. Programming scripts, writing of QA documentation. \\[2pt]
+
+2007--2009&amp; \textbf{Content Specialist} position at Celebros. Organization, analysis and categorization of data of Spanish and U.S. clients&#39; databases. \\[2pt]
+
+2006--2007  &amp;\textbf{Freelance translation} from English and Hebrew to Spanish. \\[2pt]
+
+2006 &amp;  \textbf{Translation} from English and Hebrew to Spanish for Media Vision Company. Part of the website and manuals http://www.handwallet.com/spanish/ \\[2pt]
+\end{tabular}
+
+\section*{Places of residence}
+ \begin{tabular}{L!{\VRule}R}
+  2011--Now &amp; Germany\\[2pt]
+ 2003--2011 &amp; Israel\\[2pt]
+ 1981--2003 &amp; Argentina\\[2pt]
+ \end{tabular}
+ 
+\end{document} --&gt;
+&lt;/div&gt;
+</description>
     </item>
     
     <item>
@@ -42,10 +2001,250 @@ Prob q: Is there a name for a categorical distribution that whenever you get an 
       <link>/publications/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/publications/</guid>
-      <description>Book in preparation  Nicenboim, B., D. Schad, and S. Vasishth An Introduction to Bayesian Data Analysis for Cognitive Science. [read]  
- Unpublished manuscripts [bibtex]
- Vasishth, S., H. Yadav, D. Schad, and B. Nicenboim (2021). “Sample size determination for Bayesian hierarchical models commonly used in psycholinguistics”. DOI: 10.31234/osf.io/u8yvc. [read]  Vasishth, S., B. Nicenboim, N. Chopin, and R. Ryder “Bayesian hierarchical finite mixture models of reading times: A case study”.</description>
+      <guid>/publications/</guid><description>
+&lt;script src=&#34;/rmarkdown-libs/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
+
+
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;div id=&#34;book-in-preparation&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Book in preparation&lt;/h1&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, D. Schad, and S. Vasishth &lt;em&gt;An Introduction to Bayesian Data Analysis for Cognitive Science&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://vasishth.github.io/Bayes_CogSci/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;unpublished-manuscripts&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Unpublished manuscripts&lt;/h1&gt;
+&lt;p&gt;[&lt;a href=&#34;papers/unpublished.bib&#34;&gt;bibtex&lt;/a&gt;]&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., H. Yadav, D. Schad, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2021). “Sample size determination for Bayesian hierarchical models commonly used in psycholinguistics”. DOI: &lt;a href=&#34;https://doi.org/10.31234/osf.io/u8yvc&#34;&gt;10.31234/osf.io/u8yvc&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/u8yvc/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. Chopin, and R. Ryder “Bayesian hierarchical finite mixture models of reading times: A case study”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.17605/OSF.IO/FWX3S&#34;&gt;10.17605/OSF.IO/FWX3S&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/v5nps/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; “The double life of language systems: Modelling sonority with complementary symbol and signal based models”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.31234/osf.io/kvqy5&#34;&gt;10.31234/osf.io/kvqy5&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/kvqy5&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;published-or-accepted-in-peer-reviewed-journals&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Published (or accepted) in peer-reviewed journals&lt;/h1&gt;
+&lt;p&gt;[&lt;a href=&#34;papers/published.bib&#34;&gt;bibtex&lt;/a&gt;]&lt;/p&gt;
+&lt;div id=&#34;section&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;2021&lt;/h2&gt;
+&lt;p&gt;
+Schad, D. J., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, P. Bürkner, M. Betancourt, and S. Vasishth (2021). “Workflow Techniques for the Robust Use of Bayes Factors”. In: &lt;em&gt;Psychological Methods&lt;/em&gt;. in Press. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://arxiv.org/abs/2103.08744&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Lisson, P., D. Pregla, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, D. Paape, M. L. van het Nederend, F. Burchert, N. Stadie, D. Caplan, and S. Vasishth (2021). “A computational evaluation of two models of retrieval processes in sentence processing in aphasia”. In: &lt;em&gt;Cognitive Science&lt;/em&gt; 45.4. DOI: &lt;a href=&#34;https://doi.org/10.1111/cogs.12956&#34;&gt;10.1111/cogs.12956&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/r7dn5&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-1&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;2020&lt;/h2&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and F. Rösler (2020). “Are words pre-activated probabilistically during sentence comprehension? Evidence from new data and a Bayesian random-effects meta-analysis using publicly available data”. In: &lt;em&gt;Neuropsychologia&lt;/em&gt; 142, p. 107427. ISSN: 0028-3932. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.neuropsychologia.2020.107427&#34;&gt;10.1016/j.neuropsychologia.2020.107427&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/2atrh/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-2&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;2019&lt;/h2&gt;
+&lt;p&gt;
+Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, F. Engelmann, and F. Burchert (2019). “Computational models of retrieval processes in sentence processing”. In: &lt;em&gt;Trends in Cognitive Sciences&lt;/em&gt; 23.11, pp. 968 - 982. ISSN: 1364-6613. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.tics.2019.09.003&#34;&gt;10.1016/j.tics.2019.09.003&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/e4jds/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-3&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;2018&lt;/h2&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, F. Engelmann, and K. Suckow (2018). “Exploratory and confirmatory analyses in sentence processing: A case study of number interference in German”. In: &lt;em&gt;Cognitive Science&lt;/em&gt; 42.S4, pp. 1075–1100. DOI: &lt;a href=&#34;https://doi.org/10.1111/cogs.12589&#34;&gt;10.1111/cogs.12589&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/preprints/psyarxiv/u2kqg/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/4dg9b/&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, T. B. Roettger, and S. Vasishth (2018). “Using meta-analysis for evidence synthesis: The case of incomplete neutralization in German”. In: &lt;em&gt;Journal of Phonetics&lt;/em&gt; 70, pp. 39–55. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.wocn.2018.06.001&#34;&gt;10.1016/j.wocn.2018.06.001&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/p5a4z/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/g5ndw/&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, M. E. Beckman, F. Li, and E. Kong (2018). “Bayesian data analysis in the phonetic sciences: A tutorial introduction”. In: &lt;em&gt;Journal of Phonetics&lt;/em&gt; 71, pp. 147–161. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.wocn.2018.07.008&#34;&gt;10.1016/j.wocn.2018.07.008&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/5pj49/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/g4zpv/&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2018). “Models of Retrieval in Sentence Comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: &lt;em&gt;Journal of Memory and Language&lt;/em&gt; 99, pp. 1 –34. ISSN: 0749-596X. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.jml.2017.08.004&#34;&gt;10.1016/j.jml.2017.08.004&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://arxiv.org/abs/1612.04174&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/a5ymk&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-4&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;2017&lt;/h2&gt;
+&lt;p&gt;
+Paape, D., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and S. Vasishth (2017). “Does antecedent complexity affect ellipsis processing? An empirical investigation”. In: &lt;em&gt;Glossa: A journal of general linguistics. &lt;/em&gt; 2.1, p. 71. DOI: &lt;a href=&#34;https://doi.org/10.5334/gjgl.290&#34;&gt;10.5334/gjgl.290&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://www.glossa-journal.org/articles/abstract/10.5334/gjgl.290/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-5&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;2016&lt;/h2&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logačev, C. Gattei, and S. Vasishth (2016). “When high-capacity readers slow down and low-capacity readers speed up: Working memory and locality effects”. In: &lt;em&gt;Frontiers in Psychology &lt;/em&gt; 7.280. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2016.00280&#34;&gt;10.3389/fpsyg.2016.00280 &lt;/a&gt;. eprint: &lt;a href=&#34;https://www.frontiersin.org/articles/10.3389/fpsyg.2016.00280/full&#34; class=&#34;uri&#34;&gt;https://www.frontiersin.org/articles/10.3389/fpsyg.2016.00280/full&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://github.com/bnicenboim/papers/tree/master/NicenboimEtAl2016.%20When%20High-Capacity%20Readers%20Slow%20Down%20and%20Low-Capacity%20Readers%20Speed%20Up:%20Working%20Memory%20and%20Locality%20Effects&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2016). “Statistical methods for linguistic research: Foundational Ideas - Part II”. In: &lt;em&gt;Language and Linguistics Compass&lt;/em&gt; 10.11, pp. 591–613. ISSN: 1749-818X. DOI: &lt;a href=&#34;https://doi.org/10.1111/lnc3.12207&#34;&gt;10.1111/lnc3.12207&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://arxiv.org/abs/1602.00245&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2016). “Statistical Methods for Linguistic Research: Foundational Ideas - Part I”. In: &lt;em&gt;Language and Linguistics Compass&lt;/em&gt; 10.8, pp. 349–369. ISSN: 1749-818X. DOI: &lt;a href=&#34;https://doi.org/10.1111/lnc3.12201&#34;&gt;10.1111/lnc3.12201&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://arxiv.org/abs/1601.01126&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-6&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;2015&lt;/h2&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, C. Gattei, M. Sigman, and R. Kliegl (2015). “Working memory differences in long-distance dependency resolution”. In: &lt;em&gt;Frontiers in Psychology&lt;/em&gt; 6.312. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2015.00312&#34;&gt;10.3389/fpsyg.2015.00312&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2015.00312/abstract&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://github.com/bnicenboim/papers/tree/master/NicenboimEtAl2015.%20Working%20memory%20differences%20in%20long-distance%20dependency%20resolution&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;short-peer-reviewed-papers-in-conferences-bibtex&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Short peer-reviewed papers in conferences [&lt;a href=&#34;papers/proceedings.bib&#34;&gt;bibtex&lt;/a&gt;]&lt;/h1&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2018). “The implementation of a model of choice: The (truncated) linear ballistic accumulator”. In: &lt;em&gt;StanCon&lt;/em&gt;. Aalto University, Helsinki, Finland. DOI: &lt;a href=&#34;https://doi.org/10.5281/zenodo.1465990&#34;&gt;10.5281/zenodo.1465990&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., N. Chopin, R. Ryder, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Modelling dependency completion in sentence comprehension as a Bayesian hierarchical mixture process: A case study involving Chinese relative clauses”. In: &lt;em&gt;Proceedings of Cognitive Science Conference&lt;/em&gt;. London, UK.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., L. Jaeger, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Feature overwriting as a finite mixture process: Evidence from comprehension data”. In: &lt;em&gt;Proceedings of MathPsych/ICCM Conference&lt;/em&gt;. Warwick, UK.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2017). “Models of Retrieval in Sentence Comprehension”. In: &lt;em&gt;StanCon&lt;/em&gt;. (superseeded by 10.1016/j.jml.2017.08.004). Columbia University New York, NY.
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;conferences&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;Conferences&lt;/h1&gt;
+&lt;div id=&#34;section-7&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2021&lt;/h3&gt;
+&lt;p&gt;
+Stone, K., S. Vasishth, F. Rösler, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2021). “Maximising ERP Resources Using a Sequential Bayes Factor Approach to Sample Size”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Université de Paris, France. &lt;strong&gt;[&lt;strong&gt;Short talk&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Patterson, C., P. B. Schumacher, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, J. Hagen, and A. Kehler (2021). “German pronoun use follows Bayesian principles”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference, University of Pennsylvania&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Short talk&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-8&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2020&lt;/h3&gt;
+&lt;p&gt;
+Lisson, P., D. Pregla, D. Paape, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. Stadie, F. Burchert, and S. Vasishth (2020). “Computational models of retrieval processes in sentence comprehension in aphasia”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. University of Potsdam, Germany. &lt;strong&gt;[&lt;strong&gt;talk&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2020). “Incorporating continuity in phonological models of the syllable using NAP”. In: &lt;em&gt;LabPhon17&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-9&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2019&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2019). “Bayesian inference: Obstacles and opportunities”. In: &lt;em&gt;8th Biennial International Conference on the Linguistics of Contemporary English (BICLCE), Bamberg, Germany&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;talk&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Lisson, P., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, S. Vasishth, and D. Paape (2019). “Models of retrieval in sentence comprehension in aphasia”. In: &lt;em&gt;StanCon&lt;/em&gt;. Cambridge, UK. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Lisson, P., M. van het Nederend, D. Pregla, S. Vasishth, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and D. Paape (2019). “Competing models of retrieval in sentence processing: The case of aphasia”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Institute of Cognitive Neuroscience and Centre for Language and Brain, Higher School of Economics, Russia. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-10&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2018&lt;/h3&gt;
+&lt;p&gt;
+Guerra, E., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and A. V. Helo (2018). “A crack in the crystall ball: Evidence against pre-activation of gender features in sentence comprehension”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Titanic Hotel Chaussee Berlin, Germany. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2018). “Bayesian cognitive models of memory retrieval processes: A case study ”. In: &lt;em&gt;51. Kongress der Deutschen Gesellschaft für Psychologie. Bayesian statistics as a coherent approach to psychologists’ statistical and methodological problems&lt;/em&gt;. Goethe-Universität Frankfurt, Germany. &lt;strong&gt;[&lt;strong&gt;Talk&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-11&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2017&lt;/h3&gt;
+&lt;p&gt;
+Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Linking sonority with periodic energy: Preliminary findings from production and perception”. In: &lt;em&gt;3rd International Workshop on Dynamic Modeling, Cologne, Germany&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Talk&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2017). “Models of retrieval in sentence comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: &lt;em&gt;Proceedings of the Annual CUNY Sentence Processing Conference&lt;/em&gt;. Massachusetts Institute of Technology, Boston, MA, USA. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-12&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2016&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, F. Engelmann, K. Suckow, and S. Vasishth (2016). “Number interference as predicted by cue-based retrieval”. In: &lt;em&gt; Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Bilbao, Spain. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-13&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2015&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, F. Engelmann, K. Suckow, and S. Vasishth (2015). “Fail fast or succeed slowly: Good-enough processing can mask interference effects”. In: &lt;em&gt;International Conference on Cognitive Modeling (ICCM)&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logacev, C. Gattei, and S. Vasishth (2015). “When high-capacity readers slow down and low-capacity readers speed up: Working memory differences in unbounded dependencies”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. University of Southern California, Los Angeles, CA. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, K. Suckow, and S. Vasishth (2015). “Good-enough processing can mask interference effects”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. University of Southern California, Los Angeles, CA. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-14&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2014&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logacev, C. Gattei, and S. Vasishth (2014). “When high-capacity readers slow down and low-capacity readers speed up: Working memory differences in unbounded dependencies for German and Spanish readers”. In: &lt;em&gt;Mental Architecture for Processing and Learning of Language (MAPLL)&lt;/em&gt;. Tokyo, Japan. &lt;strong&gt;[&lt;strong&gt;Talk&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and R. Kliegl (2014). “Readers with less cognitive control are more affected by surprising content: Evidence from a self-paced reading experiment in German”. In: &lt;em&gt;Mental Architecture for Processing and Learning of Language (MAPLL)&lt;/em&gt;. Tokyo, Japan. &lt;strong&gt;[&lt;strong&gt;Talk&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and R. Kliegl (2014). “Readers with less cognitive control are more affected by surprising content”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Edinburgh, UK. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, R. Kliegl, C. Gattei, and M. Sigman (2014). “Working-memory capacity modulates antilocality effects in syntactic dependencies”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. The Ohio State University, Columbus, OH. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-15&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2013&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, C. Gattei, P. Logačev, and M. Sigman (2013). “The effect of distance on unbounded dependencies: An individual differences perspective”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Aix-Marseille Université, Marseille, France. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-16&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;2012&lt;/h3&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2012). “Processing of filler-gap dependencies in Complex NP islands: Evidence from Hebrew”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference, New York, NY&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+&lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2012). “Processing Complex NP islands in Hebrew”. In: &lt;em&gt;Proceedings of Generative Linguistics in the Old World Conference (GLOW), Potsdam, Germany&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Talk&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</description>
     </item>
     
   </channel>

@@ -6,7 +6,8 @@
 <p>BibTex citation</p>
 <h5>
 <code><pre>
-  @misc&#123;
+  @misc&#123;{{$.Page.Params.author}}{{$.Page.Params.slug}},
+    author = { {{$.Page.Params.author}} },
     title = {{$title_str := $.Page.Params.title}}{{printf "{%s}" $title_str}},
     howpublished = {{$url_str := $.Page.Permalink}}{{printf "{\\url{%s}}" $url_str}},
     year = {{$year_str :=  $.Page.Params.date.Format "2006"  }}{{printf "{%s}" $year_str}}

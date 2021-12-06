@@ -22,7 +22,6 @@ parameters {
 }
 transformed parameters{
   matrix[N_subj, N_adj] u = (diag_pre_multiply(tau_u, L_u) * z_u)';
-
 }
 model {
   matrix[N_arms, N_subj] Q = rep_matrix(.5,N_arms, N_subj);
@@ -32,9 +31,11 @@ model {
     real alpha_i = inv_logit(logit(alpha) + u[i, 1]);
     for(t in 1:N_trials){
       Q_diff[t, i] = Q[2, i] - Q[1, i];
-      Q[action[t, i], i] += alpha_i * (R[t, action[t, i]] - Q[action[t, i], i]);
+      Q[action[t, i], i] += alpha_i * 
+                        (R[t, action[t, i]] - Q[action[t, i], i]);
     }
-    log_lik[i] = bernoulli_logit_lpmf(response[ ,i] | beta_0 + u[i, 2] + (beta_1 + u[i, 3]) * Q_diff[,i]);
+    log_lik[i] = bernoulli_logit_lpmf(response[ ,i] | 
+              beta_0 + u[i, 2] + (beta_1 + u[i, 3]) * Q_diff[,i]);
   }
   target += beta_lpdf(alpha | 1, 1);
   target += normal_lpdf(beta_0 | 2, 5);
