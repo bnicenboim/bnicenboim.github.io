@@ -43,24 +43,27 @@ I'm an assistant professor at the department of [Cognitive Science and AI of Til
 
 ## Computational (cognitive) modeling 
 
-- During my PhD, I worked on computational cognitive models that link memory processes with sentence comprehension, and on individual differences in sentence processing. The most important output of my PhD was [this paper about models of retrieval](papers/NicenboimVasishth2017Models.pdf); DOI: [10.1016/j.jml.2017.08.004](https://doi.org/10.1016/j.jml.2017.08.004). The paper shows the computational implementation of two different sentence processing theories (a verbal model and an ACT-R model) on the same framework using hierarchical Bayesian modeling. 
+- Projects involving of computational (cognitive) models in a Bayesian framework (using [Stan](https://mc-stan.org/)/brms). Recently, in [a paper led by Clare Patterson about German personal and demonstrative pronouns ](http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract),  I contributed with the Bayesian implementation of the models and model comparison.
 
-- I'm also interested in decision making models. See here my attempt of a fully hierarchicallinear ballistic accumulator in Stan ([Stancon submission](https://htmlpreview.github.io/?https://github.com/stan-dev/stancon_talks/blob/master/2018-helsinki/Contributed-Talks/nicenboim/LBA_stancon2018.html)).
+- Computational cognitive models that link memory processes with sentence comprehension, and individual differences in sentence processing. The most important output of my PhD was [this paper about models of retrieval](papers/NicenboimVasishth2017Models.pdf); DOI: [10.1016/j.jml.2017.08.004](https://doi.org/10.1016/j.jml.2017.08.004). The paper shows the computational implementation of two different sentence processing theories (a verbal model and an ACT-R model) on the same framework using hierarchical Bayesian modeling. 
+
+- Decision making models. See here my attempt of a fully hierarchical linear ballistic accumulator in Stan ([Stancon submission](https://htmlpreview.github.io/?https://github.com/stan-dev/stancon_talks/blob/master/2018-helsinki/Contributed-Talks/nicenboim/LBA_stancon2018.html)).
+
 
 ## EEG
 
-- For my postdoc, I worked on predictions in language using EEG [(eprint)](https://psyarxiv.com/2atrh/); using novel EEG data, together with a meta-analysis of available data, we show that the N400 effect is, at
+- An R package for the manipulation of EEG data: https://bnicenboim.github.io/eeguana/. It is fully functional, but it's only able to do basic preprocessing for EEG data.  Feedback and comments (and [github issues](https://github.com/bnicenboim/eeguana/issues)) are welcome.
+
+- Predictions in language using EEG. In [this paper](https://psyarxiv.com/2atrh/), we use novel EEG data, together with a meta-analysis of available data, and we show that the N400 effect is, at
 least in part, caused by linguistic preactivation that occurs prior to the predicted target word, as opposed to semantic integration that occurs after the target word has been read. While this idea has been present in the literature for more than 10 years, experimental evidence has been so far controversial and included several failed replications. 
 
-- I'm developing a package for the manipulation of EEG data in R: https://bnicenboim.github.io/eeguana/. It is in the early stages of development, but it's able to do basic preprocessing for EEG data.  Feedback and comments (and [github issues](https://github.com/bnicenboim/eeguana/issues)) are welcome.
 
  
 ##  Bayesian statistics 
 
-- I'm working on [this textbook](https://vasishth.github.io/Bayes_CogSci/) (in progress) together with [Shravan Vasishth](http://www.ling.uni-potsdam.de/~vasishth/) and [Daniel Schad](https://danielschad.github.io/). 
+- [Bayesian statistics for cognitive scientists textbook](https://vasishth.github.io/Bayes_CogSci/) (in progress) together with [Shravan Vasishth](http://www.ling.uni-potsdam.de/~vasishth/) and [Daniel Schad](https://danielschad.github.io/).  I have also been collaborating with Shravan Vasishth, Daniel Schad, and others (in different orders) in papers that deal with [sample size determination for Bayesian models](https://link.springer.com/article/10.1007/s42113-021-00125-y), [the robust use of Bayes factor](Robust Use of {Bayes} Factors), and [data aggregation in mixed models]().
 
-
-- I'm mantaining the [Stan for cognitive science website](https://cognitive-science-stan.github.io/) with resources for Bayesian modeling with Stan.
+- [Stan for cognitive science website](https://cognitive-science-stan.github.io/) with resources for Bayesian modeling with Stan.
 
 ----
 

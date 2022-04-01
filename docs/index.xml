@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Bruno Nicenboim</title>
@@ -8,919 +7,20 @@
     <language>en-us</language>
     <lastBuildDate>Mon, 29 Nov 2021 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+        <atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>Not a tutorial of a Bayesian implementation of a reinforcement learning model</title>
-      <link>/2021/11/29/bayesian-h-reinforcement-learning/</link>
+      <title>Posts</title>
+      <link>/post/</link>
       <pubDate>Mon, 29 Nov 2021 00:00:00 +0000</pubDate>
       
-      <guid>/2021/11/29/bayesian-h-reinforcement-learning/</guid><description>
-&lt;script src=&#34;/2021/11/29/bayesian-h-reinforcement-learning/index_files/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
-
-
-&lt;p&gt;&lt;span style=&#34;color: red;&#34;&gt;
-&lt;strong&gt;⚠️ This post is NOT about “Masheen Lurning”: I’m spelling it like this to avoid luring visitors into this post for the wrong reasons. In the context of “Masheen Lurning,” one teaches a “masheen” to make the most rewarding decisions. In contrast, this post is about fitting human (or possibly also animal) data with decisions made along a number of trials assuming that some type of reinforcement learning occurred.⚠️&lt;/strong&gt;
-&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;I’ll focus on a Bayesian implementation of Q-learning using &lt;a href=&#34;https://mc-stan.org/&#34;&gt;Stan&lt;/a&gt;. Q-learning is a specific type of reinforcement learning (RL) model that can explain how humans (and other organisms) learn behavioral policies (to make decisions) from rewards. &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-niv2009reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;Niv&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-niv2009reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;2009&lt;/a&gt;)&lt;/span&gt; presents a very extensive review of RL in the brain. Readers interested in The Book about RL should see &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-sutton2018reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;Sutton and Barto&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-sutton2018reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
-&lt;p&gt;I will &lt;em&gt;mostly&lt;/em&gt; follow the implementation of &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;van Geen and Gerraty&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;, who present a tutorial on a hierarchical Bayesian implementation of Q-learning. However, I think there are places where a different parametrization would be more appropriate. I will also model my own simulated data, especially because I wanted to check if I’m doing things right. Another useful tutorial about Bayesian modeling of RL is &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-ZhangEtAl2020&#34; role=&#34;doc-biblioref&#34;&gt;Zhang et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-ZhangEtAl2020&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;, however, that tutorial uses a Rescorla–Wagner model, rather than Q-learning. Before you continue reading, notice that if you just want to fit data using a RL model and don’t care about the nitty gritty details, you can just use the R package &lt;a href=&#34;https://ccs-lab.github.io/hBayesDM/articles/getting_started.html&#34;&gt;hBayesDM&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;The rest of the post is about simulating one subject doing an experiment and fitting it with Stan, and then simulating several subjects doing the same experiment and fitting that data with Stan.&lt;/p&gt;
-&lt;p&gt;First, I’m going to load some R packages that will be useful throughout this post and set a seed, so that the simulated data will be always the same.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(dplyr) # Data manipulation
-library(tidyr) # To pivot the data
-library(purrr) # List manipulation
-library(ggplot2) # Nice plots
-library(extraDistr) # More distributions
-library(MASS) # Tu use the multinormal distribution
-library(cmdstanr) # Lightweight Stan interface
-library(bayesplot) # Nice Bayesian plots
-set.seed(123)&lt;/code&gt;&lt;/pre&gt;
-&lt;div id=&#34;restless-bandits-or-slot-machines-with-non-fixed-probabilities-of-a-reward&#34; class=&#34;section level1&#34;&gt;
-&lt;h1&gt;Restless bandits or slot machines with non-fixed probabilities of a reward&lt;/h1&gt;
-&lt;p&gt;I simulate data from a two-armed restless bandit, where the arms are independent. This is basically as if there were two slot machines that offer rewards with probabilities that vary with time following a random walk. I always wondered why so many researchers are modeling slot machines, but it turns out they can actually represent realistic options in life. There is a &lt;a href=&#34;https://speekenbrink-lab.github.io/modelling/2019/02/28/fit_kf_rl_1.html&#34;&gt;post from Speekenbrink lab&lt;/a&gt; that gives context to the restless bandits (and they also simulate data from a different RL algorithm).&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning/https://media.giphy.com/media/xT1XGOzcLKDYN2kxLW/giphy.gif&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;I set up here a restless bandit with 2 arms that runs over 1000 trials. The reward, &lt;span class=&#34;math inline&#34;&gt;\(R_{t,a}\)&lt;/span&gt;, for the time step or trial &lt;span class=&#34;math inline&#34;&gt;\(t\)&lt;/span&gt; for the arm &lt;span class=&#34;math inline&#34;&gt;\(a\)&lt;/span&gt; follows a random walk and it’s defined as follows:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;For &lt;span class=&#34;math inline&#34;&gt;\(t =1\)&lt;/span&gt;,
-&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-R_{t,a} \sim \mathit{Normal}(0, \sigma)
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;For &lt;span class=&#34;math inline&#34;&gt;\(t &amp;gt;1\)&lt;/span&gt;,&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-R_{t,a} \sim \mathit{Normal}(R_{t-1,a}, \sigma)
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;with &lt;span class=&#34;math inline&#34;&gt;\(\sigma = .1\)&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;In R, this looks as follows.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# set up
-N_arms &amp;lt;- 2
-N_trials &amp;lt;- 1000
-sigma &amp;lt;- .1
-## Reward matrix:
-# First define a matrix with values sampled from Normal(0, sigma)
-R &amp;lt;- matrix(rnorm(N_trials * N_arms, mean = 0, sd = sigma), 
-            ncol = N_arms)
-# Then I do a cumulative sum over the rows (MARGIN = 2)
-R &amp;lt;- apply(R, MARGIN = 2, FUN = cumsum)
-colnames(R) &amp;lt;- paste0(&amp;quot;arm_&amp;quot;, 1:N_arms)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The first rows of the reward matrix will look like this:&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;head(R)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;      arm_1 arm_2
-[1,] -0.056 -0.10
-[2,] -0.079 -0.20
-[3,]  0.077 -0.21
-[4,]  0.084 -0.22
-[5,]  0.097 -0.47
-[6,]  0.268 -0.37&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;In this simulated experiment, a subject is presented at each trial with two choices, to either select arm one or arm two. Each time they’ll get a reward (or a negative reward, that is, a punisment) determined by a random walk simulated before in the matrix &lt;span class=&#34;math inline&#34;&gt;\(R\)&lt;/span&gt;.&lt;/p&gt;
-&lt;p&gt;Some &lt;code&gt;tidyr&lt;/code&gt; to plot the rewards.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;d_exp &amp;lt;- R %&amp;gt;%
-  as_tibble() %&amp;gt;%
-  pivot_longer(cols = everything(), 
-               names_to = &amp;quot;arm&amp;quot;, 
-               values_to = &amp;quot;reward&amp;quot;) %&amp;gt;%
-  group_by(arm) %&amp;gt;%
-  mutate(trial = 1:n())
-ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
-  geom_line()&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning//2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-4-1.png&#34; width=&#34;672&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;I see that the arm that will give better rewards depends on the trial, and that a subject should keep &lt;em&gt;exploring&lt;/em&gt; at least until trial ~650 to verify that they are not &lt;em&gt;exploiting&lt;/em&gt; the wrong arm. There are many, many variations of the bandits, some of them give a fixed reward with some probability based on the random walk, sometimes there are more arms, and all of them are presented as choices, and in some other tasks only a random subset of the arms are presented to the subject.&lt;/p&gt;
-&lt;div id=&#34;simulating-actions-using-q-learning&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Simulating actions using Q-learning&lt;/h2&gt;
-&lt;p&gt;There are also many, many RL models. Q-learning is a type of RL model where an agent (e.g., a human subject) learns the predictive value (in terms of future expected rewards) of taking a specific action (e.g., choosing arm one or two of the bandit) at a certain state (here, at a given trial), &lt;span class=&#34;math inline&#34;&gt;\(t\)&lt;/span&gt;. This predictive value is denoted as &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt;. In a simplified model of Q-learning, the actions of a subject will depend (to some extent) on &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt;.&lt;/p&gt;
-&lt;p&gt;Let’s focus on the case of two arms:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;For &lt;span class=&#34;math inline&#34;&gt;\(t = 1\)&lt;/span&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;In the first trial, &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; will be initialized with the same value for each action (e.g., &lt;span class=&#34;math inline&#34;&gt;\(0.5\)&lt;/span&gt;), and the subject will take an action with probability &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt; based on their bias to one of the arms. I use &lt;span class=&#34;math inline&#34;&gt;\(\beta_{0}\)&lt;/span&gt; as the bias to arm 2. This parameter can vary freely, &lt;span class=&#34;math inline&#34;&gt;\([-\infty,\infty]\)&lt;/span&gt;, and it’s converted to the &lt;span class=&#34;math inline&#34;&gt;\([0,1]\)&lt;/span&gt; range using &lt;span class=&#34;math inline&#34;&gt;\(logit^{-1}\)&lt;/span&gt;. If there are more arms presented one should use a &lt;span class=&#34;math inline&#34;&gt;\(softmax\)&lt;/span&gt; function instead.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-\begin{aligned}
-Q_{t=1,a = 1} &amp;amp;= .5 \\
-Q_{t=1,a = 2} &amp;amp;= .5 \\
-\theta &amp;amp;= logit^{-1}(\beta_0)
-\end{aligned}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;Whether the subject decides arm 1 or arm 2 depends on &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt;:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-action \sim
-\begin{cases} 
-1 \text{ with probability } 1-\theta_t\\
-2 \text{ with probability } \theta_t
-\end{cases}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;Now I update the &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; value that corresponds to the action taken for the next trial. Here, &lt;span class=&#34;math inline&#34;&gt;\(\alpha\)&lt;/span&gt;, the learning rate, determines the extent to which the prediction error will play a role in updating an action’s value. This prediction error is quantified as the difference between the expected value of an action and the actual reward
-on a given trial, &lt;span class=&#34;math inline&#34;&gt;\((R_t - Q_{t, a})\)&lt;/span&gt;.
-The parameter &lt;span class=&#34;math inline&#34;&gt;\(\alpha\)&lt;/span&gt; is bounded between &lt;span class=&#34;math inline&#34;&gt;\([0,1]\)&lt;/span&gt; to identify the model.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fn1&#34; class=&#34;footnote-ref&#34; id=&#34;fnref1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt; Higher values of &lt;span class=&#34;math inline&#34;&gt;\(\alpha\)&lt;/span&gt; imply greater sensitivity to the most recent choice outcome, that is the most recent reward.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-Q_{t + 1,action} = Q_{t, action} + \alpha \cdot (R_{t,action} - Q_{t, action})
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;For the action non taken, &lt;span class=&#34;math inline&#34;&gt;\(-action\)&lt;/span&gt;, the value of &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; remains the same (in the first trial, that would be 0.5):&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-Q_{t + 1, -action} = Q_{t, -action}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;For &lt;span class=&#34;math inline&#34;&gt;\(t &amp;gt;1\)&lt;/span&gt; things get more interesting: the influence of &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; in the agent behavior is governed by an inverse temperature parameter
-(&lt;span class=&#34;math inline&#34;&gt;\(\beta_1\)&lt;/span&gt;). Smaller values of &lt;span class=&#34;math inline&#34;&gt;\(\beta_1\)&lt;/span&gt; lead to a more exploratory behavior.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;The idea will be that we obtain the probability, &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt;, of a specific action in a given trial based on two factors: that action’s value, &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; in that trial (learned through its reward history), and how influential this value will be in determining the action taken. Again, because there are only two choices we can use &lt;span class=&#34;math inline&#34;&gt;\(logit^-1\)&lt;/span&gt; function, if we had more choices we would use a &lt;span class=&#34;math inline&#34;&gt;\(softmax\)&lt;/span&gt; function.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-\theta_t = logit^{-1}(\beta_0 + \beta_1 \cdot (Q_{t,2} - Q_{t,1}))
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;Again, and for every trial, whether the subject decides arm 1 or arm 2 depends on &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt;:
-&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-action \sim 
-\begin{cases} 
-1 \text{ with probability } 1-\theta_t\\
-2 \text{ with probability } \theta_t
-\end{cases}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;And &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt; gets updated for the next trial:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-\begin{aligned}
-Q_{t + 1,a = action} &amp;amp;= Q_{t, action} + \alpha \cdot (R_{t,action} - Q_{t, action})\\
-Q_{t + 1,a = -action} &amp;amp;= Q_{t, -action}
-\end{aligned}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;The following R code implements these equations:&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# True values
-alpha &amp;lt;- .3 # learning rate
-beta_0 &amp;lt;- 0.5 # bias to arm &amp;quot;b&amp;quot;
-beta_1 &amp;lt;- 3 # inverse temperature
-# Q vector with the first value set at 0.5
-# True Q matrix, it has an extra row,
-# since it keeps updating also for trial N_trial + 1
-Q &amp;lt;- matrix(nrow = N_trials + 1, ncol = N_arms)
-Q[1, ] &amp;lt;- rep(.5, N_arms) # initial values for all Q
-action &amp;lt;- rep(NA, times = N_trials)
-theta &amp;lt;- rep(NA, times = N_trials)
-for (t in 1:N_trials) {
-  # probability of choosing arm_2
-  theta[t] &amp;lt;- plogis(beta_0 + beta_1 * (Q[t, 2] - Q[t, 1]))
-  # What the synthethic subject would respond, 
-  # with 1 indicating arm 1, and 2 indicating arm 2
-  action[t] &amp;lt;- rbern(1, theta[t]) + 1
-  Q[t + 1, action[t]] &amp;lt;- Q[t, action[t]] +
-    alpha * (R[t, action[t]] - Q[t, action[t]])
-  nonactions_t &amp;lt;- (1:N_arms)[-action[t]]
-  Q[t + 1, nonactions_t] &amp;lt;- Q[t, nonactions_t]
-}&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;This is what I’m generating trial by trial:&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;tibble(Q[1:N_trials, ], R, action)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;# A tibble: 1,000 × 3
-   `Q[1:N_trials, ]`[,1]    [,2] R[,&amp;quot;arm_1&amp;quot;] [,&amp;quot;arm_2&amp;quot;] action
-                   &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt;       &amp;lt;dbl&amp;gt;      &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;
- 1                 0.5    0.5        -0.0560    -0.0996      2
- 2                 0.5    0.320      -0.0791    -0.204       1
- 3                 0.326  0.320       0.0768    -0.205       2
- 4                 0.326  0.162       0.0839    -0.219       1
- 5                 0.254  0.162       0.0968    -0.474       2
- 6                 0.254 -0.0283      0.268     -0.369       2
- 7                 0.254 -0.131       0.314     -0.344       1
- 8                 0.272 -0.131       0.188     -0.103       2
- 9                 0.272 -0.122       0.119     -0.0344      1
-10                 0.226 -0.122       0.0746    -0.0791      1
-# … with 990 more rows&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Let’s see what would this subject choose in each trial.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;d_res &amp;lt;- tibble(
-  arm = ifelse(action == 1, &amp;quot;arm_1&amp;quot;, &amp;quot;arm_2&amp;quot;),
-  trial = 1:N_trials
-) %&amp;gt;%
-  left_join(d_exp)
-ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
-  geom_line() +
-  geom_point(
-    data = d_res,
-    aes(x = trial, y = reward),
-    color = &amp;quot;black&amp;quot;,
-    shape = 1
-  )&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning//2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-7-1.png&#34; width=&#34;672&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;It’s interesting that there is a point (around the trial 650), where the second arm is so clearly better than the first arm, that it makes almost no sense to keep exploring.&lt;/p&gt;
-&lt;p&gt;What will be the reward of this subject?&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sum(d_res$reward)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;[1] 1788&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;What will be the maximum possible reward?&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sum(apply(R, MARGIN = 1, FUN = max))&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;[1] 1846&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Now let’s fit the model in Stan. A major difference with the R code is that I don’t keep track of all the Q values. I just keep track of one Q value for each arm, and I update them at the end of every trial. Also I store the difference between them in the vector &lt;code&gt;Q_diff&lt;/code&gt;.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;  vector[N_arms] Q = [.5, .5]&amp;#39;;
-  vector[N_trials] Q_diff;
-  for(t in 1:N_trials){
-    Q_diff[t] = Q[2] - Q[1];
-    Q[action[t]] += alpha * (R[t, action[t]] - Q[action[t]]);
-  }&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The complete code is shown below.&lt;/p&gt;
-&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;data {
-  int&amp;lt;lower=0&amp;gt; N_trials;
-  int action[N_trials];
-  int N_arms;
-  matrix[N_trials,N_arms] R;
-}
-transformed data {
-  int response[N_trials];
-  for(n in 1:N_trials)
-    response[n] = action[n] - 1;
-}
-parameters {
-  real&amp;lt;lower = 0, upper = 1&amp;gt; alpha;
-  real beta_0;
-  real beta_1;
-}
-model {
-  vector[N_arms] Q = [.5, .5]&amp;#39;;
-  vector[N_trials] Q_diff;
-  for(t in 1:N_trials){
-    Q_diff[t] = Q[2] - Q[1];
-    Q[action[t]] += alpha * (R[t, action[t]] - Q[action[t]]);
-  }
-  target += beta_lpdf(alpha | 1, 1);
-  target += normal_lpdf(beta_0 | 2, 5);
-  target += normal_lpdf(beta_1 | 0, 1);
-  target += bernoulli_logit_lpmf(response | beta_0 + beta_1 * Q_diff);
-}
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;I compile the model and fit it.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;m_ql &amp;lt;- cmdstan_model(&amp;quot;qlearning.stan&amp;quot;)
-fit_ql &amp;lt;- m_ql$sample(
-  data = list(
-    action = action,
-    N_trials = N_trials,
-    N_arms = N_arms,
-    R = R
-  ),
-  parallel_chains = 4
-)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The sampling is super fast, just a couple of seconds. In this case, compiling the model was slower than sampling.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fit_ql$summary(c(&amp;quot;alpha&amp;quot;, &amp;quot;beta_0&amp;quot;, &amp;quot;beta_1&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;# A tibble: 3 × 10
-  variable  mean median     sd    mad    q5   q95  rhat ess_bulk ess_tail
-  &amp;lt;chr&amp;gt;    &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
-1 alpha    0.266  0.260 0.0498 0.0477 0.196 0.357  1.00    2714.    1922.
-2 beta_0   0.589  0.588 0.121  0.121  0.393 0.788  1.00    2998.    2964.
-3 beta_1   2.98   2.97  0.249  0.245  2.58  3.41   1.00    2605.    2370.&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The recovery of the parameters seems fine.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;mcmc_recover_hist(fit_ql$draws(c(&amp;quot;alpha&amp;quot;, &amp;quot;beta_0&amp;quot;, &amp;quot;beta_1&amp;quot;)),
-  true = c(alpha, beta_0, beta_1)
-)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning//2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-14-1.png&#34; width=&#34;672&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;Either my Stan model was correct or I made the same mistakes in the R code and in the Stan model.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fn2&#34; class=&#34;footnote-ref&#34; id=&#34;fnref2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&#34;a-hierarchical-q-learning-model&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;A hierarchical Q-learning model&lt;/h2&gt;
-&lt;p&gt;Now let’s try to implement this hierarchically. I have several subjects (&lt;code&gt;N_subj&lt;/code&gt;), they all have their own bias, their own learning rate, and their own inverse temperature, but these values are not that different from subject to subject (there is shrinkage). I also assume that somehow these three parameters are mildly correlated, people with more bias also have a stronger learning rate and inverse temperature.&lt;/p&gt;
-&lt;p&gt;Here, I diverge a bit from the model of &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;van Geen and Gerraty&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;. I just assume that all the individual differences are generated from the same multinormal distribution. This allows me to model the variance (or SD) of the parameters and to assume that they could be correlated (or not).&lt;/p&gt;
-&lt;p&gt;This means that in the hierarchical model, rather than &lt;span class=&#34;math inline&#34;&gt;\(\alpha\)&lt;/span&gt; I use &lt;span class=&#34;math inline&#34;&gt;\(\alpha + u_{i,1}\)&lt;/span&gt;, rather than &lt;span class=&#34;math inline&#34;&gt;\(\beta_0\)&lt;/span&gt;, &lt;span class=&#34;math inline&#34;&gt;\(\beta_0 + u_{i,2}\)&lt;/span&gt;, and rather than &lt;span class=&#34;math inline&#34;&gt;\(\beta_1\)&lt;/span&gt;, &lt;span class=&#34;math inline&#34;&gt;\(beta_1 + u_{i,3}\)&lt;/span&gt;. Where &lt;span class=&#34;math inline&#34;&gt;\(u\)&lt;/span&gt; is a matrix generated as follows.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-    {\begin{pmatrix}
-    u_{i,1} \\
-    u_{i,2} \\
-    u_{i,3}
-    \end{pmatrix}}
-   \sim {\mathcal {N}}
-    \left(
-   {\begin{pmatrix}
-    0\\
-    0\\
-    0
-   \end{pmatrix}}
- ,\boldsymbol{\Sigma_u} \right)
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;with &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt; indexing subjects.&lt;/p&gt;
-&lt;p&gt;I simulate all this below with the following parameters. More details about how this works can be found in &lt;a href=&#34;https://vasishth.github.io/bayescogsci/book/ch-complexstan.html&#34;&gt;chapter 11 of the book about Bayesian modeling&lt;/a&gt; that I’m writting with Daniel Schad and Shravan Vasishth.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;alpha &amp;lt;- .3 # learning rate
-tau_u_alpha &amp;lt;- .1 # by-subj SD in the learning rate
-beta_0 &amp;lt;- 0.5 # bias to arm &amp;quot;b&amp;quot;
-tau_u_beta_0 &amp;lt;- .15  # by-subj SD in the bias
-beta_1 &amp;lt;- 3 # inverse temperature
-tau_u_beta_1 &amp;lt;- .3 # by-subj SD in the inverse temperature
-N_adj &amp;lt;- 3 # number of &amp;quot;random effects&amp;quot; or by-subj adjustments
-N_subj &amp;lt;- 20
-tau_u &amp;lt;- c(tau_u_alpha, tau_u_beta_0, tau_u_beta_1)
-rho_u &amp;lt;- .3 # corr between adjustments
-Cor_u &amp;lt;- matrix(rep(rho_u, N_adj^2), nrow = N_adj)
-diag(Cor_u) &amp;lt;- 1
-Sigma_u &amp;lt;- diag(tau_u, N_adj, N_adj) %*%
-  Cor_u %*%
-  diag(tau_u, N_adj, N_adj)
-u &amp;lt;- mvrnorm(n = N_subj, rep(0, N_adj), Sigma_u)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Now I have that each subject has it’s own &lt;span class=&#34;math inline&#34;&gt;\(Q\)&lt;/span&gt;, call it &lt;code&gt;Q_i&lt;/code&gt;. Rather than using vectors as I did when there was only one subject, in the next piece of code I use lists of everything: each element of a list corresponds to one subject. The logic is analogous to the simulation of one subject, but with an extra loop.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;Q_i &amp;lt;- matrix(.5, nrow = (N_trials + 1), ncol = N_arms)
-Q &amp;lt;- rep(list(Q_i), N_subj)
-theta &amp;lt;- rep(list(rep(NA, N_trials)), N_subj)
-action &amp;lt;- rep(list(rep(NA, N_trials)), N_subj)
-for (i in 1:N_subj) {
-  for (t in 1:N_trials) {
-    theta[[i]][t] &amp;lt;- plogis(beta_0 + u[i, 2] + 
-                     (beta_1 + u[i, 3]) * (Q[[i]][t, 2] - Q[[i]][t, 1]))
-    action[[i]][t] &amp;lt;- rbern(1, theta[[i]][t]) + 1
-    alpha_i &amp;lt;- plogis(qlogis(alpha) + u[i, 1])
-    Q[[i]][t + 1, action[[i]][t]] &amp;lt;- 
-              Q[[i]][t, action[[i]][t]] +
-              alpha_i * (R[t, action[[i]][t]] - Q[[i]][t, action[[i]][t]])
-    nonactions_t &amp;lt;- (1:N_arms)[-action[[i]][t]]
-    Q[[i]][t + 1, nonactions_t] &amp;lt;- Q[[i]][t, nonactions_t]
-  }
-}
-# Convert the actions taken by subjects into a matrix
-action_matrix &amp;lt;- matrix(as.integer(unlist(action)), ncol = N_subj)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;I store everything in a list as Stan likes it:&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;data_h &amp;lt;- list(
-  N_subj = N_subj,
-  action = action_matrix,
-  N_trials = N_trials,
-  N_arms = N_arms,
-  R = R
-)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The Stan code for the hierarchical model is a straightforward extension of the non-hierarchical version with one extra loop. A small difference here is that I calculate the log-likelihood inside the loop for each subject and then I add all those values together outside the loop for extra efficiency. Rather than using a multinormal distribution, I generate the &lt;code&gt;u&lt;/code&gt; values using a Cholesky factorization, details about this can also be found in &lt;a href=&#34;https://vasishth.github.io/bayescogsci/book/ch-complexstan.html&#34;&gt;the same chapter 11&lt;/a&gt;.&lt;/p&gt;
-&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;data {
-  int&amp;lt;lower = 0&amp;gt; N_trials;
-  int&amp;lt;lower = 0&amp;gt; N_subj;
-  int&amp;lt;lower = 0&amp;gt; N_arms;
-  matrix[N_trials, N_arms] R;
-  int action[N_trials, N_subj];
-}
-transformed data{
-  int N_adj = 3;
-  int response[N_trials, N_subj];
-    for(i in 1:N_subj)
-      for(n in 1:N_trials)
-        response[n,i] = action[n,i] - 1;
-}
-parameters {
-  real&amp;lt;lower = 0, upper = 1&amp;gt; alpha;
-  real beta_0;
-  real beta_1;
-  vector&amp;lt;lower = 0&amp;gt;[N_adj] tau_u;
-  matrix[N_adj, N_subj] z_u;
-  cholesky_factor_corr[N_adj] L_u;
-}
-transformed parameters{
-  matrix[N_subj, N_adj] u = (diag_pre_multiply(tau_u, L_u) * z_u)&amp;#39;;
-}
-model {
-  matrix[N_arms, N_subj] Q = rep_matrix(.5,N_arms, N_subj);
-  matrix[N_trials, N_subj] Q_diff;
-  vector[N_subj] log_lik;
-  for(i in 1:N_subj){
-    real alpha_i = inv_logit(logit(alpha) + u[i, 1]);
-    for(t in 1:N_trials){
-      Q_diff[t, i] = Q[2, i] - Q[1, i];
-      Q[action[t, i], i] += alpha_i * 
-                        (R[t, action[t, i]] - Q[action[t, i], i]);
-    }
-    log_lik[i] = bernoulli_logit_lpmf(response[ ,i] | 
-              beta_0 + u[i, 2] + (beta_1 + u[i, 3]) * Q_diff[,i]);
-  }
-  target += beta_lpdf(alpha | 1, 1);
-  target += normal_lpdf(beta_0 | 2, 5);
-  target += normal_lpdf(beta_1 | 0, 1);
-  target += normal_lpdf(tau_u | .1, .5)
-            - N_adj * normal_lccdf(0 | .1, .5);
-  target += lkj_corr_cholesky_lpdf(L_u | 2);
-  target += std_normal_lpdf(to_vector(z_u));
-  target += sum(log_lik);
-}
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;I fit the model below.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;m_ql_h &amp;lt;- cmdstan_model(&amp;quot;qlearning_h.stan&amp;quot;)
-fit_ql_h &amp;lt;- m_ql_h$sample(
-  data = data_h,
-  parallel_chains = 4
-)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;It took 7 minutes in my computer.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fit_ql_h&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt; variable     mean   median   sd  mad       q5      q95 rhat ess_bulk ess_tail
- lp__     -4956.49 -4956.23 7.49 7.51 -4969.52 -4944.79 1.00      883     1950
- alpha        0.29     0.29 0.01 0.01     0.27     0.32 1.00     3257     2670
- beta_0       0.46     0.46 0.05 0.05     0.38     0.54 1.00     2563     2825
- beta_1       2.86     2.86 0.09 0.09     2.71     3.00 1.00     2518     2751
- tau_u[1]     0.11     0.10 0.08 0.08     0.01     0.27 1.00     1326     1474
- tau_u[2]     0.18     0.18 0.05 0.04     0.11     0.26 1.00     2025     2351
- tau_u[3]     0.31     0.31 0.08 0.08     0.19     0.45 1.00     1781     2078
- z_u[1,1]    -0.21    -0.21 0.85 0.82    -1.59     1.25 1.00     3810     2686
- z_u[2,1]    -0.33    -0.32 0.67 0.64    -1.44     0.73 1.00     3351     2839
- z_u[3,1]     0.43     0.42 0.77 0.75    -0.81     1.69 1.00     4149     2744
-
- # showing 10 of 136 rows (change via &amp;#39;max_rows&amp;#39; argument or &amp;#39;cmdstanr_max_rows&amp;#39; option)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Let’s check if I could recover the parameters.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;mcmc_recover_hist(fit_ql_h$draws(
-  c(&amp;quot;alpha&amp;quot;, &amp;quot;beta_0&amp;quot;, &amp;quot;beta_1&amp;quot;, &amp;quot;tau_u&amp;quot;)
-),
-true = c(alpha, beta_0, beta_1, tau_u)
-)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning//2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-22-1.png&#34; width=&#34;672&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;It seems relatively good, but I should probably check it with simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-taltsValidatingBayesianInference2018&#34; role=&#34;doc-biblioref&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&#34;where-do-we-go-from-here&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Where do we go from here?&lt;/h2&gt;
-&lt;p&gt;One could compare the fit and the predictions of this flavor of Q-learning with another flavor, or with another RL model. The idea would be that each model reflects different theoretical assumptions. It’s also possible to use posterior predictive checks to investigate where the a specific RL model fails and how it should be modified. Finally, RL could be part of a larger model, as in the case of &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-pedersen2017drift&#34; role=&#34;doc-biblioref&#34;&gt;Pedersen, Frank, and Biele&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-pedersen2017drift&#34; role=&#34;doc-biblioref&#34;&gt;2017&lt;/a&gt;)&lt;/span&gt;, who combined drift diffusion with RL.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&#34;session-info&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Session info&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fn3&#34; class=&#34;footnote-ref&#34; id=&#34;fnref3&#34;&gt;&lt;sup&gt;3&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sessionInfo()&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;R version 4.1.1 (2021-08-10)
-Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 20.04.3 LTS
-
-Matrix products: default
-BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
-LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
-
-locale:
- [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=nl_NL.UTF-8   
- [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=nl_NL.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
-[11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
-
-attached base packages:
-[1] stats     graphics  grDevices utils     datasets  methods   base     
-
-other attached packages:
-[1] bayesplot_1.8.1     cmdstanr_0.4.0.9000 MASS_7.3-54         extraDistr_1.9.1    ggplot2_3.3.5       purrr_0.3.4         tidyr_1.1.4        
-[8] dplyr_1.0.7        
-
-loaded via a namespace (and not attached):
- [1] Rcpp_1.0.7           lubridate_1.8.0      ps_1.6.0             assertthat_0.2.1     digest_0.6.28        utf8_1.2.2           R6_2.5.1            
- [8] plyr_1.8.6           ggridges_0.5.3       backports_1.2.1      evaluate_0.14        highr_0.9            blogdown_1.5.2       pillar_1.6.4        
-[15] rlang_0.4.12         rstudioapi_0.13      data.table_1.14.2    jquerylib_0.1.4      checkmate_2.0.0      rmarkdown_2.11       labeling_0.4.2      
-[22] stringr_1.4.0        munsell_0.5.0        compiler_4.1.1       xfun_0.26            pkgconfig_2.0.3      papaja_0.1.0.9997    htmltools_0.5.2     
-[29] tidyselect_1.1.1     tibble_3.1.5         tensorA_0.36.2       bookdown_0.22        matrixStats_0.60.1   emo_0.0.0.9000       fansi_0.5.0         
-[36] crayon_1.4.2         withr_2.4.2          grid_4.1.1           distributional_0.2.2 jsonlite_1.7.2       gtable_0.3.0         lifecycle_1.0.1     
-[43] DBI_1.1.1            magrittr_2.0.1       posterior_1.1.0      scales_1.1.1         cli_3.1.0            stringi_1.7.6        reshape2_1.4.4      
-[50] farver_2.1.0         bslib_0.3.0          ellipsis_0.3.2       generics_0.1.1       vctrs_0.3.8          tools_4.1.1          glue_1.5.1          
-[57] processx_3.5.2       abind_1.4-5          fastmap_1.1.0        yaml_2.2.1           colorspace_2.0-2     knitr_1.36           sass_0.4.0          &lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-&lt;div id=&#34;references&#34; class=&#34;section level2 unnumbered&#34;&gt;
-&lt;h2&gt;References&lt;/h2&gt;
-&lt;div id=&#34;refs&#34; class=&#34;references csl-bib-body hanging-indent&#34;&gt;
-&lt;div id=&#34;ref-R-cmdstanr&#34; class=&#34;csl-entry&#34;&gt;
-Gabry, Jonah, and Rok Češnovar. 2021. &lt;em&gt;Cmdstanr: R Interface to ’CmdStan’&lt;/em&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-bayesplot&#34; class=&#34;csl-entry&#34;&gt;
-Gabry, Jonah, Daniel Simpson, Aki Vehtari, Michael Betancourt, and Andrew Gelman. 2019. &lt;span&gt;“Visualization in Bayesian Workflow.”&lt;/span&gt; &lt;em&gt;J. R. Stat. Soc. A&lt;/em&gt; 182: 389–402. &lt;a href=&#34;https://doi.org/10.1111/rssa.12378&#34;&gt;https://doi.org/10.1111/rssa.12378&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-purrr&#34; class=&#34;csl-entry&#34;&gt;
-Henry, Lionel, and Hadley Wickham. 2020. &lt;em&gt;Purrr: Functional Programming Tools&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=purrr&#34;&gt;https://CRAN.R-project.org/package=purrr&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-rcorpora&#34; class=&#34;csl-entry&#34;&gt;
-Kazemi, Darius, Cole Willsea, Serin Delaunay, Karl Swedberg, Matthew Rothenberg, Greg Kennedy, Nathaniel Mitchell, et al. 2018. &lt;em&gt;Rcorpora: A Collection of Small Text Corpora of Interesting Data&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=rcorpora&#34;&gt;https://CRAN.R-project.org/package=rcorpora&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-niv2009reinforcement&#34; class=&#34;csl-entry&#34;&gt;
-Niv, Yael. 2009. &lt;span&gt;“Reinforcement Learning in the Brain.”&lt;/span&gt; &lt;em&gt;Journal of Mathematical Psychology&lt;/em&gt; 53 (3): 139–54.
-&lt;/div&gt;
-&lt;div id=&#34;ref-pedersen2017drift&#34; class=&#34;csl-entry&#34;&gt;
-Pedersen, Mads Lund, Michael J Frank, and Guido Biele. 2017. &lt;span&gt;“The Drift Diffusion Model as the Choice Rule in Reinforcement Learning.”&lt;/span&gt; &lt;em&gt;Psychonomic Bulletin &amp;amp; Review&lt;/em&gt; 24 (4): 1234–51.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-base&#34; class=&#34;csl-entry&#34;&gt;
-R Core Team. 2021. &lt;em&gt;R: A Language and Environment for Statistical Computing&lt;/em&gt;. Vienna, Austria: R Foundation for Statistical Computing. &lt;a href=&#34;https://www.R-project.org/&#34;&gt;https://www.R-project.org/&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-sutton2018reinforcement&#34; class=&#34;csl-entry&#34;&gt;
-Sutton, Richard S, and Andrew G Barto. 2018. &lt;em&gt;Reinforcement Learning: An Introduction&lt;/em&gt;. MIT press.
-&lt;/div&gt;
-&lt;div id=&#34;ref-taltsValidatingBayesianInference2018&#34; class=&#34;csl-entry&#34;&gt;
-Talts, Sean, Michael Betancourt, Daniel Simpson, Aki Vehtari, and Andrew Gelman. 2018. &lt;span&gt;“Validating &lt;span&gt;Bayesian Inference Algorithms&lt;/span&gt; with &lt;span&gt;Simulation&lt;/span&gt;-&lt;span&gt;Based Calibration&lt;/span&gt;,”&lt;/span&gt; April. &lt;a href=&#34;http://arxiv.org/abs/1804.06788&#34;&gt;http://arxiv.org/abs/1804.06788&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-vanGeenGerraty2021&#34; class=&#34;csl-entry&#34;&gt;
-van Geen, Camilla, and Raphael T. Gerraty. 2021. &lt;span&gt;“Hierarchical &lt;span&gt;Bayesian&lt;/span&gt; Models of Reinforcement Learning: &lt;span&gt;Introduction&lt;/span&gt; and Comparison to Alternative Methods.”&lt;/span&gt; &lt;em&gt;Journal of Mathematical Psychology&lt;/em&gt; 105: 102602. https://doi.org/&lt;a href=&#34;https://doi.org/10.1016/j.jmp.2021.102602&#34;&gt;https://doi.org/10.1016/j.jmp.2021.102602&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-ggplot2&#34; class=&#34;csl-entry&#34;&gt;
-Wickham, Hadley. 2016. &lt;em&gt;Ggplot2: Elegant Graphics for Data Analysis&lt;/em&gt;. Springer-Verlag New York. &lt;a href=&#34;https://ggplot2.tidyverse.org&#34;&gt;https://ggplot2.tidyverse.org&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-dplyr&#34; class=&#34;csl-entry&#34;&gt;
-Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. &lt;em&gt;Dplyr: A Grammar of Data Manipulation&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=dplyr&#34;&gt;https://CRAN.R-project.org/package=dplyr&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-extraDistr&#34; class=&#34;csl-entry&#34;&gt;
-Wolodzko, Tymoteusz. 2020. &lt;em&gt;extraDistr: Additional Univariate and Multivariate Distributions&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=extraDistr&#34;&gt;https://CRAN.R-project.org/package=extraDistr&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-ZhangEtAl2020&#34; class=&#34;csl-entry&#34;&gt;
-Zhang, Lei, Lukas Lengersdorff, Nace Mikus, Jan Gläscher, and Claus Lamm. 2020. &lt;span&gt;“&lt;span class=&#34;nocase&#34;&gt;Using reinforcement learning models in social neuroscience: frameworks, pitfalls and suggestions of best practices&lt;/span&gt;.”&lt;/span&gt; &lt;em&gt;Social Cognitive and Affective Neuroscience&lt;/em&gt; 15 (6): 695–707. &lt;a href=&#34;https://doi.org/10.1093/scan/nsaa089&#34;&gt;https://doi.org/10.1093/scan/nsaa089&lt;/a&gt;.
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&#34;footnotes&#34;&gt;
-&lt;hr /&gt;
-&lt;ol&gt;
-&lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;I actually forgot to bound the parameter at one point, and I could verify that the chains of the MCMC sampler got stuck at different modes.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;A &lt;a href=&#34;https://xkcd.com/2303/&#34;&gt;Type-V Error&lt;/a&gt;.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;li id=&#34;fn3&#34;&gt;&lt;p&gt;I used R [Version 4.1.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;R Core Team&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;] and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; [Version 1.8.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;Gabry et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;2019&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;cmdstanr&lt;/em&gt; [Version 0.4.0.9000; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;Gabry and Češnovar&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;dplyr&lt;/em&gt; [Version 1.0.7; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;Wickham et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;extraDistr&lt;/em&gt; [Version 1.9.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;Wolodzko&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;ggplot2&lt;/em&gt; [Version 3.3.5; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;2016&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;purrr&lt;/em&gt; [Version 0.3.4; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;Henry and Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], and &lt;em&gt;rcorpora&lt;/em&gt; [Version 2.0.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;Kazemi et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;] to generate this document.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref3&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;/div&gt;
+      <guid>/post/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;/tags/&#34;&gt;List of tags&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;/categories/&#34;&gt;List of categories&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Follow using &lt;a href=&#34;index.xml&#34;&gt;RSS&lt;/a&gt;&lt;/p&gt;
 </description>
-    </item>
-    
-    <item>
-      <title>A simple way to model rankings with Stan</title>
-      <link>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</link>
-      <pubDate>Sun, 21 Mar 2021 00:00:00 +0000</pubDate>
       
-      <guid>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</guid><description>
-&lt;script src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
-
-
-&lt;div id=&#34;the-initial-problem&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;The initial problem&lt;/h2&gt;
-&lt;p&gt;I wrote what I thought it was the generative process for some modeling work, and it looked too common to not have a name, so I started to ask around in Twitter:&lt;/p&gt;
-&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? &lt;br&gt;Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2&lt;br&gt;2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1&lt;br&gt;3rd, y ~ categorical(p3/(p3+p4),p4/(p3+p4)); y =3&lt;br&gt;4th, it&amp;#39;s y =4&lt;/p&gt;&amp;mdash; Bruno Nicenboim (@bruno_nicenboim) &lt;a href=&#34;https://twitter.com/bruno_nicenboim/status/1369217174699732995?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
-&lt;/p&gt;
-&lt;p&gt;One useful clue was this one:&lt;/p&gt;
-&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;If I understand you correctly, the situation is similar to a (literal) horse-race, as modeled here: &lt;a href=&#34;https://t.co/TGGS1h4xxe&#34;&gt;https://t.co/TGGS1h4xxe&lt;/a&gt;&lt;/p&gt;&amp;mdash; Pavel Logačev (@pavellogacev) &lt;a href=&#34;https://twitter.com/pavellogacev/status/1369226616312901637?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
-&lt;/p&gt;
-&lt;p&gt;It turns out that the distribution that I was describing is in general used for rankings or ordered data and it is called an &lt;a href=&#34;https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit&#34;&gt;&lt;em&gt;exploded logit distribution&lt;/em&gt;&lt;/a&gt;.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fn1&#34; class=&#34;footnote-ref&#34; id=&#34;fnref1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/3osxYCsLd9qgsgqpwI/giphy.gif&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;In this post, I’ll show how this model can be fit in the probabilistic programming language &lt;a href=&#34;https://mc-stan.org/&#34;&gt;Stan&lt;/a&gt;, and how it can be used to describe the underlying order of ranking data.&lt;/p&gt;
-&lt;p&gt;I’m going to load some R packages that will be useful throughout this post.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(dplyr) # Data manipulation
-library(purrr) # List manipulation
-library(ggplot2) # Nice plots
-library(extraDistr) # More distributions
-library(rcorpora) # Get random words
-library(cmdstanr) # Lightweight Stan interface
-library(bayesplot) # Nice Bayesian plots&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-&lt;div id=&#34;ranking-data&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Ranking data&lt;/h2&gt;
-&lt;p&gt;Ranking data appear when we care about the &lt;em&gt;underlying&lt;/em&gt; order that certain elements have. We might want to know which are the best horses after looking at several races &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-gakisetal2018&#34; role=&#34;doc-biblioref&#34;&gt;Gakis et al. 2018&lt;/a&gt;)&lt;/span&gt;, which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.&lt;/p&gt;
-&lt;p&gt;One way to get a ranking of exemplars of a category, for example, is to present them to participants and ask them to order all (or a subset) of them &lt;span class=&#34;citation&#34;&gt;(see &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Barsalou1985&#34; role=&#34;doc-biblioref&#34;&gt;Barsalou 1985&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
-&lt;div id=&#34;a-ranking-simulation-using-pizza-toppings&#34; class=&#34;section level3&#34;&gt;
-&lt;h3&gt;A ranking simulation using pizza toppings&lt;/h3&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/3oEjHZhG9COPG6XjzO/giphy.gif&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;Let’s consider the following 25 pizza toppings:&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;toppings &amp;lt;- corpora(&amp;quot;foods/pizzaToppings&amp;quot;)$pizzaToppings
-N_toppings &amp;lt;- length(toppings)
-toppings&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt; [1] &amp;quot;anchovies&amp;quot;        &amp;quot;artichoke&amp;quot;       
- [3] &amp;quot;bacon&amp;quot;            &amp;quot;breakfast bacon&amp;quot; 
- [5] &amp;quot;Canadian bacon&amp;quot;   &amp;quot;cheese&amp;quot;          
- [7] &amp;quot;chicken&amp;quot;          &amp;quot;chili peppers&amp;quot;   
- [9] &amp;quot;feta&amp;quot;             &amp;quot;garlic&amp;quot;          
-[11] &amp;quot;green peppers&amp;quot;    &amp;quot;grilled onions&amp;quot;  
-[13] &amp;quot;ground beef&amp;quot;      &amp;quot;ham&amp;quot;             
-[15] &amp;quot;hot sauce&amp;quot;        &amp;quot;meatballs&amp;quot;       
-[17] &amp;quot;mushrooms&amp;quot;        &amp;quot;olives&amp;quot;          
-[19] &amp;quot;onions&amp;quot;           &amp;quot;pepperoni&amp;quot;       
-[21] &amp;quot;pineapple&amp;quot;        &amp;quot;sausage&amp;quot;         
-[23] &amp;quot;spinach&amp;quot;          &amp;quot;sun-dried tomato&amp;quot;
-[25] &amp;quot;tomatoes&amp;quot;        &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Let’s say that we want to know the underlying order of pizza toppings. For the modeling, I’m going to assume that the toppings are ordered according to an underlying value, which also represents how likely it is for each topping to be &lt;em&gt;the&lt;/em&gt; exemplar of their category.&lt;/p&gt;
-&lt;p&gt;To get a known ground truth for the ranking, I’m going to simulate an order of pizza toppings. I assign probabilities that sum up to one to the toppings by drawing a random sample from a &lt;a href=&#34;https://en.wikipedia.org/wiki/Dirichlet_distribution&#34;&gt;Dirichlet distribution&lt;/a&gt;. The Dirichlet distribution is the generalization of the Beta distribution. It has a concentration parameter, usually &lt;span class=&#34;math inline&#34;&gt;\(\boldsymbol{\alpha}\)&lt;/span&gt;, which is a vector as long as the probabilities we are sampling (25 here). When the vector is full of ones, the distribution is uniform: All probabilities are equally likely, so on average each one is &lt;span class=&#34;math inline&#34;&gt;\(\frac{1}{vector \text{  } length}\)&lt;/span&gt; (&lt;span class=&#34;math inline&#34;&gt;\(\frac{1}{25}\)&lt;/span&gt; here). By setting all the concentration parameters below one (namely &lt;span class=&#34;math inline&#34;&gt;\(.2\)&lt;/span&gt;), I’m enforcing sparsity in the random values that I’m generating, that is, many probability values close to zero.&lt;/p&gt;
-&lt;p&gt;These is the true order that I’m assuming here:&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# all elements of the vector are .5
-alpha &amp;lt;- rep(.2, N_toppings)
-# Generate one draw from a Dirichlet distribution
-P_toppings &amp;lt;- c(rdirichlet(1, alpha)) %&amp;gt;%
-  # Add names
-  setNames(toppings) %&amp;gt;%
-  # Sort from the best exemplar
-  sort(decreasing = TRUE)
-P_toppings %&amp;gt;%
-  round(3)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt; breakfast bacon          chicken             feta 
-           0.294            0.241            0.087 
-       anchovies sun-dried tomato           olives 
-           0.087            0.077            0.057 
-       pepperoni        artichoke           cheese 
-           0.056            0.049            0.010 
-  Canadian bacon            bacon              ham 
-           0.008            0.008            0.006 
-       meatballs    chili peppers           garlic 
-           0.004            0.004            0.004 
-     ground beef         tomatoes        hot sauce 
-           0.003            0.003            0.002 
-          onions          sausage        pineapple 
-           0.000            0.000            0.000 
-         spinach        mushrooms   grilled onions 
-           0.000            0.000            0.000 
-   green peppers 
-           0.000 &lt;/code&gt;&lt;/pre&gt;
-&lt;ul&gt;
-&lt;li&gt;Given these values, if I were to ask a participant “What’s the most appropriate topping for a pizza?” I would assume that 29.37 percent of the time, I would get &lt;em&gt;breakfast bacon&lt;/em&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Essentially, we expect something like this to be happening.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probicat&#34;&gt;\[\begin{equation} 
-response \sim Categorical(\Theta_{toppings})
-\tag{1}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;With &lt;span class=&#34;math inline&#34;&gt;\(\Theta_{toppings}\)&lt;/span&gt; representing the different probabilities for each topping. The probability mass function of the categorical distribution is absurdly simple: It’s just the probability of the outcome.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi&#34;&gt;\[\begin{equation} 
-p(x = i) = \Theta_i
-\tag{2}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(i = \{\)&lt;/span&gt;breakfast bacon, chicken, feta, anchovies, sun-dried tomato, olives, pepperoni, artichoke, cheese, Canadian bacon, bacon, ham, meatballs, chili peppers, garlic, ground beef, tomatoes, hot sauce, onions, sausage, pineapple, spinach, mushrooms, grilled onions, green peppers&lt;span class=&#34;math inline&#34;&gt;\(\}\)&lt;/span&gt;.&lt;/p&gt;
-&lt;p&gt;We can simulate this with 100 participants as follows:&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;response &amp;lt;- rcat(100, P_toppings, names(P_toppings))&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;And this should match approximately &lt;code&gt;P_toppings&lt;/code&gt;.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;table(response)/100&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;response
- breakfast bacon          chicken             feta 
-            0.26             0.19             0.16 
-       anchovies sun-dried tomato           olives 
-            0.07             0.15             0.06 
-       pepperoni        artichoke           cheese 
-            0.01             0.08             0.00 
-  Canadian bacon            bacon              ham 
-            0.02             0.00             0.00 
-       meatballs    chili peppers           garlic 
-            0.00             0.00             0.00 
-     ground beef         tomatoes        hot sauce 
-            0.00             0.00             0.00 
-          onions          sausage        pineapple 
-            0.00             0.00             0.00 
-         spinach        mushrooms   grilled onions 
-            0.00             0.00             0.00 
-   green peppers 
-            0.00 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;em&gt;It seems that by only asking participants to give the best topping we could already deduce the underlying order…&lt;/em&gt;&lt;/p&gt;
-&lt;p&gt;True, but one motivation for considering ranking data is the amount of information that we gather with a list due to their combinatorial nature. If we ask participants to rank &lt;span class=&#34;math inline&#34;&gt;\(n\)&lt;/span&gt; items, an answer consists in making a single selection out of &lt;span class=&#34;math inline&#34;&gt;\(n!\)&lt;/span&gt; possibilities. Ordering 7 pizza toppings, for example, constitutes making a single selection out of 5040 possibilities!&lt;/p&gt;
-&lt;p&gt;If we don’t relay on lists and there is sparcity, it requires a large number of participants until we get answers of low probability. (For example, we’ll need a very large number of participants until we hear something else but &lt;em&gt;hammer&lt;/em&gt; as an exemplar of tools).&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Now, what happens if we ask about the second most appropriate topping for a pizza?&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Now we need to exclude the first topping that was given, and draw another sample from a categorical distribution. (We don’t allow the participant to repeat toppings, that is, to say that the best topping is pineapple and the second best is also pineapple). This means that now the probability of the topping already given is zero, and that we need to normalize our original probability values by dividing them by the new total probability (which will be lower than 1).&lt;/p&gt;
-&lt;p&gt;Here, the probability of getting the element &lt;span class=&#34;math inline&#34;&gt;\(j\)&lt;/span&gt; (where &lt;span class=&#34;math inline&#34;&gt;\(j \neq i\)&lt;/span&gt;) is&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probj&#34;&gt;\[\begin{equation}
-p(x = j) = \frac{\Theta_j}{\sum \Theta_{[-i]}}
-\tag{3}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(\Theta_{[-i]}\)&lt;/span&gt; represents the probabilities of all the outcomes except of &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;, which was the first one.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;We can go on with the third best topping, where we need to normalize the remaining probabilities by dividing by the new sum of probabilities.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probk&#34;&gt;\[\begin{equation}
-p(x = k) = \frac{\Theta_k}{\sum \Theta_{[-i,-j]}}
-\tag{4}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;We can do this until we get to the last element, which will be drawn with probability 1.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;strong&gt;And this is the exploded logit distribution.&lt;/strong&gt;&lt;/p&gt;
-&lt;p&gt;This process can be simulated in R as follows:&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;rexploded &amp;lt;-  function(n, ranked = 3, prob, labels = NULL){
-  #run n times
-  lapply(1:n, function(nn){
-    res &amp;lt;- rep(NA,ranked)
-    if(!is.null(labels)){
-      res &amp;lt;- factor(res, labels)
-    } else {
-      # if there are no labels, just 1,2,3,...
-      labels &amp;lt;- seq_along(prob)
-    }
-  for(i in 1:ranked){
-    # normalize the probability so that it sums to 1
-    prob &amp;lt;- prob/sum(prob)
-    res[i] &amp;lt;- rcat(1, prob = prob, labels = labels)
-    # remove the choice from the set:
-    prob[res[i]] &amp;lt;- 0
-  }
-    res
-  })
-}&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;If we would like to simulate 50 subjects creating a ranking of the best 7 toppings, we would do the following:&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;res &amp;lt;- rexploded(n = 50,
-                 ranked = 7,
-                 prob = P_toppings,
-                 labels = names(P_toppings))
-# subject 1:
-res[[1]]&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;[1] sun-dried tomato artichoke        olives          
-[4] breakfast bacon  chicken          pepperoni       
-[7] anchovies       
-25 Levels: breakfast bacon chicken feta ... green peppers&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan//2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/subjects.gif&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;We have simulated ranking data of pizza toppings, can we recover the original probability values and “discover” the underlying order?&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div id=&#34;fitting-the-exploded-logistic-distribution-in-stan&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Fitting the exploded logistic distribution in Stan&lt;/h2&gt;
-&lt;p&gt;To fit the model in Stan, I’m going to create a custom probability mass function that takes an array of integers, &lt;code&gt;x&lt;/code&gt;, which represents a set of rankings, and a vector of probability values, &lt;code&gt;theta&lt;/code&gt;, that sums up to one.&lt;/p&gt;
-&lt;p&gt;The logic of this function is that the probability mass function of a ranking &lt;span class=&#34;math inline&#34;&gt;\(\{i,j,k, \ldots, N \}\)&lt;/span&gt; can be written as a product of normalized categorical distributions (where the first one is just divided by 1).&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probijk&#34;&gt;\[\begin{equation}
-p(x = \{i,j,k,\ldots\}) = \frac{\Theta_i}{\sum \Theta} \cdot \frac{\Theta_j}{\sum \Theta_{[-i]}} \cdot \frac{\Theta_k}{\sum \Theta_{[-i, -j]}} \ldots
-\tag{5}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;For Stan, we need the log-PDF. In log-space, products become sums, and divisions differences, and the log of &lt;span class=&#34;math inline&#34;&gt;\(\sum \Theta\)&lt;/span&gt; will be zero:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probijk&#34;&gt;\[\begin{equation}
-\begin{aligned}
-log(p(x = \{i,j,k,\ldots\})) =&amp;amp; \log(\Theta_i) - log(\sum \Theta) \\
-&amp;amp; + \log(\Theta_j) -  \log(\sum \Theta_{[-i]}) \\
-&amp;amp;+ \log(\Theta_k) -\log(\sum \Theta_{[-i, -j]}) \\
-&amp;amp; + \ldots
-\end{aligned}
-\tag{5}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;The following Stan custom function follows this logic but iterating over the rankings. In each iteration, it aggregates in the variable &lt;code&gt;out&lt;/code&gt; the addends of the log probability mass function, and turns the probability of selecting again the already ranked element to zero.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt; real exploded_lpmf(int[] x, vector Theta){
-    real out = 0;
-    vector[num_elements(Theta)] thetar = Theta;
-    for(pos in x){
-      out += log(thetar[pos]) - log(sum(thetar));
-      thetar[pos] = 0;
-      }
-     return(out);
- }&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The whole model named &lt;code&gt;exploded.stan&lt;/code&gt; includes the usual data declaration, the parameter &lt;code&gt;Theta&lt;/code&gt; declared as a simplex (i.e., it sums to one), and a uniform Dirichlet prior for &lt;code&gt;Theta&lt;/code&gt;. (I’m assuming that I don’t know how sparse the probabilities are).&lt;/p&gt;
-&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;functions {
- real exploded_lpmf(int[] x, vector Theta){
-    real out = 0;
-    vector[num_elements(Theta)] thetar = Theta;
-    for(pos in x){
-      out += log(thetar[pos]) - log(sum(thetar));
-      thetar[pos] = 0;
-      }
-     return(out);
- }
-}
-data{
-  int N_ranking; //total times the choices were ranked
-  int N_ranked; //total choices ranked
-  int N_options; //total options
-  int res[N_ranking, N_ranked];
-}
-parameters {
-  simplex[N_options] Theta;
-}
-model {
-  target += dirichlet_lpdf(Theta| rep_vector(1, N_options));
-  for(r in 1:N_ranking){
-    target += exploded_lpmf(res[r]|Theta);
-  }
-}&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Let’s see if I can recover the parameter values.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# Makethe list of lists into a matrix
-res_matrix &amp;lt;- t(sapply(res, as.numeric))
-ldata &amp;lt;- list(res = res_matrix, 
-              N_ranked = length(res[[1]]), 
-              N_options = length(P_toppings), 
-              N_ranking = length(res)) 
-
-m_expl &amp;lt;- cmdstan_model(&amp;quot;./exploded.stan&amp;quot;)
-
-f_exploded &amp;lt;- m_expl$sample(
-  data = ldata,
-  seed = 123,
-  parallel_chains = 4
-)
-
-f_exploded&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt; variable    mean  median   sd  mad      q5     q95 rhat ess_bulk ess_tail
- lp__     -724.91 -724.59 3.59 3.49 -731.39 -719.59 1.00     1262     2290
- Theta[1]    0.29    0.29 0.04 0.04    0.23    0.35 1.00     5575     2538
- Theta[2]    0.27    0.27 0.04 0.04    0.21    0.33 1.00     5320     3114
- Theta[3]    0.08    0.08 0.01 0.01    0.06    0.10 1.00     6830     3167
- Theta[4]    0.09    0.08 0.01 0.01    0.06    0.11 1.00     5790     2746
- Theta[5]    0.07    0.07 0.01 0.01    0.05    0.09 1.00     6440     3142
- Theta[6]    0.05    0.04 0.01 0.01    0.03    0.06 1.00     6608     3177
- Theta[7]    0.04    0.04 0.01 0.01    0.03    0.06 1.00     6373     2697
- Theta[8]    0.05    0.05 0.01 0.01    0.03    0.06 1.00     5620     2863
- Theta[9]    0.01    0.01 0.00 0.00    0.00    0.01 1.00     7235     2664
-
- # showing 10 of 26 rows (change via &amp;#39;max_rows&amp;#39; argument or &amp;#39;cmdstanr_max_rows&amp;#39; option)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;I plot the posterior distributions of the probability values and the true probability values below.&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;mcmc_recover_hist(f_exploded$draws(&amp;quot;Theta&amp;quot;),
-                  P_toppings,
-                  facet_args =
-                    list(scales = &amp;quot;fixed&amp;quot;, ncol = 3)) +
-  theme(legend.position=&amp;quot;bottom&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan//2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/unnamed-chunk-10-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;It looks reasonable. However, if we really want to be sure that this is working, we should probably use simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-taltsValidatingBayesianInference2018&#34; role=&#34;doc-biblioref&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&#34;what-is-this-good-for&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;What is this good for?&lt;/h2&gt;
-&lt;p&gt;This super simple example shows how to get an underlying ranking based on a set of responses from a number of subjects. It’s straightforward to adapt this model to data from participants ranking elements from different sets of the &lt;em&gt;same size&lt;/em&gt; (e.g., 7 out of 25 toppings, 7 out of 25 tools). It’s a little less straightforward if the sets are of different sizes, e.g., rank 7 toppings out 25, but 7 tools out 50. This is just because Stan doesn’t allow ragged arrays. See &lt;a href=&#34;https://discourse.mc-stan.org/t/ragged-array-of-simplexes/1382/31&#34;&gt;here&lt;/a&gt; some tips for implementing the latter model.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&#34;could-this-be-used-as-a-cognitive-model-of-peoples-rankings&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Could this be used as a cognitive model of people’s rankings?&lt;/h2&gt;
-&lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/dXcwxFuXCd8sI3VcFb/giphy.gif&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;Maybe. And I enter here in the realm of half baked research, ideal for a blog post.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;Lee, Steyvers, and Miller&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;2014&lt;/a&gt;)&lt;/span&gt; show the implementation of a cognitive model for rank order data from the latent knowledge of participants, which is
-based on Thurstonian models &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1927law&#34; role=&#34;doc-biblioref&#34;&gt;Thurstone 1927&lt;/a&gt;, &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1931rank&#34; role=&#34;doc-biblioref&#34;&gt;1931&lt;/a&gt;)&lt;/span&gt; fitted with Bayesian methods in JAGS &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Johnson2013&#34; role=&#34;doc-biblioref&#34;&gt;Johnson and Kuhn 2013&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
-&lt;p&gt;The exploded logit model seems to be closely related to the Thurstonian model. The Thurstonian model assumes that each participant assigns an underlying score to each item of a set, which is drawn from a true score with normally distributed error. The score determines the order that the participant gives. We can think about the exploded logit similarly. While I modeled the underlying ranking based on probability values, one could assume that each participant &lt;span class=&#34;math inline&#34;&gt;\(s\)&lt;/span&gt; had their own score &lt;span class=&#34;math inline&#34;&gt;\(mu_{is}\)&lt;/span&gt; for each item (or pizza topping) &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;, which is built as a common score &lt;span class=&#34;math inline&#34;&gt;\(mu_i\)&lt;/span&gt; together with some individual deviation &lt;span class=&#34;math inline&#34;&gt;\(\epsilon_{is}\)&lt;/span&gt;:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:muis&#34;&gt;\[\begin{equation} 
-\mu_{is}  = \mu_i + \epsilon_{is}
-\tag{6}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;If we assume that &lt;span class=&#34;math inline&#34;&gt;\(\epsilon_{is}\)&lt;/span&gt; has a &lt;a href=&#34;https://en.wikipedia.org/wiki/Gumbel_distribution&#34;&gt;Gumbel&lt;/a&gt; distribution, then the probability of &lt;span class=&#34;math inline&#34;&gt;\(\mu_{is}\)&lt;/span&gt; being ranked first out of N options is determined by a softmax function:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi2&#34;&gt;\[\begin{equation} 
-P(i) = \frac{\exp(\mu_i)}{\sum \exp(\mu)}
-\tag{7}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(\mu\)&lt;/span&gt; is the vector of scores for all elements of the set.&lt;/p&gt;
-&lt;p&gt;And the probability of ordering &lt;span class=&#34;math inline&#34;&gt;\(j\)&lt;/span&gt; second is:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probj2&#34;&gt;\[\begin{equation} 
-P(i,j,\ldots) = \frac{\exp(\mu_j)}{\sum \exp(\mu_{[-i]} )}
-\tag{8}
-\end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;and so forth.&lt;/p&gt;
-&lt;p&gt;These last equations are essentially the same categorical distributions that I used before in &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#eq:probi&#34;&gt;(2)&lt;/a&gt; and &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#eq:probj&#34;&gt;(3)&lt;/a&gt;, but the softmax function converts the unbounded scores into probabilities first. However, with the exploded logit, the error term goes away leading to a more tractable model. This is not the case for the Thurstonian model. The Thurstonian model is more complex, but at the same time we gain more flexibility. With the error term, the Thurstonian model can incorporate the reliability of the participants’ judgments and even correlations, which, as far as I know, can’t be included in the exploded logit model.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&#34;session-info&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Session info&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fn2&#34; class=&#34;footnote-ref&#34; id=&#34;fnref2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sessionInfo()&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;R version 4.1.1 (2021-08-10)
-Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 20.04.3 LTS
-
-Matrix products: default
-BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
-LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
-
-locale:
- [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=nl_NL.UTF-8   
- [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=nl_NL.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
-[11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
-
-attached base packages:
-[1] stats     graphics  grDevices utils     datasets  methods   base     
-
-other attached packages:
-[1] bayesplot_1.8.1     cmdstanr_0.4.0.9000 rcorpora_2.0.0      extraDistr_1.9.1    ggplot2_3.3.5       purrr_0.3.4         dplyr_1.0.7        
-
-loaded via a namespace (and not attached):
- [1] tidyselect_1.1.1     xfun_0.26            bslib_0.3.0          reshape2_1.4.4       colorspace_2.0-2     vctrs_0.3.8          generics_0.1.1      
- [8] htmltools_0.5.2      yaml_2.2.1           utf8_1.2.2           rlang_0.4.12         jquerylib_0.1.4      pillar_1.6.4         glue_1.5.1          
-[15] withr_2.4.2          DBI_1.1.1            distributional_0.2.2 matrixStats_0.60.1   lifecycle_1.0.1      plyr_1.8.6           stringr_1.4.0       
-[22] posterior_1.1.0      munsell_0.5.0        blogdown_1.5.2       gtable_0.3.0         evaluate_0.14        labeling_0.4.2       papaja_0.1.0.9997   
-[29] knitr_1.36           fastmap_1.1.0        ps_1.6.0             fansi_0.5.0          highr_0.9            Rcpp_1.0.7           scales_1.1.1        
-[36] backports_1.2.1      checkmate_2.0.0      jsonlite_1.7.2       abind_1.4-5          farver_2.1.0         tensorA_0.36.2       digest_0.6.28       
-[43] stringi_1.7.6        processx_3.5.2       bookdown_0.22        grid_4.1.1           tools_4.1.1          magrittr_2.0.1       sass_0.4.0          
-[50] tibble_3.1.5         crayon_1.4.2         pkgconfig_2.0.3      ellipsis_0.3.2       data.table_1.14.2    ggridges_0.5.3       assertthat_0.2.1    
-[57] rmarkdown_2.11       R6_2.5.1             compiler_4.1.1      &lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-&lt;div id=&#34;references&#34; class=&#34;section level2 unnumbered&#34;&gt;
-&lt;h2&gt;References&lt;/h2&gt;
-&lt;div id=&#34;refs&#34; class=&#34;references csl-bib-body hanging-indent&#34;&gt;
-&lt;div id=&#34;ref-Barsalou1985&#34; class=&#34;csl-entry&#34;&gt;
-Barsalou, Lawrence W. 1985. &lt;span&gt;“Ideals, Central Tendency, and Frequency of Instantiation as Determinants of Graded Structure in Categories.”&lt;/span&gt; &lt;em&gt;Journal of Experimental Psychology: Learning, Memory, and Cognition&lt;/em&gt; 11 (4): 629.
-&lt;/div&gt;
-&lt;div id=&#34;ref-BEGGS19811&#34; class=&#34;csl-entry&#34;&gt;
-Beggs, S, S Cardell, and J Hausman. 1981. &lt;span&gt;“Assessing the Potential Demand for Electric Cars.”&lt;/span&gt; &lt;em&gt;Journal of Econometrics&lt;/em&gt; 17 (1): 1–19. https://doi.org/&lt;a href=&#34;https://doi.org/10.1016/0304-4076(81)90056-7&#34;&gt;https://doi.org/10.1016/0304-4076(81)90056-7&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-shiny&#34; class=&#34;csl-entry&#34;&gt;
-Chang, Winston, Joe Cheng, JJ Allaire, Carson Sievert, Barret Schloerke, Yihui Xie, Jeff Allen, Jonathan McPherson, Alan Dipert, and Barbara Borges. 2021. &lt;em&gt;Shiny: Web Application Framework for r&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=shiny&#34;&gt;https://CRAN.R-project.org/package=shiny&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-cmdstanr&#34; class=&#34;csl-entry&#34;&gt;
-Gabry, Jonah, and Rok Češnovar. 2020. &lt;em&gt;Cmdstanr: R Interface to ’CmdStan’&lt;/em&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-bayesplot&#34; class=&#34;csl-entry&#34;&gt;
-Gabry, Jonah, Daniel Simpson, Aki Vehtari, Michael Betancourt, and Andrew Gelman. 2019. &lt;span&gt;“Visualization in Bayesian Workflow.”&lt;/span&gt; &lt;em&gt;J. R. Stat. Soc. A&lt;/em&gt; 182: 389–402. &lt;a href=&#34;https://doi.org/10.1111/rssa.12378&#34;&gt;https://doi.org/10.1111/rssa.12378&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-gakisetal2018&#34; class=&#34;csl-entry&#34;&gt;
-Gakis, Konstantinos, Panos Pardalos, Chang-Hwan Choi, Jae-Hyeon Park, and Jiwun Yoon. 2018. &lt;span&gt;“Simulation of a Probabilistic Model for Multi-Contestant Races.”&lt;/span&gt; &lt;em&gt;Athens Journal of Sports&lt;/em&gt; 5 (2): 95–114.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-purrr&#34; class=&#34;csl-entry&#34;&gt;
-Henry, Lionel, and Hadley Wickham. 2020. &lt;em&gt;Purrr: Functional Programming Tools&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=purrr&#34;&gt;https://CRAN.R-project.org/package=purrr&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-Johnson2013&#34; class=&#34;csl-entry&#34;&gt;
-Johnson, Timothy R., and Kristine M. Kuhn. 2013. &lt;span&gt;“Bayesian &lt;span&gt;Thurstonian&lt;/span&gt; Models for Ranking Data Using &lt;span&gt;JAGS&lt;/span&gt;.”&lt;/span&gt; &lt;em&gt;Behavior Research Methods&lt;/em&gt; 45 (3): 857–72. &lt;a href=&#34;https://doi.org/10.3758/s13428-012-0300-3&#34;&gt;https://doi.org/10.3758/s13428-012-0300-3&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-rcorpora&#34; class=&#34;csl-entry&#34;&gt;
-Kazemi, Darius, Cole Willsea, Serin Delaunay, Karl Swedberg, Matthew Rothenberg, Greg Kennedy, Nathaniel Mitchell, et al. 2018. &lt;em&gt;Rcorpora: A Collection of Small Text Corpora of Interesting Data&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=rcorpora&#34;&gt;https://CRAN.R-project.org/package=rcorpora&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-Lee2014&#34; class=&#34;csl-entry&#34;&gt;
-Lee, Michael D., Mark Steyvers, and Brent Miller. 2014. &lt;span&gt;“A Cognitive Model for Aggregating People’s Rankings.”&lt;/span&gt; &lt;em&gt;PLOS ONE&lt;/em&gt; 9 (5): e96431. &lt;a href=&#34;https://doi.org/10.1371/journal.pone.0096431&#34;&gt;https://doi.org/10.1371/journal.pone.0096431&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-Luce1959&#34; class=&#34;csl-entry&#34;&gt;
-Luce, R. Duncan. 1959. &lt;em&gt;Individual Choice Behavior : A Theoretical Analysis&lt;/em&gt;. Book. Wiley N.Y.
-&lt;/div&gt;
-&lt;div id=&#34;ref-Plackett&#34; class=&#34;csl-entry&#34;&gt;
-Plackett, R. L. 1975. &lt;span&gt;“The Analysis of Permutations.”&lt;/span&gt; &lt;em&gt;Journal of the Royal Statistical Society. Series C (Applied Statistics)&lt;/em&gt; 24 (2): 193–202. &lt;a href=&#34;http://www.jstor.org/stable/2346567&#34;&gt;http://www.jstor.org/stable/2346567&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-base&#34; class=&#34;csl-entry&#34;&gt;
-R Core Team. 2020. &lt;em&gt;R: A Language and Environment for Statistical Computing&lt;/em&gt;. Vienna, Austria: R Foundation for Statistical Computing. &lt;a href=&#34;https://www.R-project.org/&#34;&gt;https://www.R-project.org/&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-taltsValidatingBayesianInference2018&#34; class=&#34;csl-entry&#34;&gt;
-Talts, Sean, Michael Betancourt, Daniel Simpson, Aki Vehtari, and Andrew Gelman. 2018. &lt;span&gt;“Validating &lt;span&gt;Bayesian Inference Algorithms&lt;/span&gt; with &lt;span&gt;Simulation&lt;/span&gt;-&lt;span&gt;Based Calibration&lt;/span&gt;,”&lt;/span&gt; April. &lt;a href=&#34;http://arxiv.org/abs/1804.06788&#34;&gt;http://arxiv.org/abs/1804.06788&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-thurstone1927law&#34; class=&#34;csl-entry&#34;&gt;
-Thurstone, Louis L. 1927. &lt;span&gt;“A Law of Comparative Judgement.”&lt;/span&gt; &lt;em&gt;Psychological Reviews&lt;/em&gt; 34: 273–86.
-&lt;/div&gt;
-&lt;div id=&#34;ref-thurstone1931rank&#34; class=&#34;csl-entry&#34;&gt;
-———. 1931. &lt;span&gt;“Rank Order as a Psycho-Physical Method.”&lt;/span&gt; &lt;em&gt;Journal of Experimental Psychology&lt;/em&gt; 14 (3): 187.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-ggplot2&#34; class=&#34;csl-entry&#34;&gt;
-Wickham, Hadley. 2016. &lt;em&gt;Ggplot2: Elegant Graphics for Data Analysis&lt;/em&gt;. Springer-Verlag New York. &lt;a href=&#34;https://ggplot2.tidyverse.org&#34;&gt;https://ggplot2.tidyverse.org&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-dplyr&#34; class=&#34;csl-entry&#34;&gt;
-Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. &lt;em&gt;Dplyr: A Grammar of Data Manipulation&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=dplyr&#34;&gt;https://CRAN.R-project.org/package=dplyr&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-extraDistr&#34; class=&#34;csl-entry&#34;&gt;
-Wolodzko, Tymoteusz. 2020. &lt;em&gt;extraDistr: Additional Univariate and Multivariate Distributions&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=extraDistr&#34;&gt;https://CRAN.R-project.org/package=extraDistr&lt;/a&gt;.
-&lt;/div&gt;
-&lt;div id=&#34;ref-R-mediumr&#34; class=&#34;csl-entry&#34;&gt;
-Yutani, Hiroaki. 2021. &lt;em&gt;Mediumr: R Interface to ’Medium’ API&lt;/em&gt;.
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&#34;footnotes&#34;&gt;
-&lt;hr /&gt;
-&lt;ol&gt;
-&lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;This model is also called the &lt;em&gt;rank ordered logit model&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-BEGGS19811&#34; role=&#34;doc-biblioref&#34;&gt;Beggs, Cardell, and Hausman 1981&lt;/a&gt;)&lt;/span&gt; or Plackett–Luce model due to &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;Plackett&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;1975&lt;/a&gt;)&lt;/span&gt; and &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;Luce&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;1959&lt;/a&gt;)&lt;/span&gt;, but I liked the explosion part more.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;I used R [Version 4.1.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;R Core Team&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;] and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; [Version 1.8.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;Gabry et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;2019&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;cmdstanr&lt;/em&gt; [Version 0.4.0.9000; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;Gabry and Češnovar&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;dplyr&lt;/em&gt; [Version 1.0.7; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;Wickham et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;extraDistr&lt;/em&gt; [Version 1.9.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;Wolodzko&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;ggplot2&lt;/em&gt; [Version 3.3.5; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;2016&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;mediumr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-mediumr&#34; role=&#34;doc-biblioref&#34;&gt;Yutani 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;purrr&lt;/em&gt; [Version 0.3.4; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;Henry and Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;rcorpora&lt;/em&gt; [Version 2.0.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;Kazemi et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;], and &lt;em&gt;shiny&lt;/em&gt; [Version 1.6.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;Chang et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;] to generate this document.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;/div&gt;
-</description>
     </item>
     
     <item>
@@ -928,7 +28,8 @@ Yutani, Hiroaki. 2021. &lt;em&gt;Mediumr: R Interface to ’Medium’ API&lt;/em
       <link>/cv_to_pdf/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/cv_to_pdf/</guid><description>
+      <guid>/cv_to_pdf/</guid>
+      <description>
 
 
 &lt;div id=&#34;contact-information&#34; class=&#34;section level1&#34;&gt;
@@ -1632,6 +733,7 @@ German &amp; Intermediate (B2)\\
 \end{document} --&gt;
 &lt;/div&gt;
 </description>
+      
     </item>
     
     <item>
@@ -1639,54 +741,55 @@ German &amp; Intermediate (B2)\\
       <link>/cv/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/cv/</guid><description>
+      <guid>/cv/</guid>
+      <description>
 &lt;script src=&#34;/rmarkdown-libs/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
 
 &lt;div id=&#34;TOC&#34;&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#contact-information&#34;&gt;Contact Information&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#education&#34;&gt;Education&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#academic-related-work&#34;&gt;Academic-related work&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#articles&#34;&gt;Articles&lt;/a&gt;
+&lt;li&gt;&lt;a href=&#34;#contact-information&#34;&gt;Contact Information&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#education&#34;&gt;Education&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#academic-related-work&#34;&gt;Academic-related work&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#articles&#34;&gt;Articles&lt;/a&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#published-or-accepted-in-peer-reviewed-journals&#34;&gt;Published or accepted in peer-reviewed journals&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#unpublished-manuscripts&#34;&gt;Unpublished manuscripts&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#short-peer-reviewed-papers-in-conferences&#34;&gt;Short peer-reviewed papers in conferences&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#published-or-accepted-in-peer-reviewed-journals&#34;&gt;Published or accepted in peer-reviewed journals&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#unpublished-manuscripts&#34;&gt;Unpublished manuscripts&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#short-peer-reviewed-papers-in-conferences&#34;&gt;Short peer-reviewed papers in conferences&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#book-in-preparation&#34;&gt;Book in preparation&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#conferences&#34;&gt;Conferences&lt;/a&gt;
+&lt;li&gt;&lt;a href=&#34;#book-in-preparation&#34;&gt;Book in preparation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#conferences&#34;&gt;Conferences&lt;/a&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section&#34;&gt;2021&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-1&#34;&gt;2020&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-2&#34;&gt;2019&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-3&#34;&gt;2018&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-4&#34;&gt;2017&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-5&#34;&gt;2016&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-6&#34;&gt;2015&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-7&#34;&gt;2014&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-8&#34;&gt;2013&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-9&#34;&gt;2012&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section&#34;&gt;2021&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-1&#34;&gt;2020&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-2&#34;&gt;2019&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-3&#34;&gt;2018&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-4&#34;&gt;2017&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-5&#34;&gt;2016&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-6&#34;&gt;2015&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-7&#34;&gt;2014&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-8&#34;&gt;2013&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-9&#34;&gt;2012&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#invited-talks&#34;&gt;Invited talks&lt;/a&gt;
+&lt;li&gt;&lt;a href=&#34;#invited-talks&#34;&gt;Invited talks&lt;/a&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-10&#34;&gt;2019&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-11&#34;&gt;2018&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-12&#34;&gt;2017&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-13&#34;&gt;2015&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-14&#34;&gt;2013&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#section-15&#34;&gt;2012&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-10&#34;&gt;2019&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-11&#34;&gt;2018&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-12&#34;&gt;2017&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-13&#34;&gt;2015&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-14&#34;&gt;2013&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#section-15&#34;&gt;2012&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#honors-and-grants&#34;&gt;Honors and grants&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#teaching-experience&#34;&gt;Teaching experience&lt;/a&gt;
+&lt;li&gt;&lt;a href=&#34;#honors-and-grants&#34;&gt;Honors and grants&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#teaching-experience&#34;&gt;Teaching experience&lt;/a&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#workshops-and-summer-schools&#34;&gt;Workshops and summer schools&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#courses&#34;&gt;Courses&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#workshops-and-summer-schools&#34;&gt;Workshops and summer schools&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#courses&#34;&gt;Courses&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#open-software&#34;&gt;Open software&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#academic-related-training&#34;&gt;Academic-related training&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#reviewing&#34;&gt;Reviewing&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#languages&#34;&gt;Languages&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/cv/#non-academic-professional-experience&#34;&gt;Non-academic professional experience&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#open-software&#34;&gt;Open software&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#academic-related-training&#34;&gt;Academic-related training&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#reviewing&#34;&gt;Reviewing&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#languages&#34;&gt;Languages&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#non-academic-professional-experience&#34;&gt;Non-academic professional experience&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/div&gt;
 
@@ -1842,7 +945,13 @@ German &amp; Intermediate (B2)\\
 &lt;div id=&#34;published-or-accepted-in-peer-reviewed-journals&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;Published or accepted in peer-reviewed journals&lt;/h2&gt;
 &lt;p&gt;
-Schad, D. J., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, P. Bürkner, M. Betancourt, and S. Vasishth (2021). “Workflow Techniques for the Robust Use of Bayes Factors”. In: &lt;em&gt;Psychological Methods&lt;/em&gt;. in Press.
+Patterson, C., P. B. Schumacher, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, J. Hagen, and A. Kehler (2022). “A Bayesian approach to German personal and demonstrative pronouns”. In: &lt;em&gt;Frontiers in Psychology, Language Sciences&lt;/em&gt; 12. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2021.672927&#34;&gt;10.3389/fpsyg.2021.672927&lt;/a&gt;. eprint: &lt;a href=&#34;https://www.frontiersin.org/articles/10.3389/fpsyg.2021.672927/abstract&#34; class=&#34;uri&#34;&gt;https://www.frontiersin.org/articles/10.3389/fpsyg.2021.672927/abstract&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., H. Yadav, D. Schad, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2022). “Sample size determination for Bayesian hierarchical models commonly used in psycholinguistics”. In: &lt;em&gt;Computational Brain and Behavior&lt;/em&gt;. DOI: &lt;a href=&#34;https://doi.org/10.1007/s42113-021-00125-y&#34;&gt;10.1007/s42113-021-00125-y&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+Schad, D. J., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, P. Bürkner, M. Betancourt, and S. Vasishth (2022). “Workflow Techniques for the Robust Use of Bayes Factors”. In: &lt;em&gt;Psychological methods&lt;/em&gt;. ISSN: 1082-989X. DOI: &lt;a href=&#34;https://doi.org/10.1037/met0000472&#34;&gt;10.1037/met0000472&lt;/a&gt;.
 &lt;/p&gt;
 &lt;p&gt;
 Lisson, P., D. Pregla, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, D. Paape, M. L. van het Nederend, F. Burchert, N. Stadie, D. Caplan, and S. Vasishth (2021). “A computational evaluation of two models of retrieval processes in sentence processing in aphasia”. In: &lt;em&gt;Cognitive Science&lt;/em&gt; 45.4. DOI: &lt;a href=&#34;https://doi.org/10.1111/cogs.12956&#34;&gt;10.1111/cogs.12956&lt;/a&gt;.
@@ -1886,7 +995,7 @@ Vasishth, S. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2016). “Statistica
 &lt;div id=&#34;unpublished-manuscripts&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;Unpublished manuscripts&lt;/h2&gt;
 &lt;p&gt;
-Vasishth, S., H. Yadav, D. Schad, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2021). “Sample size determination for Bayesian hierarchical models commonly used in psycholinguistics”. DOI: &lt;a href=&#34;https://doi.org/10.31234/osf.io/u8yvc&#34;&gt;10.31234/osf.io/u8yvc&lt;/a&gt;.
+Schad, D. J., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and S. Vasishth (2022). “Data aggregation can lead to biased inferences in Bayesian linear mixed models”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.48550/ARXIV.2203.02361&#34;&gt;10.48550/ARXIV.2203.02361&lt;/a&gt;.
 &lt;/p&gt;
 &lt;p&gt;
 Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. Chopin, and R. Ryder “Bayesian hierarchical finite mixture models of reading times: A case study”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.17605/OSF.IO/FWX3S&#34;&gt;10.17605/OSF.IO/FWX3S&lt;/a&gt;.
@@ -2492,6 +1601,7 @@ German &amp; Intermediate (B2)\\
 \end{document} --&gt;
 &lt;/div&gt;
 </description>
+      
     </item>
     
     <item>
@@ -2499,7 +1609,8 @@ German &amp; Intermediate (B2)\\
       <link>/publications/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/publications/</guid><description>
+      <guid>/publications/</guid>
+      <description>
 &lt;script src=&#34;/rmarkdown-libs/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
 
 
@@ -2517,7 +1628,7 @@ German &amp; Intermediate (B2)\\
 &lt;h1&gt;Unpublished manuscripts&lt;/h1&gt;
 &lt;p&gt;[&lt;a href=&#34;papers/unpublished.bib&#34;&gt;bibtex&lt;/a&gt;]&lt;/p&gt;
 &lt;p&gt;
-Vasishth, S., H. Yadav, D. Schad, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2021). “Sample size determination for Bayesian hierarchical models commonly used in psycholinguistics”. DOI: &lt;a href=&#34;https://doi.org/10.31234/osf.io/u8yvc&#34;&gt;10.31234/osf.io/u8yvc&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/u8yvc/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+Schad, D. J., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and S. Vasishth (2022). “Data aggregation can lead to biased inferences in Bayesian linear mixed models”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.48550/ARXIV.2203.02361&#34;&gt;10.48550/ARXIV.2203.02361&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://arxiv.org/abs/2203.02361&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;p&gt;
 Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. Chopin, and R. Ryder “Bayesian hierarchical finite mixture models of reading times: A case study”. unpublished. DOI: &lt;a href=&#34;https://doi.org/10.17605/OSF.IO/FWX3S&#34;&gt;10.17605/OSF.IO/FWX3S&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/v5nps/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
@@ -2532,27 +1643,36 @@ Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; “The double life of l
 &lt;h1&gt;Published (or accepted) in peer-reviewed journals&lt;/h1&gt;
 &lt;p&gt;[&lt;a href=&#34;papers/published.bib&#34;&gt;bibtex&lt;/a&gt;]&lt;/p&gt;
 &lt;div id=&#34;section&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;2021&lt;/h2&gt;
+&lt;h2&gt;2022&lt;/h2&gt;
 &lt;p&gt;
-Schad, D. J., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, P. Bürkner, M. Betancourt, and S. Vasishth (2021). “Workflow Techniques for the Robust Use of Bayes Factors”. In: &lt;em&gt;Psychological Methods&lt;/em&gt;. in Press. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://arxiv.org/abs/2103.08744&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+Patterson, C., P. B. Schumacher, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, J. Hagen, and A. Kehler (2022). “A Bayesian approach to German personal and demonstrative pronouns”. In: &lt;em&gt;Frontiers in Psychology, Language Sciences&lt;/em&gt; 12. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2021.672927&#34;&gt;10.3389/fpsyg.2021.672927&lt;/a&gt;. eprint: &lt;a href=&#34;https://www.frontiersin.org/articles/10.3389/fpsyg.2021.672927/abstract&#34; class=&#34;uri&#34;&gt;https://www.frontiersin.org/articles/10.3389/fpsyg.2021.672927/abstract&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
+&lt;p&gt;
+Vasishth, S., H. Yadav, D. Schad, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2022). “Sample size determination for Bayesian hierarchical models commonly used in psycholinguistics”. In: &lt;em&gt;Computational Brain and Behavior&lt;/em&gt;. DOI: &lt;a href=&#34;https://doi.org/10.1007/s42113-021-00125-y&#34;&gt;10.1007/s42113-021-00125-y&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://link.springer.com/article/10.1007/s42113-021-00125-y&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/hjgrm/&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Schad, D. J., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, P. Bürkner, M. Betancourt, and S. Vasishth (2022). “Workflow Techniques for the Robust Use of Bayes Factors”. In: &lt;em&gt;Psychological methods&lt;/em&gt;. ISSN: 1082-989X. DOI: &lt;a href=&#34;https://doi.org/10.1037/met0000472&#34;&gt;10.1037/met0000472&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://arxiv.org/abs/2103.08744&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/y354c/&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;section-1&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;2021&lt;/h2&gt;
 &lt;p&gt;
 Lisson, P., D. Pregla, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, D. Paape, M. L. van het Nederend, F. Burchert, N. Stadie, D. Caplan, and S. Vasishth (2021). “A computational evaluation of two models of retrieval processes in sentence processing in aphasia”. In: &lt;em&gt;Cognitive Science&lt;/em&gt; 45.4. DOI: &lt;a href=&#34;https://doi.org/10.1111/cogs.12956&#34;&gt;10.1111/cogs.12956&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/r7dn5&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-1&#34; class=&#34;section level2&#34;&gt;
+&lt;div id=&#34;section-2&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;2020&lt;/h2&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, and F. Rösler (2020). “Are words pre-activated probabilistically during sentence comprehension? Evidence from new data and a Bayesian random-effects meta-analysis using publicly available data”. In: &lt;em&gt;Neuropsychologia&lt;/em&gt; 142, p. 107427. ISSN: 0028-3932. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.neuropsychologia.2020.107427&#34;&gt;10.1016/j.neuropsychologia.2020.107427&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/2atrh/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-2&#34; class=&#34;section level2&#34;&gt;
+&lt;div id=&#34;section-3&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;2019&lt;/h2&gt;
 &lt;p&gt;
 Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, F. Engelmann, and F. Burchert (2019). “Computational models of retrieval processes in sentence processing”. In: &lt;em&gt;Trends in Cognitive Sciences&lt;/em&gt; 23.11, pp. 968 - 982. ISSN: 1364-6613. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.tics.2019.09.003&#34;&gt;10.1016/j.tics.2019.09.003&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://psyarxiv.com/e4jds/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-3&#34; class=&#34;section level2&#34;&gt;
+&lt;div id=&#34;section-4&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;2018&lt;/h2&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, F. Engelmann, and K. Suckow (2018). “Exploratory and confirmatory analyses in sentence processing: A case study of number interference in German”. In: &lt;em&gt;Cognitive Science&lt;/em&gt; 42.S4, pp. 1075–1100. DOI: &lt;a href=&#34;https://doi.org/10.1111/cogs.12589&#34;&gt;10.1111/cogs.12589&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/preprints/psyarxiv/u2kqg/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/4dg9b/&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
@@ -2567,13 +1687,13 @@ Vasishth, S., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, M. E. Beckman, F. Li, a
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2018). “Models of Retrieval in Sentence Comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: &lt;em&gt;Journal of Memory and Language&lt;/em&gt; 99, pp. 1 –34. ISSN: 0749-596X. DOI: &lt;a href=&#34;https://doi.org/10.1016/j.jml.2017.08.004&#34;&gt;10.1016/j.jml.2017.08.004&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://arxiv.org/abs/1612.04174&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://osf.io/a5ymk&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-4&#34; class=&#34;section level2&#34;&gt;
+&lt;div id=&#34;section-5&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;2017&lt;/h2&gt;
 &lt;p&gt;
 Paape, D., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and S. Vasishth (2017). “Does antecedent complexity affect ellipsis processing? An empirical investigation”. In: &lt;em&gt;Glossa: A journal of general linguistics. &lt;/em&gt; 2.1, p. 71. DOI: &lt;a href=&#34;https://doi.org/10.5334/gjgl.290&#34;&gt;10.5334/gjgl.290&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://www.glossa-journal.org/articles/abstract/10.5334/gjgl.290/&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-5&#34; class=&#34;section level2&#34;&gt;
+&lt;div id=&#34;section-6&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;2016&lt;/h2&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logačev, C. Gattei, and S. Vasishth (2016). “When high-capacity readers slow down and low-capacity readers speed up: Working memory and locality effects”. In: &lt;em&gt;Frontiers in Psychology &lt;/em&gt; 7.280. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2016.00280&#34;&gt;10.3389/fpsyg.2016.00280 &lt;/a&gt;. eprint: &lt;a href=&#34;https://www.frontiersin.org/articles/10.3389/fpsyg.2016.00280/full&#34; class=&#34;uri&#34;&gt;https://www.frontiersin.org/articles/10.3389/fpsyg.2016.00280/full&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://github.com/bnicenboim/papers/tree/master/NicenboimEtAl2016.%20When%20High-Capacity%20Readers%20Slow%20Down%20and%20Low-Capacity%20Readers%20Speed%20Up:%20Working%20Memory%20and%20Locality%20Effects&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
@@ -2585,7 +1705,7 @@ Paape, D., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and S. Vasishth (2017). �
 Vasishth, S. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2016). “Statistical Methods for Linguistic Research: Foundational Ideas - Part I”. In: &lt;em&gt;Language and Linguistics Compass&lt;/em&gt; 10.8, pp. 349–369. ISSN: 1749-818X. DOI: &lt;a href=&#34;https://doi.org/10.1111/lnc3.12201&#34;&gt;10.1111/lnc3.12201&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://arxiv.org/abs/1601.01126&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-6&#34; class=&#34;section level2&#34;&gt;
+&lt;div id=&#34;section-7&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;2015&lt;/h2&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, C. Gattei, M. Sigman, and R. Kliegl (2015). “Working memory differences in long-distance dependency resolution”. In: &lt;em&gt;Frontiers in Psychology&lt;/em&gt; 6.312. ISSN: 1664-1078. DOI: &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2015.00312&#34;&gt;10.3389/fpsyg.2015.00312&lt;/a&gt;. &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2015.00312/abstract&#34;&gt;&lt;/strong&gt;read&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt; &lt;strong&gt;[&lt;strong&gt;&lt;a href=&#34;https://github.com/bnicenboim/papers/tree/master/NicenboimEtAl2015.%20Working%20memory%20differences%20in%20long-distance%20dependency%20resolution&#34;&gt;&lt;/strong&gt;code/data&lt;strong&gt;&lt;/a&gt;&lt;/strong&gt;]&lt;/strong&gt;
@@ -2645,7 +1765,7 @@ Vasishth, S., L. Jaeger, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). �
 &lt;/div&gt;
 &lt;div id=&#34;conferences&#34; class=&#34;section level1&#34;&gt;
 &lt;h1&gt;Conferences&lt;/h1&gt;
-&lt;div id=&#34;section-7&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-8&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2021&lt;/h3&gt;
 &lt;p&gt;
 Stone, K., S. Vasishth, F. Rösler, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2021). “Maximising ERP Resources Using a Sequential Bayes Factor Approach to Sample Size”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Université de Paris, France. &lt;strong&gt;[&lt;strong&gt;Short talk&lt;/strong&gt;]&lt;/strong&gt;
@@ -2654,7 +1774,7 @@ Stone, K., S. Vasishth, F. Rösler, and &lt;strong&gt;B. Nicenboim&lt;/strong&gt
 Patterson, C., P. B. Schumacher, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, J. Hagen, and A. Kehler (2021). “German pronoun use follows Bayesian principles”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference, University of Pennsylvania&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Short talk&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-8&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-9&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2020&lt;/h3&gt;
 &lt;p&gt;
 Lisson, P., D. Pregla, D. Paape, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. Stadie, F. Burchert, and S. Vasishth (2020). “Computational models of retrieval processes in sentence comprehension in aphasia”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. University of Potsdam, Germany. &lt;strong&gt;[&lt;strong&gt;talk&lt;/strong&gt;]&lt;/strong&gt;
@@ -2663,7 +1783,7 @@ Lisson, P., D. Pregla, D. Paape, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, N. S
 Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2020). “Incorporating continuity in phonological models of the syllable using NAP”. In: &lt;em&gt;LabPhon17&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-9&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-10&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2019&lt;/h3&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2019). “Bayesian inference: Obstacles and opportunities”. In: &lt;em&gt;8th Biennial International Conference on the Linguistics of Contemporary English (BICLCE), Bamberg, Germany&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;talk&lt;/strong&gt;]&lt;/strong&gt;
@@ -2675,7 +1795,7 @@ Lisson, P., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, S. Vasishth, and D. Paape
 Lisson, P., M. van het Nederend, D. Pregla, S. Vasishth, &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and D. Paape (2019). “Competing models of retrieval in sentence processing: The case of aphasia”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Institute of Cognitive Neuroscience and Centre for Language and Brain, Higher School of Economics, Russia. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-10&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-11&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2018&lt;/h3&gt;
 &lt;p&gt;
 Guerra, E., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and A. V. Helo (2018). “A crack in the crystall ball: Evidence against pre-activation of gender features in sentence comprehension”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Titanic Hotel Chaussee Berlin, Germany. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
@@ -2684,7 +1804,7 @@ Guerra, E., &lt;strong&gt;B. Nicenboim&lt;/strong&gt;, and A. V. Helo (2018). �
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2018). “Bayesian cognitive models of memory retrieval processes: A case study ”. In: &lt;em&gt;51. Kongress der Deutschen Gesellschaft für Psychologie. Bayesian statistics as a coherent approach to psychologists’ statistical and methodological problems&lt;/em&gt;. Goethe-Universität Frankfurt, Germany. &lt;strong&gt;[&lt;strong&gt;Talk&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-11&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-12&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2017&lt;/h3&gt;
 &lt;p&gt;
 Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Linking sonority with periodic energy: Preliminary findings from production and perception”. In: &lt;em&gt;3rd International Workshop on Dynamic Modeling, Cologne, Germany&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Talk&lt;/strong&gt;]&lt;/strong&gt;
@@ -2693,13 +1813,13 @@ Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Linking sono
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt; and S. Vasishth (2017). “Models of retrieval in sentence comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: &lt;em&gt;Proceedings of the Annual CUNY Sentence Processing Conference&lt;/em&gt;. Massachusetts Institute of Technology, Boston, MA, USA. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-12&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-13&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2016&lt;/h3&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, F. Engelmann, K. Suckow, and S. Vasishth (2016). “Number interference as predicted by cue-based retrieval”. In: &lt;em&gt; Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Bilbao, Spain. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-13&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-14&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2015&lt;/h3&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, F. Engelmann, K. Suckow, and S. Vasishth (2015). “Fail fast or succeed slowly: Good-enough processing can mask interference effects”. In: &lt;em&gt;International Conference on Cognitive Modeling (ICCM)&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
@@ -2711,7 +1831,7 @@ Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Linking sono
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, K. Suckow, and S. Vasishth (2015). “Good-enough processing can mask interference effects”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. University of Southern California, Los Angeles, CA. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-14&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-15&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2014&lt;/h3&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, P. Logacev, C. Gattei, and S. Vasishth (2014). “When high-capacity readers slow down and low-capacity readers speed up: Working memory differences in unbounded dependencies for German and Spanish readers”. In: &lt;em&gt;Mental Architecture for Processing and Learning of Language (MAPLL)&lt;/em&gt;. Tokyo, Japan. &lt;strong&gt;[&lt;strong&gt;Talk&lt;/strong&gt;]&lt;/strong&gt;
@@ -2726,13 +1846,13 @@ Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Linking sono
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, R. Kliegl, C. Gattei, and M. Sigman (2014). “Working-memory capacity modulates antilocality effects in syntactic dependencies”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference&lt;/em&gt;. The Ohio State University, Columbus, OH. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-15&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-16&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2013&lt;/h3&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt;, S. Vasishth, C. Gattei, P. Logačev, and M. Sigman (2013). “The effect of distance on unbounded dependencies: An individual differences perspective”. In: &lt;em&gt;Architectures and Mechanisms for Language Processing (AMLaP)&lt;/em&gt;. Aix-Marseille Université, Marseille, France. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
 &lt;/p&gt;
 &lt;/div&gt;
-&lt;div id=&#34;section-16&#34; class=&#34;section level3&#34;&gt;
+&lt;div id=&#34;section-17&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;2012&lt;/h3&gt;
 &lt;p&gt;
 &lt;strong&gt;Nicenboim, B.&lt;/strong&gt; (2012). “Processing of filler-gap dependencies in Complex NP islands: Evidence from Hebrew”. In: &lt;em&gt;Proceedings of Annual CUNY Sentence Processing Conference, New York, NY&lt;/em&gt;. &lt;strong&gt;[&lt;strong&gt;Poster&lt;/strong&gt;]&lt;/strong&gt;
@@ -2743,6 +1863,7 @@ Albert, A. and &lt;strong&gt;B. Nicenboim&lt;/strong&gt; (2017). “Linking sono
 &lt;/div&gt;
 &lt;/div&gt;
 </description>
+      
     </item>
     
   </channel>
