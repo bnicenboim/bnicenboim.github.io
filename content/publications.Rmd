@@ -28,9 +28,13 @@ first_year <-  2000
 source("common.R")
 
 unpublished <- bib[list(bibtype="unpublished")]
+underreview <- unpublished[list(notes="under review")]
+unpublished <- unpublished[list(notes="unpublished")]
 
 dir.create("papers", showWarnings = FALSE)
 
+capture.output(print(underreview, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/underreview")
+ 
 capture.output(print(unpublished, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/unpublished.bib")
  
 articlesall <- bib[list(bibtype="article")]
@@ -54,11 +58,11 @@ output(booksall,withbrackets=TRUE)
 <br/>
 <br/>
 
-# Unpublished manuscripts
-[[bibtex](papers/unpublished.bib)]
+# Under review
+[[bibtex](papers/underreview)]
 
 ```{r,echo=F,results="asis",cache=F}
-output(unpublished) 
+output(underreview) 
 ```
 <br/>
 <br/>
@@ -95,6 +99,16 @@ for(y in seq(last_year,first_year,-1)){
 
 }
 ```
+
+# Unpublished manuscripts
+[[bibtex](papers/unpublished.bib)]
+
+```{r,echo=F,results="asis",cache=F}
+output(unpublished) 
+```
+<br/>
+<br/>
+
 
 # Conferences
 

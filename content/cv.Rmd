@@ -254,7 +254,7 @@ for(y in seq(this_year,first_year,-1)){
 ## Workshops and summer schools
 
 ------------------------  -----------------------------------------------------------------------
-2017-2021                 "Bayesian methods",
+2017-2022                 "Bayesian methods",
 
                           Yearly Summer School on Statistical Methods for Linguistics and Psychology,
 
@@ -301,7 +301,7 @@ for(y in seq(this_year,first_year,-1)){
 ## Courses
 
 ------------------------  -----------------------------------------------------------------------
-2021                      **Lecturer** in "Bayesian Models of Cognitive Processes", Master in Cogntive Science & AI. Tilburg University
+2021-2022                      **Lecturer** in "Bayesian Models of Cognitive Processes", Master in Cogntive Science & AI. Tilburg University
 
 2020-2021                 **Lecturer** in "Research skill: Programing with R", Data Science & Society. Tilburg University
 

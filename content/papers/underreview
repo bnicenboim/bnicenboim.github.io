@@ -1,0 +1,8 @@
+@unpublished{Schadaggregation,
+  doi = {10.48550/ARXIV.2203.02361},
+  url = {https://arxiv.org/abs/2203.02361},
+  author = {Daniel J. Schad and Bruno Nicenboim and Shravan Vasishth},
+  title = {Data aggregation can lead to biased inferences in Bayesian linear mixed models},
+  publisher = {arXiv},
+  year = {2022},
+}
