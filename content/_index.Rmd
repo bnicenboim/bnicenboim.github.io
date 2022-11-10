@@ -29,10 +29,12 @@ Address:           Department of Cognitive Science and Artificial Intelligence
 
 I'm an assistant professor at the department of [Cognitive Science and AI of Tilburg University](https://research.tilburguniversity.edu/en/persons/bruno-nicenboim) and a guest researcher at the department of Linguistics the University of Potsdam, Germany. Before that I did my PhD and Postdoc in [Shravan Vasishth's lab](http://www.ling.uni-potsdam.de/~vasishth/), at the Department of Linguistics of University of Potsdam, Germany. 
 
-[Twitter](https://twitter.com/bruno_nicenboim)
-[Github](https://github.com/bnicenboim)
-[ORCID](http://orcid.org/0000-0002-5176-3943)
-[OSF](https://osf.io/cmist/#!)
+
+<a rel="me" href="https://fediscience.org/@bruno_nicenboim">[Mastodon]</a>
+[[Twitter]](https://twitter.com/bruno_nicenboim)
+[[Github]](https://github.com/bnicenboim)
+[[ORCID]](http://orcid.org/0000-0002-5176-3943)
+[[OSF]](https://osf.io/cmist/#!)
 
 
 ---
