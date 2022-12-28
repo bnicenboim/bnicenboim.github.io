@@ -107,11 +107,11 @@
 <div id="the-initial-problem" class="section level2">
 <h2>The initial problem</h2>
 <p>I wrote what I thought it was the generative process for some modeling work, and it looked too common to not have a name, so I started to ask around in Twitter:</p>
-<p><blockquote class="twitter-tweet"><p lang="en" dir="ltr">Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? <br>Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2<br>2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1<br>3rd, y ~ categorical(p3/(p3+p4),p4/(p3+p4)); y =3<br>4th, it&#39;s y =4</p>&mdash; Bruno Nicenboim (@bruno_nicenboim) <a href="https://twitter.com/bruno_nicenboim/status/1369217174699732995?ref_src=twsrc%5Etfw">March 9, 2021</a></blockquote>
+<p><blockquote class="twitter-tweet"><p lang="en" dir="ltr">Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? <br>Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2<br>2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1<br>3rd, y ~ categorical(p3/(p3+p4),p4/(p3+p4)); y =3<br>4th, it&#39;s y =4</p>&mdash; @bruno_nicenboim@fediscience.org (@bruno_nicenboim) <a href="https://twitter.com/bruno_nicenboim/status/1369217174699732995?ref_src=twsrc%5Etfw">March 9, 2021</a></blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 </p>
 <p>One useful clue was this one:</p>
-<p><blockquote class="twitter-tweet"><p lang="en" dir="ltr">If I understand you correctly, the situation is similar to a (literal) horse-race, as modeled here: <a href="https://t.co/TGGS1h4xxe">https://t.co/TGGS1h4xxe</a></p>&mdash; Pavel Logačev (@pavellogacev) <a href="https://twitter.com/pavellogacev/status/1369226616312901637?ref_src=twsrc%5Etfw">March 9, 2021</a></blockquote>
+<p><blockquote class="twitter-tweet"><p lang="en" dir="ltr">If I understand you correctly, the situation is similar to a (literal) horse-race, as modeled here: <a href="https://t.co/TGGS1h4xxe">https://t.co/TGGS1h4xxe</a></p>&mdash; @pavel_logacev@bayes.club (@pavellogacev) <a href="https://twitter.com/pavellogacev/status/1369226616312901637?ref_src=twsrc%5Etfw">March 9, 2021</a></blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 </p>
 <p>It turns out that the distribution that I was describing is in general used for rankings or ordered data and it is called an <a href="https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit"><em>exploded logit distribution</em></a>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>

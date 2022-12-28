@@ -1,3 +1,13 @@
+@unpublished{benartzi2022,
+  title = {Computational mechanisms underlying latent inverse value updating of unchosen actions},
+  url = {https://psyarxiv.com/sxjez},
+  doi = {10.31234/osf.io/sxjez},
+  publisher = {PsyArXiv},
+  author = {Ido Ben-Artzi and Yoav Kessler and Bruno Nicenboim and Nitzan Shahar},
+  year = {2022},
+  month = {May},
+}
+
 @unpublished{Schadaggregation,
   doi = {10.48550/ARXIV.2203.02361},
   url = {https://arxiv.org/abs/2203.02361},

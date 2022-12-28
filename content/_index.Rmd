@@ -45,7 +45,7 @@ I'm an assistant professor at the department of [Cognitive Science and AI of Til
 
 ## Computational (cognitive) modeling 
 
-- Projects involving of computational (cognitive) models in a Bayesian framework (using [Stan](https://mc-stan.org/)/brms). Recently, in [a paper led by Clare Patterson about German personal and demonstrative pronouns ](http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract),  I contributed with the Bayesian implementation of the models and model comparison.
+- Projects involving of computational (cognitive) models in a Bayesian framework (using [Stan](https://mc-stan.org/)/brms). Recently, in [a paper led by Clare Patterson about German personal and demonstrative pronouns ](http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract),  I contributed with the Bayesian implementation of the models and model comparison. Another paper where my contribution was to help with the Bayesian implementation is [this one](https://psyarxiv.com/sxjez/) about the update of unchosen actions in reinforcement learning. 
 
 - Computational cognitive models that link memory processes with sentence comprehension, and individual differences in sentence processing. The most important output of my PhD was [this paper about models of retrieval](papers/NicenboimVasishth2017Models.pdf); DOI: [10.1016/j.jml.2017.08.004](https://doi.org/10.1016/j.jml.2017.08.004). The paper shows the computational implementation of two different sentence processing theories (a verbal model and an ACT-R model) on the same framework using hierarchical Bayesian modeling. 
 
@@ -56,7 +56,9 @@ I'm an assistant professor at the department of [Cognitive Science and AI of Til
 
 - An R package for the manipulation of EEG data: https://bnicenboim.github.io/eeguana/. It is fully functional, but it's only able to do basic preprocessing for EEG data.  Feedback and comments (and [github issues](https://github.com/bnicenboim/eeguana/issues)) are welcome.
 
-- Predictions in language using EEG. In [this paper](https://psyarxiv.com/2atrh/), we use novel EEG data, together with a meta-analysis of available data, and we show that the N400 effect is, at
+- Predictions in language using EEG. Recently, we have tried to figure out the (elusive) effects of contextual constraint in [this paper](
+https://doi.org/10.1162/nol_a_00094). Kate Stone (first author) summarizes it nicely [here](https://twitter.com/stonekatem/status/1569640223042306050). 
+Before that, in my post-doc ([in this paper](https://doi.org/10.1016/j.neuropsychologia.2020.107427)), we used novel EEG data, together with a meta-analysis of available data, and we showed that the N400 effect is, at
 least in part, caused by linguistic preactivation that occurs prior to the predicted target word, as opposed to semantic integration that occurs after the target word has been read. While this idea has been present in the literature for more than 10 years, experimental evidence has been so far controversial and included several failed replications. 
 
 
