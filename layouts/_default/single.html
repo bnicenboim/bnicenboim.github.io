@@ -24,7 +24,7 @@
     
       {{ .Content }}
 
-{{ partial "citation.html" .}}
+
     </div>
   </article>
 
@@ -33,6 +33,9 @@
  {{ if eq .Section "post" }}
  <div class="row justify-content-center">
         <div class="blog-post-footer">
+          <div style = "text-align: left;">
+          {{ partial "citation.html" .}}
+          </div>
   {{ partial "share-buttons.html" . }}
 
   </div>

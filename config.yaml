@@ -25,12 +25,15 @@ menu:
     - name: Publications and presentations
       url: /publications/
       weight: 2
+    - name: Software
+      url: /software/
+      weight: 3      
     - name: CV
       url: /cv/
-      weight: 3
+      weight: 4
     - name: Posts
       url: /post/
-      weigth: 4
+      weigth: 5
 params:
   author: Bruno Nicenboim
   commentsrepo: bnicenboim/bnicenboim.github.io

@@ -39,5 +39,7 @@
     <loc>/cv/</loc>
   </url><url>
     <loc>/publications/</loc>
+  </url><url>
+    <loc>/software/</loc>
   </url>
 </urlset>
