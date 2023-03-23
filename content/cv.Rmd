@@ -180,7 +180,15 @@ output(books,withbrackets=F)
 
 ```
 
+<br/>
+<br/>
 
+## Contributions to open software 
+- `eeguana` (https://bruno.nicenboim.me/eeguana/) An R package for tidy-ish manipulation of EEG data. **Author**
+- `pangoling` (https://bruno.nicenboim.me/pangoling/)  An R package for estimating the log-probabilities of words in a given context using transformer models. **Author** 
+-  `loo` (https://cran.r-project.org/web/packages/loo/). Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models. **Contributor**
+-  `MNE` (https://mne.tools/). Open-source Python package for exploring, visualizing, and analyzing human neurophysiological data. **Bug fixing**
+- `Bayesplot` (https://github.com/stan-dev) R package providing an extensive library of plotting functions for use after fitting Bayesian models. **Bug fixing**
 
 <br/>
 <br/>
@@ -343,15 +351,6 @@ for(y in seq(this_year,first_year,-1)){
 <br/>
 
 
-# Open software 
-
-- [eeguana](https://bnicenboim.github.io/eeguana/). An R package for flexible manipulation of EEG data. **Author**
-- [loo](https://cran.r-project.org/web/packages/loo/). Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models. **Contributor**
-
-
-
-<br/>
-<br/>
 
 
 # Academic-related training
