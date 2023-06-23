@@ -1,37 +1,77 @@
 % Encoding: ISO-8859-1
 
-@unpublished{Schadaggregation,
-  doi = {10.48550/ARXIV.2203.02361},
-  eprint = {https://arxiv.org/abs/2203.02361},
-  author = {Schad, Daniel J. and Nicenboim, Bruno and Vasishth, Shravan},
-  title = {Data aggregation can lead to biased inferences in Bayesian linear mixed models},
-  notes={unpublished},
-  publisher = {arXiv},
-  year = {2022}
-} 
-
-@Article{PAttersonEtAl,
-  author  = {Clare Patterson and Petra B. Schumacher and Bruno Nicenboim and Johannes Hagen and Andrew Kehler},
-  journal = {Frontiers in Psychology, Language Sciences},
-  title   = {A {Bayesian} approach to {German} personal and demonstrative pronouns},
-  year    = {2022},
-  issn    = {1664-1078},
-  volume  = {12},
-  doi     = {10.3389/fpsyg.2021.672927},
-  eprint  = {http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract},
-}
+@article{vanDoorn2023,
+author={van Doorn, Johnny and Haaf, Julia M. and Stefan, Angelika M. and Wagenmakers, Eric-Jan and Cox, Gregory Edward and Davis-Stober, Clintin P. and Heathcote, Andrew and Heck, Daniel W. and Kalish, Michael and Kellen, David and Matzke, Dora and Morey, Richard D. and Nicenboim, Bruno and van Ravenzwaaij, Don and Rouder, Jeffrey N. and Schad, Daniel J. and Shiffrin, Richard M. and Singmann, Henrik and Vasishth, Shravan and Ver{\'i}ssimo, Jo{\~a}o and Bockting, Florence and Chandramouli, Suyog and Dunn, John C. and Gronau, Quentin F. and Linde, Maximilian and McMullin, Sara D. and Navarro, Danielle and Schnuerch, Martin and Yadav, Himanshu and Aust, Frederik}, title={Bayes Factors for Mixed Models: a Discussion},
+journal={Computational Brain {\&} Behavior}, 
+year={2023},
+month={Mar},
+day={01},
+volume={6},
+number={1},
+pages={140-158},
+issn={2522-087X},
+doi={10.1007/s42113-022-00160-3},
+eprint={https://link.springer.com/content/pdf/10.1007/s42113-022-00160-3.pdf?pdf=button}
 }
 
-@article{vasishth2022sample,
-  title={Sample size determination for {Bayesian} hierarchical models commonly used in psycholinguistics},
-  author={Vasishth, Shravan and Yadav, Himanshu and Schad, Daniel and Nicenboim, Bruno},
-    DOI={10.1007/s42113-021-00125-y},
-  year={2022},
-  customb = {https://osf.io/hjgrm/},
-  journal = {Computational Brain and Behavior},
-  eprint = {https://link.springer.com/article/10.1007/s42113-021-00125-y},
+
+
+
+
+
+@article{Vasishth2023,
+  author={Vasishth, Shravan and Yadav, Himanshu and Schad, Daniel J. and Nicenboim, Bruno},
+  title={Sample Size Determination for {Bayesian} Hierarchical Models Commonly Used in Psycholinguistics},
+  journal={Computational Brain {\&} Behavior},
+  year={2023},
+  month={Mar},
+  day={01},
+  volume={6},
+  number={1},
+  pages={102-126},
+  issn={2522-087X},
+  doi={10.1007/s42113-021-00125-y},
+  eprint={https://link.springer.com/content/pdf/10.1007/s42113-021-00125-y.pdf?pdf=button}
 }
 
+
+
+@book{Nicenboimetal,
+      title     = "An Introduction to {Bayesian} Data Analysis for Cognitive Science",
+      author    = "Bruno Nicenboim and Daniel Schad and Shravan Vasishth",
+      year      = "in preparation",
+  eprint   = {https://vasishth.github.io/Bayes_CogSci/}
+    }
+    
+
+@article{Stone2022,
+    author = {Stone, Kate and Nicenboim, Bruno and Vasishth, Shravan and Rösler, Frank},
+    title = "{Understanding the effects of constraint and predictability in ERP}",
+    journal = {Neurobiology of Language},
+    pages = {1-71},
+    year = {2022},
+    month = {12},
+    issn = {2641-4368},
+    doi = {10.1162/nol_a_00094},
+    customb = {https://osf.io/fndk5/},
+    eprint = {https://direct.mit.edu/nol/article-pdf/doi/10.1162/nol\_a\_00094/2062866/nol\_a\_00094.pdf}
+}
+
+
+
+@article{PAttersonEtAl,
+  issn = {1664-1078},
+DOI={10.3389/fpsyg.2021.672927},      
+eprint = {http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract},
+  number = {},
+  year = {2022},
+VOLUME={12},      
+journal = {Frontiers in Psychology, Language Sciences},
+  title = {A {Bayesian} approach to {German} personal and demonstrative pronouns},
+  eprint   = {https://www.frontiersin.org/articles/10.3389/fpsyg.2021.672927/abstract},
+  customb = {},
+  author = {Clare Patterson and Petra B. Schumacher and Bruno Nicenboim and Johannes Hagen and Andrew Kehler}
+}
 
 @article{schad2022workflow,
       title={Workflow Techniques for the Robust Use of {Bayes} Factors}, 
@@ -44,25 +84,16 @@
       journal ={Psychological Methods},
       eprint={https://arxiv.org/abs/2103.08744}
 }
-
-
-@book{Nicenboimetal,
-      title     = "An Introduction to {Bayesian} Data Analysis for Cognitive Science",
-      author    = "Bruno Nicenboim and Daniel Schad and Shravan Vasishth",
-      year      = "in preparation",
-  eprint   = {https://vasishth.github.io/Bayes_CogSci/}
-    }
-
-@Article{PaapeEtAl2017,
-  author  = {Dario Paape and Bruno Nicenboim and Shravan Vasishth},
-  journal = {Glossa: {A} journal of general linguistics.},
-  title   = {Does antecedent complexity affect ellipsis processing? An empirical investigation},
-  year    = {2017},
-  number  = {1},
-  pages   = {71},
-  volume  = {2},
-  doi     = {10.5334/gjgl.290},
-  eprint  = {https://www.glossa-journal.org/articles/abstract/10.5334/gjgl.290/},
+rticle{PAttAl2017,
+  journal = {Glossa: {A} journal of general linguistics. },
+  title = {Does antecedent complexity affect ellipsis processing? An empirical investigation},
+  year ={2017},
+  Volume=2,
+  number=1,
+  pages={71},
+  doi = {10.5334/gjgl.290},
+eprint ={https://www.glossa-journal.org/articles/abstract/10.5334/gjgl.290/},
+  author = {Dario Paape and Bruno Nicenboim  and Shravan Vasishth}
 }
 
 @Article{NicenboimEtAl2016When,
@@ -192,14 +223,20 @@ journal = "Neuropsychologia"
 }
 
 
-@unpublished{albert_nicenboim_2020,
- title={The double life of language systems: Modelling sonority with complementary symbol and signal based models},
- eprint={https://psyarxiv.com/kvqy5},
- DOI={10.31234/osf.io/kvqy5},
- publisher={PsyArXiv},
+@article{albert_nicenboim_2020,
+ title={Modeling Sonority in Terms of Pitch Intelligibility With the Nucleus Attraction Principle},
+ eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1111/cogs.13161},
+ DOI={doi.or1/cogs.13161},
+ journal = {Cognitive Science},
+volume = {46},
+number = {7},
+pages = {e13161},
+keywords = {Sonority, Pitch intelligibility, Periodic energy, Bayesian data analysis, Speech perception, Phonetics and phonology},
  author={Albert, Aviad and Nicenboim, Bruno},
- notes={unpublished},
- month={Oct}
+ month={Oct},
+ year = {2022},
+  customb ={https://osf.io/y477r}
+
 }
 
 @Article{NicenboimVasishth2017Models,
@@ -277,6 +314,32 @@ Location={Warwick, UK},
   note = {(superseeded by 10.1016/j.jml.2017.08.004)},
   customa ={http://mc-stan.org/events/stancon2017-notebooks/stancon2017-nicenboim-vasishth-retrieval-models.html},
   customd = {https://youtu.be/DJ0c7Bm5Djk?t=6h18m1s}
+}
+
+
+
+@unpublished{Schadaggregation,
+  doi = {10.48550/ARXIV.2203.02361},
+  url = {https://arxiv.org/abs/2203.02361},
+  author = {Schad, Daniel J. and Nicenboim, Bruno and Vasishth, Shravan},
+
+  title = {Data aggregation can lead to biased inferences in Bayesian linear mixed models},
+  publisher = {arXiv},
+  notes = {under review},
+  year = {2022}
+ 
+}
+
+
+@unpublished{benartzi2022,
+ title={Computational mechanisms underlying latent inverse value updating of unchosen actions},
+ url={https://psyarxiv.com/sxjez},
+ DOI={10.31234/osf.io/sxjez},
+ publisher={PsyArXiv},
+ author={Ben-Artzi, Ido and Kessler, Yoav and Nicenboim, Bruno and Shahar, Nitzan},
+ year={2022},
+  notes = {under review},
+ month={May}
 }
 
 @Comment{jabref-meta: databaseType:bibtex;}
