@@ -77,9 +77,14 @@ Data and code for my published papers  is mostly in the [OSF website](https://os
 
 ---
 
-##  Recent posts
+## News
 
-<!-- #### News  -->
+Together with [Riccardo Fusaroli](https://fusaroli.weebly.com) and [Marieke van Vugt](https://mkvanvugt.wordpress.com/), we are organizing a Lorentz Centre "Cognitive Modeling of Complex behaviour" hands-on workshop in January 2024. Check the call and join us (early career especially welcome). The core of the workshop is self-organized group work, where participants together tackle the modeling of a phenomenon of interest. There will be initial talks on example projects and good practices and recurring joint discussion about the ongoing projects, but no explicit tutorial or lessons on these topics. See the 
+[Open call](https://www.lorentzcenter.nl/site/index.php?conFormulierId=1004&pntType=ConStap&id=1648&pntHandler=Page).
+
+
+---
+##  Recent posts
 
 
 <!-- <\!-- -------------- -\-> -->
