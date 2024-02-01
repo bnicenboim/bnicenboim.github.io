@@ -1,0 +1,73 @@
+---
+title: 'Doe mee aan ons experiment waarbij je teksten moet aanvullen! Draag bij aan taalkundig onderzoek en verdien €10!'
+author: Bruno Nicenboim
+date: '2024-02-01'
+slug: participants
+categories: ["experiments"]
+tags: ["experiments"]
+cite: false
+draft: false 
+---
+
+```{r setup, include = FALSE}
+## Global options
+options( # max.print="75",
+  width = 80,
+  tibble.width = 75,
+  digits = 2
+)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  cache = FALSE,
+  prompt = FALSE,
+  tidy = FALSE,
+  comment = NA,
+  message = FALSE,
+  warning = TRUE,
+  fig.align = "center"
+)
+knitr::opts_knit$set(width = 80)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+
+# folding:
+local({
+  hook_source <- knitr::knit_hooks$get("source")
+  knitr::knit_hooks$set(source = function(x, options) {
+    fold <- options$fold
+    if (is.null(fold)) fold <- FALSE
+    if (fold == TRUE) {
+      if (knitr::is_html_output()) {
+        # fold code here
+        foldb <- ""
+        folde <- ""
+        options$class.source <- "fold-hide"
+        hook_source(c(foldb, x, folde), options)
+      } else {
+        # empty code for pdf
+      }
+    } else {
+      # regular output elsewhere:
+      hook_source(x, options)
+    }
+  })
+})
+```
+
+Is Nederlands jouw moedertaal en ben je boven de 18 jaar? Houd je van taalpuzzels en snelle denkopdrachten? Zo ja, dan hebben we een interessante kans voor jou!
+
+We voeren een taalkundig experiment uit en nodigen je uit om deel te nemen. Het doel van dit experiment is om de verwerking van taal te onderzoeken door te bestuderen hoe Nederlandstalige sprekers teksten met ontbrekende woorden aanvullen. Zo werkt het:
+
+Je krijgt korte stukjes tekst te zien met ontbrekende woorden. Het is jouw taak om deze teksten aan te vullen met het eerste woord dat in je opkomt. Dit is een leuke manier  om te onderzoeken hoe onze hersenen taal verwerken en weggelaten informatie aanvullen.  
+
+Het experiment duurt ongeveer één uur. Om je te bedanken voor je tijd en bijdrage, ontvang je een vergoeding van €10!
+
+Vereisten om te kunnen deelnemen aan dit experiment:
+Nederlands is je enige moedertaal (je bent niet meertalig opgevoed)
+
+- Je bent 18 jaar of ouder 
+- Je bent in staat om Nederlandse teksten te lezen en te begrijpen
+- Je hebt geen leer- of leesstoornis (bijv. ADHD, ADD, autisme of dyslexie)
+- Je hebt een normaal of naar normaal gecorrigeerd (bril/contactlenzen/operatie) gezichtsvermogen
+- Je bent bereid om deel te nemen aan een experiment waarbij je ontbrekende woorden in teksten moet aanvullen
+
+Interesse? Neem contact met ons op via <tekstonderzoek_aanvullen@tilburguniversity.edu> om jouw sessie in te plannen. We kijken uit naar jouw deelname aan dit interessante onderzoek!

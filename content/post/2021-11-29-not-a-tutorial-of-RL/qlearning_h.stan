@@ -3,11 +3,11 @@ data {
   int<lower = 0> N_subj;
   int<lower = 0> N_arms;
   matrix[N_trials, N_arms] R;
-  int action[N_trials, N_subj];
+  array[N_trials, N_subj] int action;
 }
 transformed data{
   int N_adj = 3;
-  int response[N_trials, N_subj];
+  array[N_trials, N_subj] int response;
     for(i in 1:N_subj)
       for(n in 1:N_trials)
         response[n,i] = action[n,i] - 1;

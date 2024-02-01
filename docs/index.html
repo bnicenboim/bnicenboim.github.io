@@ -45,6 +45,8 @@
     
     <li><a href="/publications/">Publications and presentations</a></li>
     
+    <li><a href="/team/">Team</a></li>
+    
     <li><a href="/software/">Software</a></li>
     
     <li><a href="/cv/">CV</a></li>
@@ -111,7 +113,7 @@
 <h1>About me</h1>
 <p>I’m an assistant professor at the department of <a href="https://research.tilburguniversity.edu/en/persons/bruno-nicenboim">Cognitive Science and AI of Tilburg University</a> and a guest researcher at the department of Linguistics the University of Potsdam, Germany. Before that I did my PhD and Postdoc in <a href="http://www.ling.uni-potsdam.de/~vasishth/">Shravan Vasishth’s lab</a>, at the Department of Linguistics of University of Potsdam, Germany.</p>
 <p><a rel="me" href="https://fediscience.org/@bruno_nicenboim">[Mastodon]</a>
-<a href="https://twitter.com/bruno_nicenboim">[Twitter]</a>
+<a href="https://twitter.com/bruno_nicenboim">[<del>Twitter</del>]</a>
 <a href="https://github.com/bnicenboim">[Github]</a>
 <a href="http://orcid.org/0000-0002-5176-3943">[ORCID]</a>
 <a href="https://osf.io/cmist/#!">[OSF]</a></p>
@@ -120,29 +122,41 @@
 </div>
 <div id="my-main-interests" class="section level1">
 <h1>My main interests</h1>
-<div id="computational-cognitive-modeling" class="section level2">
-<h2>Computational (cognitive) modeling</h2>
-<ul>
-<li><p>Projects involving of computational (cognitive) models in a Bayesian framework (using <a href="https://mc-stan.org/">Stan</a>/brms). Recently, in <a href="http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract">a paper led by Clare Patterson about German personal and demonstrative pronouns</a>, I contributed with the Bayesian implementation of the models and model comparison. Another paper where my contribution was to help with the Bayesian implementation is <a href="https://psyarxiv.com/sxjez/">this one</a> about the update of unchosen actions in reinforcement learning.</p></li>
-<li><p>Computational cognitive models that link memory processes with sentence comprehension, and individual differences in sentence processing. The most important output of my PhD was <a href="papers/NicenboimVasishth2017Models.pdf">this paper about models of retrieval</a>; DOI: <a href="https://doi.org/10.1016/j.jml.2017.08.004">10.1016/j.jml.2017.08.004</a>. The paper shows the computational implementation of two different sentence processing theories (a verbal model and an ACT-R model) on the same framework using hierarchical Bayesian modeling.</p></li>
-<li><p>Decision making models. See here my attempt of a fully hierarchical linear ballistic accumulator in Stan (<a href="https://htmlpreview.github.io/?https://github.com/stan-dev/stancon_talks/blob/master/2018-helsinki/Contributed-Talks/nicenboim/LBA_stancon2018.html">Stancon submission</a>).</p></li>
-</ul>
+<div id="computational-cognitive-modeling-in-a-bayesian-framework-using-stan" class="section level2">
+<h2>Computational (cognitive) modeling in a Bayesian framework (using Stan)</h2>
+<p>Some representative examples:</p>
+<p>[1] B. Nicenboim. “The CoFI Reader: A Continuous Flow of Information
+approach to modeling reading”. In: <em>MathPsych/ICCM/EMPG</em>. University of
+Amsterdam, the Netherlands, jul. 2023.</p>
+<p>[2] B. Nicenboim and S. Vasishth. “Models of Retrieval in Sentence
+Comprehension: A computational evaluation using Bayesian hierarchical
+modeling”. In: <em>Journal of Memory and Language</em> 99 (2018), pp. 1 -34.
+DOI: 10.1016/j.jml.2017.08.004.</p>
 </div>
 <div id="eeg" class="section level2">
 <h2>EEG</h2>
-<ul>
-<li><p>An R package for the manipulation of EEG data: <a href="https://bnicenboim.github.io/eeguana/" class="uri">https://bnicenboim.github.io/eeguana/</a>. It is fully functional, but it’s only able to do basic preprocessing for EEG data. Feedback and comments (and <a href="https://github.com/bnicenboim/eeguana/issues">github issues</a>) are welcome.</p></li>
-<li><p>Predictions in language using EEG. Recently, we have tried to figure out the (elusive) effects of contextual constraint in <a href="https://doi.org/10.1162/nol_a_00094">this paper</a>. Kate Stone (first author) summarizes it nicely <a href="https://twitter.com/stonekatem/status/1569640223042306050">here</a>.
-Before that, in my post-doc (<a href="https://doi.org/10.1016/j.neuropsychologia.2020.107427">in this paper</a>), we used novel EEG data, together with a meta-analysis of available data, and we showed that the N400 effect is, at
-least in part, caused by linguistic preactivation that occurs prior to the predicted target word, as opposed to semantic integration that occurs after the target word has been read. While this idea has been present in the literature for more than 10 years, experimental evidence has been so far controversial and included several failed replications.</p></li>
-</ul>
+<p>Some representative examples:</p>
+<p>[1] B. Nicenboim, S. Vasishth, and F. Rösler. “Are words pre-activated
+probabilistically during sentence comprehension? Evidence from new data
+and a Bayesian random-effects meta-analysis using publicly available
+data”. In: <em>Neuropsychologia</em> 142 (2020), p. 107427. DOI:
+10.1016/j.neuropsychologia.2020.107427.</p>
+<p>[2] K. Stone, B. Nicenboim, S. Vasishth, et al. “Understanding the
+effects of constraint and predictability in ERP”. In: <em>Neurobiology of
+Language</em> (dec. 2022), pp. 1-71. DOI: 10.1162/nol_a_00094.</p>
+<p>[3] An R package for the manipulation of EEG data: <a href="https://bnicenboim.github.io/eeguana/" class="uri">https://bnicenboim.github.io/eeguana/</a>.</p>
 </div>
 <div id="bayesian-statistics" class="section level2">
 <h2>Bayesian statistics</h2>
-<ul>
-<li><p><a href="https://vasishth.github.io/Bayes_CogSci/">Bayesian statistics for cognitive scientists textbook</a> (in progress) together with <a href="http://www.ling.uni-potsdam.de/~vasishth/">Shravan Vasishth</a> and <a href="https://danielschad.github.io/">Daniel Schad</a>. I have also been collaborating with Shravan Vasishth, Daniel Schad, and others (in different orders) in papers that deal with <a href="https://link.springer.com/article/10.1007/s42113-021-00125-y">sample size determination for Bayesian models</a>, <a href="Robust%20Use%20of%20%7BBayes%7D%20Factors">the robust use of Bayes factor</a>, and <a href="">data aggregation in mixed models</a>.</p></li>
-<li><p><a href="https://cognitive-science-stan.github.io/">Stan for cognitive science website</a> with resources for Bayesian modeling with Stan.</p></li>
-</ul>
+<p>Some representative examples:</p>
+<p>[1] B. Nicenboim and S. Vasishth. “Statistical methods for linguistic
+research: Foundational Ideas - Part II”. In: <em>Language and Linguistics
+Compass</em> 10.11 (2016), pp. 591-613. DOI: 10.1111/lnc3.12207.</p>
+<p>[2] D. J. Schad, B. Nicenboim, P. Bürkner, et al. “Workflow Techniques
+for the Robust Use of Bayes Factors”. In: <em>Psychological methods</em>
+(2022). DOI: 10.1037/met0000472.</p>
+<p>[3] <a href="https://vasishth.github.io/Bayes_CogSci/">Bayesian statistics for cognitive scientists textbook</a> (in progress) together with <a href="http://www.ling.uni-potsdam.de/~vasishth/">Shravan Vasishth</a> and <a href="https://danielschad.github.io/">Daniel Schad</a>.</p>
+<p>[4] <a href="https://cognitive-science-stan.github.io/">Stan for cognitive science website</a> with resources for Bayesian modeling with Stan.</p>
 <hr />
 </div>
 <div id="data-and-code" class="section level2">
@@ -152,8 +166,10 @@ least in part, caused by linguistic preactivation that occurs prior to the predi
 </div>
 <div id="news" class="section level2">
 <h2>News</h2>
-<p>Together with <a href="https://fusaroli.weebly.com">Riccardo Fusaroli</a> and <a href="https://mkvanvugt.wordpress.com/">Marieke van Vugt</a>, we are organizing a Lorentz Centre “Cognitive Modeling of Complex behaviour” hands-on workshop in January 2024. Check the call and join us (early career especially welcome). The core of the workshop is self-organized group work, where participants together tackle the modeling of a phenomenon of interest. There will be initial talks on example projects and good practices and recurring joint discussion about the ongoing projects, but no explicit tutorial or lessons on these topics. See the
-<a href="https://www.lorentzcenter.nl/site/index.php?conFormulierId=1004&amp;pntType=ConStap&amp;id=1648&amp;pntHandler=Page">Open call</a>.</p>
+<p>The 57th Annual Meeting of the Society for Mathematical Psychology (MathPsych) and the 22nd International Conference on Cognitive Modeling (ICCM) will happen at Tilburg University, the Netherlands. The dates of the conference are July 19 to 22, 2024. <a href="https://mathpsych.org/conference/15/">The deadline for submissions is Feb 28th, 2024.</a>.</p>
+<p>I obtained a <a href="https://www.nwo.nl/en/researchprogrammes/open-competition-ssh/granted-projects">NWO Open Competition SGW XS grant</a> The project’s aim is to gather self-paced EEG data for benchmarks and computational modeling.</p>
+<p>Together with <a href="https://fusaroli.weebly.com">Riccardo Fusaroli</a> and <a href="https://mkvanvugt.wordpress.com/">Marieke van Vugt</a>, we organized a Lorentz Centre “Cognitive Modeling of Complex behaviour” hands-on workshop in January 2024. The core of the workshop was self-organized group work, where participants together tackle the modeling of a phenomenon of interest. See
+<a href="https://www.lorentzcenter.nl/cognitive-modeling-of-complex-behavior.html">here</a>.</p>
 <hr />
 </div>
 <div id="recent-posts" class="section level2">
@@ -171,6 +187,16 @@ least in part, caused by linguistic preactivation that occurs prior to the predi
     
     
     
+    
+    
+    <h2 class="archive-title">2024</h2>
+    
+    <article class="archive-item">
+      <a href="/2024/02/01/participants/" class="archive-item-link">Doe mee aan ons experiment waarbij je teksten moet aanvullen! Draag bij aan taalkundig onderzoek en verdien €10!</a>
+      <span class="archive-item-date">
+        2024-02-01
+      </span>
+    </article>
     
     
     <h2 class="archive-title">2021</h2>

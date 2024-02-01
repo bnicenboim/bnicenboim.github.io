@@ -1,11 +1,11 @@
 data {
   int<lower=0> N_trials;
-  int action[N_trials];
+  array[N_trials] int action;
   int N_arms;
   matrix[N_trials,N_arms] R;
 }
 transformed data {
-  int response[N_trials];
+  array[N_trials] int response;
   for(n in 1:N_trials)
     response[n] = action[n] - 1;
 }

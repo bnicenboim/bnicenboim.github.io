@@ -4,10 +4,12 @@ author: "Bruno Nicenboim"
 date: "2021-03-21"
 categories: ["stats"]
 tags: ["stan", "Bayesian", "r"]
+cite: true 
 bibliography: ["../biblio.bib","r-references.bib"]
 draft: false 
 ---
 
+**Update Feb 1st, 2024: I updated the Stan syntax.** 
 
 ```{r setup, include = FALSE}
 papaja::r_refs("r-references.bib")
@@ -209,7 +211,7 @@ res <- rexploded(n = 50,
 # subject 1:
 res[[1]]
 ```
-
+ 
 ```{r subjects, fig.show='animate', ffmpeg.format='gif', dev='jpeg', echo = FALSE, fig.height = 2}
 plots <- map_dfr(res,
                      ~ tibble(topping= .x) %>%
@@ -258,7 +260,7 @@ log(p(x = \{i,j,k,\ldots\})) =& \log(\Theta_i) - log(\sum \Theta) \\
 The following Stan custom function follows this logic but iterating over the rankings. In each iteration, it aggregates in the variable `out` the addends of the log probability mass function, and turns the probability of selecting again the already ranked element to zero.
 
 ```
- real exploded_lpmf(int[] x, vector Theta){
+ real exploded_lpmf(array[] int x, vector Theta){
     real out = 0;
     vector[num_elements(Theta)] thetar = Theta;
     for(pos in x){

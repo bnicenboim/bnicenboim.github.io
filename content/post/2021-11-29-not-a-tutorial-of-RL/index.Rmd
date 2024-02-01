@@ -3,15 +3,17 @@ title: 'Not a tutorial of a Bayesian implementation of a reinforcement learning 
 author: Bruno Nicenboim
 date: '2021-11-29'
 slug: Bayesian-h-Reinforcement-Learning
+cite: true 
 categories: ["stats"]
 bibliography: ["../biblio.bib","r-references.bib"]
 tags: ["stan", "Bayesian", "r"]
-draft: false 
+draft: false  
 ---
+
+**Update Feb 1st, 2024: I updated the Stan syntax.**  
 
 ```{r setup, include = FALSE}
 papaja::r_refs("r-references.bib")
-
 ## Global options
 options( # max.print="75",
   width = 80,

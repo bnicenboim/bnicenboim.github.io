@@ -238,7 +238,9 @@ for(y in seq(this_year,first_year,-1)){
 
 ------------------------  -----------------------------------------------------------------------
 2022                      NWO Starter Grant
-2022                      NWO Open Competition SGW XS grant
+
+2022                      [NWO Open Competition SGW XS grant](https://www.nwo.nl/en/researchprogrammes/open-competition-ssh/granted-projects)
+
 2012--2018                Potsdam Graduate School (PoGS) Travel Grants 
 
 2014                      Kommission für Forschung und wissenschaftlichen Nachwuchs (FNK, University of Potsdam) Travel Grant

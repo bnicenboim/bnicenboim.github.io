@@ -4,7 +4,7 @@ title: Bruno Nicenboim
 theme: hugo-lithium
 googleAnalytics: ''
 disqusShortname: ''
-
+ignoreErrors: "error-remote-getjson"
 enableEmoji: true
 publishDir: docs
 
@@ -24,6 +24,9 @@ menu:
       weight: 1
     - name: Publications and presentations
       url: /publications/
+      weight: 2
+    - name: Team
+      url: /team/
       weight: 2
     - name: Software
       url: /software/
@@ -63,3 +66,4 @@ params:
     height: 500
     url: logo.png
     width: 500
+  

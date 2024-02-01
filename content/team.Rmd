@@ -1,0 +1,37 @@
+---
+title: "Team"
+---
+  
+# Phd Student
+
+:::: {style="display: grid; grid-template-columns: 20% 75%; grid-column-gap: 1px; "}
+::: {}
+![](https://saraoe.github.io/img/sara_hu3d862241707eb82ad0f30f56130bd5fb_53044_80x80_fill_q90_box_smart1.jpg)
+:::
+::: {}
+ [Sara Møller Østergaard](https://saraoe.github.io/)
+:::
+::::
+
+
+
+
+
+
+
+# Research assistants
+
+:::: {style="display: grid; grid-template-columns: 0% 75%; grid-column-gap: 1px; "}
+::: {}
+:::
+::: {}
+ [Laura Boon](https://nl.linkedin.com/in/laura-boon-6992b8197)
+:::
+::::
+:::: {style="display: grid; grid-template-columns: 0% 75%; grid-column-gap: 1px; "}
+::: {}
+:::
+::: {}
+ [Lenneke Lichtenberg](https://nl.linkedin.com/in/lenneke-lichtenberg-a91a71172)
+:::
+::::

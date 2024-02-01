@@ -31,7 +31,7 @@ I'm an assistant professor at the department of [Cognitive Science and AI of Til
 
 
 <a rel="me" href="https://fediscience.org/@bruno_nicenboim">[Mastodon]</a>
-[[Twitter]](https://twitter.com/bruno_nicenboim)
+[[~~Twitter~~]](https://twitter.com/bruno_nicenboim)
 [[Github]](https://github.com/bnicenboim)
 [[ORCID]](http://orcid.org/0000-0002-5176-3943)
 [[OSF]](https://osf.io/cmist/#!)
@@ -42,32 +42,56 @@ I'm an assistant professor at the department of [Cognitive Science and AI of Til
 <br />
 
 # My main interests
+```{r, echo = FALSE}
+library(knitr)
+library(rmarkdown)
+library(htmltools)
 
-## Computational (cognitive) modeling 
+options(htmltools.dir.version = FALSE)
 
-- Projects involving of computational (cognitive) models in a Bayesian framework (using [Stan](https://mc-stan.org/)/brms). Recently, in [a paper led by Clare Patterson about German personal and demonstrative pronouns ](http://www.frontiersin.org/language_sciences/10.3389/fpsyg.2016.00280/abstract),  I contributed with the Bayesian implementation of the models and model comparison. Another paper where my contribution was to help with the Bayesian implementation is [this one](https://psyarxiv.com/sxjez/) about the update of unchosen actions in reinforcement learning. 
+library(RefManageR)
+bib <- ReadBib("mypub.bib", check = FALSE)
+bib2 <- ReadBib("others.bib", check = FALSE)
+```
 
-- Computational cognitive models that link memory processes with sentence comprehension, and individual differences in sentence processing. The most important output of my PhD was [this paper about models of retrieval](papers/NicenboimVasishth2017Models.pdf); DOI: [10.1016/j.jml.2017.08.004](https://doi.org/10.1016/j.jml.2017.08.004). The paper shows the computational implementation of two different sentence processing theories (a verbal model and an ACT-R model) on the same framework using hierarchical Bayesian modeling. 
+## Computational (cognitive) modeling in a Bayesian framework (using Stan)
 
-- Decision making models. See here my attempt of a fully hierarchical linear ballistic accumulator in Stan ([Stancon submission](https://htmlpreview.github.io/?https://github.com/stan-dev/stancon_talks/blob/master/2018-helsinki/Contributed-Talks/nicenboim/LBA_stancon2018.html)).
+Some representative examples:
 
+```{r,echo=F,results="asis",cache=F}
+print(bib[c("NicenboimVasishth2017Models","Nicenboim2023ICCM")],
+      .opts=list(no.print.fields=c("customa","customb","customc","eprint","issn")))
+
+```
 
 ## EEG
 
-- An R package for the manipulation of EEG data: https://bnicenboim.github.io/eeguana/. It is fully functional, but it's only able to do basic preprocessing for EEG data.  Feedback and comments (and [github issues](https://github.com/bnicenboim/eeguana/issues)) are welcome.
+Some representative examples:
 
-- Predictions in language using EEG. Recently, we have tried to figure out the (elusive) effects of contextual constraint in [this paper](
-https://doi.org/10.1162/nol_a_00094). Kate Stone (first author) summarizes it nicely [here](https://twitter.com/stonekatem/status/1569640223042306050). 
-Before that, in my post-doc ([in this paper](https://doi.org/10.1016/j.neuropsychologia.2020.107427)), we used novel EEG data, together with a meta-analysis of available data, and we showed that the N400 effect is, at
-least in part, caused by linguistic preactivation that occurs prior to the predicted target word, as opposed to semantic integration that occurs after the target word has been read. While this idea has been present in the literature for more than 10 years, experimental evidence has been so far controversial and included several failed replications. 
+```{r,echo=F,results="asis",cache=F}
+print(bib[c("Stone2022","nicenboim_vasishth_rosler_2019")],
+      .opts=list(no.print.fields=c("customa","customb","customc","eprint","issn")))
+
+```
+
+[3] An R package for the manipulation of EEG data: https://bnicenboim.github.io/eeguana/. 
 
 
  
 ##  Bayesian statistics 
 
-- [Bayesian statistics for cognitive scientists textbook](https://vasishth.github.io/Bayes_CogSci/) (in progress) together with [Shravan Vasishth](http://www.ling.uni-potsdam.de/~vasishth/) and [Daniel Schad](https://danielschad.github.io/).  I have also been collaborating with Shravan Vasishth, Daniel Schad, and others (in different orders) in papers that deal with [sample size determination for Bayesian models](https://link.springer.com/article/10.1007/s42113-021-00125-y), [the robust use of Bayes factor](Robust Use of {Bayes} Factors), and [data aggregation in mixed models]().
+Some representative examples:
 
-- [Stan for cognitive science website](https://cognitive-science-stan.github.io/) with resources for Bayesian modeling with Stan.
+```{r,echo=F,results="asis",cache=F}
+print(bib[c("schad2022workflow","NicenboimVasishth2016llcII")],
+      .opts=list(no.print.fields=c("customa","customb","customc","eprint","issn")))
+
+```
+
+[3] [Bayesian statistics for cognitive scientists textbook](https://vasishth.github.io/Bayes_CogSci/) (in progress) together with [Shravan Vasishth](http://www.ling.uni-potsdam.de/~vasishth/) and [Daniel Schad](https://danielschad.github.io/). 
+
+
+[4] [Stan for cognitive science website](https://cognitive-science-stan.github.io/) with resources for Bayesian modeling with Stan.
 
 ----
 
@@ -79,8 +103,14 @@ Data and code for my published papers  is mostly in the [OSF website](https://os
 
 ## News
 
-Together with [Riccardo Fusaroli](https://fusaroli.weebly.com) and [Marieke van Vugt](https://mkvanvugt.wordpress.com/), we are organizing a Lorentz Centre "Cognitive Modeling of Complex behaviour" hands-on workshop in January 2024. Check the call and join us (early career especially welcome). The core of the workshop is self-organized group work, where participants together tackle the modeling of a phenomenon of interest. There will be initial talks on example projects and good practices and recurring joint discussion about the ongoing projects, but no explicit tutorial or lessons on these topics. See the 
-[Open call](https://www.lorentzcenter.nl/site/index.php?conFormulierId=1004&pntType=ConStap&id=1648&pntHandler=Page).
+The 57th Annual Meeting of the Society for Mathematical Psychology (MathPsych) and the 22nd International Conference on Cognitive Modeling (ICCM) will happen at Tilburg University, the Netherlands. The dates of the conference are July 19 to 22, 2024. [The deadline for submissions is Feb 28th, 2024.](https://mathpsych.org/conference/15/).
+
+
+I obtained a [NWO Open Competition SGW XS grant](https://www.nwo.nl/en/researchprogrammes/open-competition-ssh/granted-projects)  The project's aim is to gather self-paced EEG data for benchmarks and computational modeling.
+
+
+Together with [Riccardo Fusaroli](https://fusaroli.weebly.com) and [Marieke van Vugt](https://mkvanvugt.wordpress.com/), we organized a Lorentz Centre "Cognitive Modeling of Complex behaviour" hands-on workshop in January 2024.  The core of the workshop was self-organized group work, where participants together tackle the modeling of a phenomenon of interest. See 
+[here](https://www.lorentzcenter.nl/cognitive-modeling-of-complex-behavior.html).
 
 
 ---

@@ -17,14 +17,14 @@
       <pubDate>Mon, 29 Nov 2021 00:00:00 +0000</pubDate>
       
       <guid>/2021/11/29/bayesian-h-reinforcement-learning/</guid><description>
-&lt;script src=&#34;/2021/11/29/bayesian-h-reinforcement-learning/index_files/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
 
 
+&lt;p&gt;&lt;strong&gt;Update Feb 1st, 2024: I updated the Stan syntax.&lt;/strong&gt;&lt;/p&gt;
 &lt;p&gt;&lt;span style=&#34;color: red;&#34;&gt;
-&lt;strong&gt;⚠️ This post is NOT about “Masheen Lurning”: I’m spelling it like this to avoid luring visitors into this post for the wrong reasons. In the context of “Masheen Lurning,” one teaches a “masheen” to make the most rewarding decisions. In contrast, this post is about fitting human (or possibly also animal) data with decisions made along a number of trials assuming that some type of reinforcement learning occurred.⚠️&lt;/strong&gt;
+&lt;strong&gt;⚠️ This post is NOT about “Masheen Lurning”: I’m spelling it like this to avoid luring visitors into this post for the wrong reasons. In the context of “Masheen Lurning”, one teaches a “masheen” to make the most rewarding decisions. In contrast, this post is about fitting human (or possibly also animal) data with decisions made along a number of trials assuming that some type of reinforcement learning occurred.⚠️&lt;/strong&gt;
 &lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;I’ll focus on a Bayesian implementation of Q-learning using &lt;a href=&#34;https://mc-stan.org/&#34;&gt;Stan&lt;/a&gt;. Q-learning is a specific type of reinforcement learning (RL) model that can explain how humans (and other organisms) learn behavioral policies (to make decisions) from rewards. &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-niv2009reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;Niv&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-niv2009reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;2009&lt;/a&gt;)&lt;/span&gt; presents a very extensive review of RL in the brain. Readers interested in The Book about RL should see &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-sutton2018reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;Sutton and Barto&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-sutton2018reinforcement&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
-&lt;p&gt;I will &lt;em&gt;mostly&lt;/em&gt; follow the implementation of &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;van Geen and Gerraty&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;, who present a tutorial on a hierarchical Bayesian implementation of Q-learning. However, I think there are places where a different parametrization would be more appropriate. I will also model my own simulated data, especially because I wanted to check if I’m doing things right. Another useful tutorial about Bayesian modeling of RL is &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-ZhangEtAl2020&#34; role=&#34;doc-biblioref&#34;&gt;Zhang et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-ZhangEtAl2020&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;, however, that tutorial uses a Rescorla–Wagner model, rather than Q-learning. Before you continue reading, notice that if you just want to fit data using a RL model and don’t care about the nitty gritty details, you can just use the R package &lt;a href=&#34;https://ccs-lab.github.io/hBayesDM/articles/getting_started.html&#34;&gt;hBayesDM&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;I’ll focus on a Bayesian implementation of Q-learning using &lt;a href=&#34;https://mc-stan.org/&#34;&gt;Stan&lt;/a&gt;. Q-learning is a specific type of reinforcement learning (RL) model that can explain how humans (and other organisms) learn behavioral policies (to make decisions) from rewards. &lt;span class=&#34;citation&#34;&gt;Niv (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-niv2009reinforcement&#34;&gt;2009&lt;/a&gt;)&lt;/span&gt; presents a very extensive review of RL in the brain. Readers interested in The Book about RL should see &lt;span class=&#34;citation&#34;&gt;Sutton and Barto (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-sutton2018reinforcement&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;I will &lt;em&gt;mostly&lt;/em&gt; follow the implementation of &lt;span class=&#34;citation&#34;&gt;van Geen and Gerraty (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;, who present a tutorial on a hierarchical Bayesian implementation of Q-learning. However, I think there are places where a different parametrization would be more appropriate. I will also model my own simulated data, especially because I wanted to check if I’m doing things right. Another useful tutorial about Bayesian modeling of RL is &lt;span class=&#34;citation&#34;&gt;Zhang et al. (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-ZhangEtAl2020&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;, however, that tutorial uses a Rescorla–Wagner model, rather than Q-learning. Before you continue reading, notice that if you just want to fit data using a RL model and don’t care about the nitty gritty details, you can just use the R package &lt;a href=&#34;https://ccs-lab.github.io/hBayesDM/articles/getting_started.html&#34;&gt;hBayesDM&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;The rest of the post is about simulating one subject doing an experiment and fitting it with Stan, and then simulating several subjects doing the same experiment and fitting that data with Stan.&lt;/p&gt;
 &lt;p&gt;First, I’m going to load some R packages that will be useful throughout this post and set a seed, so that the simulated data will be always the same.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;library(dplyr) # Data manipulation
@@ -104,7 +104,7 @@ Q_{t=1,a = 2} &amp;amp;= .5 \\
 &lt;p&gt;Whether the subject decides arm 1 or arm 2 depends on &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt;:&lt;/p&gt;
 &lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
 action \sim
-\begin{cases} 
+\begin{cases}
 1 \text{ with probability } 1-\theta_t\\
 2 \text{ with probability } \theta_t
 \end{cases}
@@ -129,8 +129,8 @@ Q_{t + 1, -action} = Q_{t, -action}
 \end{equation}\]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;Again, and for every trial, whether the subject decides arm 1 or arm 2 depends on &lt;span class=&#34;math inline&#34;&gt;\(\theta\)&lt;/span&gt;:
 &lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
-action \sim 
-\begin{cases} 
+action \sim
+\begin{cases}
 1 \text{ with probability } 1-\theta_t\\
 2 \text{ with probability } \theta_t
 \end{cases}
@@ -180,7 +180,7 @@ for (t in 1:N_trials) {
  8                 0.272 -0.131       0.188     -0.103       2
  9                 0.272 -0.122       0.119     -0.0344      1
 10                 0.226 -0.122       0.0746    -0.0791      1
-# … with 990 more rows&lt;/code&gt;&lt;/pre&gt;
+# ℹ 990 more rows&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Let’s see what would this subject choose in each trial.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;d_res &amp;lt;- tibble(
   arm = ifelse(action == 1, &amp;quot;arm_1&amp;quot;, &amp;quot;arm_2&amp;quot;),
@@ -213,12 +213,12 @@ ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
 &lt;p&gt;The complete code is shown below.&lt;/p&gt;
 &lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;data {
   int&amp;lt;lower=0&amp;gt; N_trials;
-  int action[N_trials];
+  array[N_trials] int action;
   int N_arms;
   matrix[N_trials,N_arms] R;
 }
 transformed data {
-  int response[N_trials];
+  array[N_trials] int response;
   for(n in 1:N_trials)
     response[n] = action[n] - 1;
 }
@@ -256,9 +256,9 @@ fit_ql &amp;lt;- m_ql$sample(
 &lt;pre&gt;&lt;code&gt;# A tibble: 3 × 10
   variable  mean median     sd    mad    q5   q95  rhat ess_bulk ess_tail
   &amp;lt;chr&amp;gt;    &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
-1 alpha    0.266  0.260 0.0498 0.0477 0.196 0.357  1.00    2714.    1922.
-2 beta_0   0.589  0.588 0.121  0.121  0.393 0.788  1.00    2998.    2964.
-3 beta_1   2.98   2.97  0.249  0.245  2.58  3.41   1.00    2605.    2370.&lt;/code&gt;&lt;/pre&gt;
+1 alpha    0.266  0.261 0.0497 0.0469 0.196 0.355  1.00    2258.    1790.
+2 beta_0   0.586  0.586 0.119  0.121  0.390 0.782  1.00    2906.    3191.
+3 beta_1   2.98   2.97  0.246  0.243  2.59  3.39   1.00    2704.    2881.&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;The recovery of the parameters seems fine.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;mcmc_recover_hist(fit_ql$draws(c(&amp;quot;alpha&amp;quot;, &amp;quot;beta_0&amp;quot;, &amp;quot;beta_1&amp;quot;)),
   true = c(alpha, beta_0, beta_1)
@@ -269,7 +269,7 @@ fit_ql &amp;lt;- m_ql$sample(
 &lt;div id=&#34;a-hierarchical-q-learning-model&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;A hierarchical Q-learning model&lt;/h2&gt;
 &lt;p&gt;Now let’s try to implement this hierarchically. I have several subjects (&lt;code&gt;N_subj&lt;/code&gt;), they all have their own bias, their own learning rate, and their own inverse temperature, but these values are not that different from subject to subject (there is shrinkage). I also assume that somehow these three parameters are mildly correlated, people with more bias also have a stronger learning rate and inverse temperature.&lt;/p&gt;
-&lt;p&gt;Here, I diverge a bit from the model of &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;van Geen and Gerraty&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;. I just assume that all the individual differences are generated from the same multinormal distribution. This allows me to model the variance (or SD) of the parameters and to assume that they could be correlated (or not).&lt;/p&gt;
+&lt;p&gt;Here, I diverge a bit from the model of &lt;span class=&#34;citation&#34;&gt;van Geen and Gerraty (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-vanGeenGerraty2021&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;. I just assume that all the individual differences are generated from the same multinormal distribution. This allows me to model the variance (or SD) of the parameters and to assume that they could be correlated (or not).&lt;/p&gt;
 &lt;p&gt;This means that in the hierarchical model, rather than &lt;span class=&#34;math inline&#34;&gt;\(\alpha\)&lt;/span&gt; I use &lt;span class=&#34;math inline&#34;&gt;\(\alpha + u_{i,1}\)&lt;/span&gt;, rather than &lt;span class=&#34;math inline&#34;&gt;\(\beta_0\)&lt;/span&gt;, &lt;span class=&#34;math inline&#34;&gt;\(\beta_0 + u_{i,2}\)&lt;/span&gt;, and rather than &lt;span class=&#34;math inline&#34;&gt;\(\beta_1\)&lt;/span&gt;, &lt;span class=&#34;math inline&#34;&gt;\(beta_1 + u_{i,3}\)&lt;/span&gt;. Where &lt;span class=&#34;math inline&#34;&gt;\(u\)&lt;/span&gt; is a matrix generated as follows.&lt;/p&gt;
 &lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
     {\begin{pmatrix}
@@ -284,7 +284,7 @@ fit_ql &amp;lt;- m_ql$sample(
     0\\
     0
    \end{pmatrix}}
- ,\boldsymbol{\Sigma_u} \right)
+,\boldsymbol{\Sigma_u} \right)
 \end{equation}\]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;with &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt; indexing subjects.&lt;/p&gt;
 &lt;p&gt;I simulate all this below with the following parameters. More details about how this works can be found in &lt;a href=&#34;https://vasishth.github.io/bayescogsci/book/ch-complexstan.html&#34;&gt;chapter 11 of the book about Bayesian modeling&lt;/a&gt; that I’m writting with Daniel Schad and Shravan Vasishth.&lt;/p&gt;
@@ -338,11 +338,11 @@ action_matrix &amp;lt;- matrix(as.integer(unlist(action)), ncol = N_subj)&lt;/co
   int&amp;lt;lower = 0&amp;gt; N_subj;
   int&amp;lt;lower = 0&amp;gt; N_arms;
   matrix[N_trials, N_arms] R;
-  int action[N_trials, N_subj];
+  array[N_trials, N_subj] int action;
 }
 transformed data{
   int N_adj = 3;
-  int response[N_trials, N_subj];
+  array[N_trials, N_subj] int response;
     for(i in 1:N_subj)
       for(n in 1:N_trials)
         response[n,i] = action[n,i] - 1;
@@ -391,16 +391,16 @@ fit_ql_h &amp;lt;- m_ql_h$sample(
 &lt;p&gt;It took 7 minutes in my computer.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fit_ql_h&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt; variable     mean   median   sd  mad       q5      q95 rhat ess_bulk ess_tail
- lp__     -4956.49 -4956.23 7.49 7.51 -4969.52 -4944.79 1.00      883     1950
- alpha        0.29     0.29 0.01 0.01     0.27     0.32 1.00     3257     2670
- beta_0       0.46     0.46 0.05 0.05     0.38     0.54 1.00     2563     2825
- beta_1       2.86     2.86 0.09 0.09     2.71     3.00 1.00     2518     2751
- tau_u[1]     0.11     0.10 0.08 0.08     0.01     0.27 1.00     1326     1474
- tau_u[2]     0.18     0.18 0.05 0.04     0.11     0.26 1.00     2025     2351
- tau_u[3]     0.31     0.31 0.08 0.08     0.19     0.45 1.00     1781     2078
- z_u[1,1]    -0.21    -0.21 0.85 0.82    -1.59     1.25 1.00     3810     2686
- z_u[2,1]    -0.33    -0.32 0.67 0.64    -1.44     0.73 1.00     3351     2839
- z_u[3,1]     0.43     0.42 0.77 0.75    -0.81     1.69 1.00     4149     2744
+ lp__     -4568.72 -4568.26 7.88 7.83 -4582.50 -4556.30 1.00      864     1691
+ alpha        0.31     0.31 0.02 0.01     0.29     0.34 1.00     2777     2099
+ beta_0       0.60     0.60 0.06 0.06     0.51     0.70 1.00     2325     2887
+ beta_1       3.02     3.02 0.10 0.09     2.87     3.18 1.00     2635     2415
+ tau_u[1]     0.13     0.12 0.09 0.10     0.01     0.30 1.00     1548     2187
+ tau_u[2]     0.23     0.22 0.05 0.05     0.15     0.33 1.00     1713     2583
+ tau_u[3]     0.36     0.35 0.09 0.09     0.22     0.52 1.00     1811     2552
+ z_u[1,1]     0.44     0.47 0.91 0.88    -1.12     1.89 1.00     1517     2751
+ z_u[2,1]     1.06     1.06 0.66 0.65    -0.01     2.13 1.00     3463     3017
+ z_u[3,1]     0.58     0.58 0.75 0.74    -0.66     1.80 1.00     4226     2838
 
  # showing 10 of 136 rows (change via &amp;#39;max_rows&amp;#39; argument or &amp;#39;cmdstanr_max_rows&amp;#39; option)&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Let’s check if I could recover the parameters.&lt;/p&gt;
@@ -410,49 +410,55 @@ fit_ql_h &amp;lt;- m_ql_h$sample(
 true = c(alpha, beta_0, beta_1, tau_u)
 )&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;img src=&#34;/2021/11/29/bayesian-h-reinforcement-learning//2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-22-1.png&#34; width=&#34;672&#34; style=&#34;display: block; margin: auto;&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;It seems relatively good, but I should probably check it with simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-taltsValidatingBayesianInference2018&#34; role=&#34;doc-biblioref&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;It seems relatively good, but I should probably check it with simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-taltsValidatingBayesianInference2018&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&#34;where-do-we-go-from-here&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;Where do we go from here?&lt;/h2&gt;
-&lt;p&gt;One could compare the fit and the predictions of this flavor of Q-learning with another flavor, or with another RL model. The idea would be that each model reflects different theoretical assumptions. It’s also possible to use posterior predictive checks to investigate where the a specific RL model fails and how it should be modified. Finally, RL could be part of a larger model, as in the case of &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-pedersen2017drift&#34; role=&#34;doc-biblioref&#34;&gt;Pedersen, Frank, and Biele&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-pedersen2017drift&#34; role=&#34;doc-biblioref&#34;&gt;2017&lt;/a&gt;)&lt;/span&gt;, who combined drift diffusion with RL.&lt;/p&gt;
+&lt;p&gt;One could compare the fit and the predictions of this flavor of Q-learning with another flavor, or with another RL model. The idea would be that each model reflects different theoretical assumptions. It’s also possible to use posterior predictive checks to investigate where the a specific RL model fails and how it should be modified. Finally, RL could be part of a larger model, as in the case of &lt;span class=&#34;citation&#34;&gt;Pedersen, Frank, and Biele (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-pedersen2017drift&#34;&gt;2017&lt;/a&gt;)&lt;/span&gt;, who combined drift diffusion with RL.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&#34;session-info&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Session info&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fn3&#34; class=&#34;footnote-ref&#34; id=&#34;fnref3&#34;&gt;&lt;sup&gt;3&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
+&lt;h2&gt;Session info &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fn3&#34; class=&#34;footnote-ref&#34; id=&#34;fnref3&#34;&gt;&lt;sup&gt;3&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sessionInfo()&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;R version 4.1.1 (2021-08-10)
+&lt;pre&gt;&lt;code&gt;R version 4.3.2 (2023-10-31)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 20.04.3 LTS
+Running under: Ubuntu 22.04.3 LTS
 
 Matrix products: default
-BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
-LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0 
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0
 
 locale:
  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=nl_NL.UTF-8   
  [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=nl_NL.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
 [11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
 
+time zone: Europe/Amsterdam
+tzcode source: system (glibc)
+
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bayesplot_1.8.1     cmdstanr_0.4.0.9000 MASS_7.3-54         extraDistr_1.9.1    ggplot2_3.3.5       purrr_0.3.4         tidyr_1.1.4        
-[8] dplyr_1.0.7        
+[1] bayesplot_1.10.0   cmdstanr_0.7.1     MASS_7.3-60        extraDistr_1.9.1   ggplot2_3.4.4.9000 purrr_1.0.2        tidyr_1.3.0        dplyr_1.1.3       
 
 loaded via a namespace (and not attached):
- [1] Rcpp_1.0.7           lubridate_1.8.0      ps_1.6.0             assertthat_0.2.1     digest_0.6.28        utf8_1.2.2           R6_2.5.1            
- [8] plyr_1.8.6           ggridges_0.5.3       backports_1.2.1      evaluate_0.14        highr_0.9            blogdown_1.5.2       pillar_1.6.4        
-[15] rlang_0.4.12         rstudioapi_0.13      data.table_1.14.2    jquerylib_0.1.4      checkmate_2.0.0      rmarkdown_2.11       labeling_0.4.2      
-[22] stringr_1.4.0        munsell_0.5.0        compiler_4.1.1       xfun_0.26            pkgconfig_2.0.3      papaja_0.1.0.9997    htmltools_0.5.2     
-[29] tidyselect_1.1.1     tibble_3.1.5         tensorA_0.36.2       bookdown_0.22        matrixStats_0.60.1   emo_0.0.0.9000       fansi_0.5.0         
-[36] crayon_1.4.2         withr_2.4.2          grid_4.1.1           distributional_0.2.2 jsonlite_1.7.2       gtable_0.3.0         lifecycle_1.0.1     
-[43] DBI_1.1.1            magrittr_2.0.1       posterior_1.1.0      scales_1.1.1         cli_3.1.0            stringi_1.7.6        reshape2_1.4.4      
-[50] farver_2.1.0         bslib_0.3.0          ellipsis_0.3.2       generics_0.1.1       vctrs_0.3.8          tools_4.1.1          glue_1.5.1          
-[57] processx_3.5.2       abind_1.4-5          fastmap_1.1.0        yaml_2.2.1           colorspace_2.0-2     knitr_1.36           sass_0.4.0          &lt;/code&gt;&lt;/pre&gt;
+ [1] gtable_0.3.4         tensorA_0.36.2.1     xfun_0.41            bslib_0.5.1          processx_3.8.3       papaja_0.1.2         vctrs_0.6.5         
+ [8] tools_4.3.2          ps_1.7.6             generics_0.1.3       tibble_3.2.1         fansi_1.0.6          highr_0.10           RefManageR_1.4.0    
+[15] pkgconfig_2.0.3      data.table_1.14.10   checkmate_2.3.1      distributional_0.3.2 assertthat_0.2.1     lifecycle_1.0.4      rcorpora_2.0.0      
+[22] compiler_4.3.2       farver_2.1.1         stringr_1.5.0        munsell_0.5.0        tinylabels_0.2.4     htmltools_0.5.7      sass_0.4.7          
+[29] yaml_2.3.7           pillar_1.9.0         crayon_1.5.2         jquerylib_0.1.4      cachem_1.0.8         abind_1.4-5          posterior_1.5.0     
+[36] tidyselect_1.2.0     digest_0.6.34        stringi_1.8.1        reshape2_1.4.4       bookdown_0.36        labeling_0.4.3       bibtex_0.5.1        
+[43] fastmap_1.1.1        grid_4.3.2           colorspace_2.1-0     cli_3.6.2            magrittr_2.0.3       emo_0.0.0.9000       utf8_1.2.4          
+[50] withr_3.0.0          scales_1.3.0         backports_1.4.1      lubridate_1.9.3      timechange_0.2.0     httr_1.4.7           rmarkdown_2.25      
+[57] matrixStats_1.2.0    blogdown_1.18        evaluate_0.23        knitr_1.45           rlang_1.1.3          Rcpp_1.0.12          glue_1.7.0          
+[64] xml2_1.3.5           rstudioapi_0.15.0    jsonlite_1.8.8       R6_2.5.1             plyr_1.8.9          &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 &lt;div id=&#34;references&#34; class=&#34;section level2 unnumbered&#34;&gt;
 &lt;h2&gt;References&lt;/h2&gt;
 &lt;div id=&#34;refs&#34; class=&#34;references csl-bib-body hanging-indent&#34;&gt;
+&lt;div id=&#34;ref-R-htmltools&#34; class=&#34;csl-entry&#34;&gt;
+Cheng, Joe, Carson Sievert, Barret Schloerke, Winston Chang, Yihui Xie, and Jeff Allen. 2023. &lt;em&gt;Htmltools: Tools for HTML&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=htmltools&#34;&gt;https://CRAN.R-project.org/package=htmltools&lt;/a&gt;.
+&lt;/div&gt;
 &lt;div id=&#34;ref-R-cmdstanr&#34; class=&#34;csl-entry&#34;&gt;
 Gabry, Jonah, and Rok Češnovar. 2021. &lt;em&gt;Cmdstanr: R Interface to ’CmdStan’&lt;/em&gt;.
 &lt;/div&gt;
@@ -464,6 +470,9 @@ Henry, Lionel, and Hadley Wickham. 2020. &lt;em&gt;Purrr: Functional Programming
 &lt;/div&gt;
 &lt;div id=&#34;ref-R-rcorpora&#34; class=&#34;csl-entry&#34;&gt;
 Kazemi, Darius, Cole Willsea, Serin Delaunay, Karl Swedberg, Matthew Rothenberg, Greg Kennedy, Nathaniel Mitchell, et al. 2018. &lt;em&gt;Rcorpora: A Collection of Small Text Corpora of Interesting Data&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=rcorpora&#34;&gt;https://CRAN.R-project.org/package=rcorpora&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-RefManageR&#34; class=&#34;csl-entry&#34;&gt;
+McLean, Mathew William. 2017. &lt;span&gt;“RefManageR: Import and Manage BibTeX and BibLaTeX References in r.”&lt;/span&gt; &lt;em&gt;The Journal of Open Source Software&lt;/em&gt;. &lt;a href=&#34;https://doi.org/10.21105/joss.00338&#34;&gt;https://doi.org/10.21105/joss.00338&lt;/a&gt;.
 &lt;/div&gt;
 &lt;div id=&#34;ref-niv2009reinforcement&#34; class=&#34;csl-entry&#34;&gt;
 Niv, Yael. 2009. &lt;span&gt;“Reinforcement Learning in the Brain.”&lt;/span&gt; &lt;em&gt;Journal of Mathematical Psychology&lt;/em&gt; 53 (3): 139–54.
@@ -486,11 +495,23 @@ van Geen, Camilla, and Raphael T. Gerraty. 2021. &lt;span&gt;“Hierarchical &lt
 &lt;div id=&#34;ref-R-ggplot2&#34; class=&#34;csl-entry&#34;&gt;
 Wickham, Hadley. 2016. &lt;em&gt;Ggplot2: Elegant Graphics for Data Analysis&lt;/em&gt;. Springer-Verlag New York. &lt;a href=&#34;https://ggplot2.tidyverse.org&#34;&gt;https://ggplot2.tidyverse.org&lt;/a&gt;.
 &lt;/div&gt;
+&lt;div id=&#34;ref-R-stringr&#34; class=&#34;csl-entry&#34;&gt;
+———. 2022. &lt;em&gt;Stringr: Simple, Consistent Wrappers for Common String Operations&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=stringr&#34;&gt;https://CRAN.R-project.org/package=stringr&lt;/a&gt;.
+&lt;/div&gt;
 &lt;div id=&#34;ref-R-dplyr&#34; class=&#34;csl-entry&#34;&gt;
 Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. &lt;em&gt;Dplyr: A Grammar of Data Manipulation&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=dplyr&#34;&gt;https://CRAN.R-project.org/package=dplyr&lt;/a&gt;.
 &lt;/div&gt;
 &lt;div id=&#34;ref-R-extraDistr&#34; class=&#34;csl-entry&#34;&gt;
 Wolodzko, Tymoteusz. 2020. &lt;em&gt;extraDistr: Additional Univariate and Multivariate Distributions&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=extraDistr&#34;&gt;https://CRAN.R-project.org/package=extraDistr&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-knitr&#34; class=&#34;csl-entry&#34;&gt;
+Xie, Yihui. 2015. &lt;em&gt;Dynamic Documents with &lt;span&gt;R&lt;/span&gt; and Knitr&lt;/em&gt;. 2nd ed. Boca Raton, Florida: Chapman; Hall/CRC. &lt;a href=&#34;https://yihui.org/knitr/&#34;&gt;https://yihui.org/knitr/&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-rmarkdown_a&#34; class=&#34;csl-entry&#34;&gt;
+Xie, Yihui, J. J. Allaire, and Garrett Grolemund. 2018. &lt;em&gt;R Markdown: The Definitive Guide&lt;/em&gt;. Boca Raton, Florida: Chapman; Hall/CRC. &lt;a href=&#34;https://bookdown.org/yihui/rmarkdown&#34;&gt;https://bookdown.org/yihui/rmarkdown&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-rmarkdown_b&#34; class=&#34;csl-entry&#34;&gt;
+Xie, Yihui, Christophe Dervieux, and Emily Riederer. 2020. &lt;em&gt;R Markdown Cookbook&lt;/em&gt;. Boca Raton, Florida: Chapman; Hall/CRC. &lt;a href=&#34;https://bookdown.org/yihui/rmarkdown-cookbook&#34;&gt;https://bookdown.org/yihui/rmarkdown-cookbook&lt;/a&gt;.
 &lt;/div&gt;
 &lt;div id=&#34;ref-ZhangEtAl2020&#34; class=&#34;csl-entry&#34;&gt;
 Zhang, Lei, Lukas Lengersdorff, Nace Mikus, Jan Gläscher, and Claus Lamm. 2020. &lt;span&gt;“&lt;span class=&#34;nocase&#34;&gt;Using reinforcement learning models in social neuroscience: frameworks, pitfalls and suggestions of best practices&lt;/span&gt;.”&lt;/span&gt; &lt;em&gt;Social Cognitive and Affective Neuroscience&lt;/em&gt; 15 (6): 695–707. &lt;a href=&#34;https://doi.org/10.1093/scan/nsaa089&#34;&gt;https://doi.org/10.1093/scan/nsaa089&lt;/a&gt;.
@@ -498,12 +519,12 @@ Zhang, Lei, Lukas Lengersdorff, Nace Mikus, Jan Gläscher, and Claus Lamm. 2020.
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;/div&gt;
-&lt;div class=&#34;footnotes&#34;&gt;
+&lt;div class=&#34;footnotes footnotes-end-of-document&#34;&gt;
 &lt;hr /&gt;
 &lt;ol&gt;
 &lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;I actually forgot to bound the parameter at one point, and I could verify that the chains of the MCMC sampler got stuck at different modes.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
 &lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;A &lt;a href=&#34;https://xkcd.com/2303/&#34;&gt;Type-V Error&lt;/a&gt;.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;li id=&#34;fn3&#34;&gt;&lt;p&gt;I used R [Version 4.1.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;R Core Team&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;] and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; [Version 1.8.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;Gabry et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;2019&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;cmdstanr&lt;/em&gt; [Version 0.4.0.9000; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;Gabry and Češnovar&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;dplyr&lt;/em&gt; [Version 1.0.7; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;Wickham et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;extraDistr&lt;/em&gt; [Version 1.9.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;Wolodzko&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;ggplot2&lt;/em&gt; [Version 3.3.5; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;2016&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;purrr&lt;/em&gt; [Version 0.3.4; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;Henry and Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], and &lt;em&gt;rcorpora&lt;/em&gt; [Version 2.0.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;Kazemi et al.&lt;/a&gt; (&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;] to generate this document.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref3&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&#34;fn3&#34;&gt;&lt;p&gt;I used R &lt;span class=&#34;citation&#34;&gt;(Version 4.3.2; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-base&#34;&gt;R Core Team 2021&lt;/a&gt;)&lt;/span&gt; and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.10.0; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-bayesplot&#34;&gt;Gabry et al. 2019&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;cmdstanr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 0.7.1; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-cmdstanr&#34;&gt;Gabry and Češnovar 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;dplyr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.1.3; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-dplyr&#34;&gt;Wickham et al. 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;extraDistr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.9.1; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-extraDistr&#34;&gt;Wolodzko 2020&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;ggplot2&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 3.4.4.9000; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-ggplot2&#34;&gt;Wickham 2016&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;htmltools&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 0.5.7; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-htmltools&#34;&gt;Cheng et al. 2023&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;knitr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.45; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-knitr&#34;&gt;Xie 2015&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;purrr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.0.2; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-purrr&#34;&gt;Henry and Wickham 2020&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;rcorpora&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 2.0.0; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-rcorpora&#34;&gt;Kazemi et al. 2018&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;RefManageR&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.4.0; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-RefManageR&#34;&gt;McLean 2017&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;rmarkdown&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 2.25; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-rmarkdown_a&#34;&gt;Xie, Allaire, and Grolemund 2018&lt;/a&gt;; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-rmarkdown_b&#34;&gt;Xie, Dervieux, and Riederer 2020&lt;/a&gt;)&lt;/span&gt;, and &lt;em&gt;stringr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.5.0; &lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#ref-R-stringr&#34;&gt;Wickham 2022&lt;/a&gt;)&lt;/span&gt; to generate this document.&lt;a href=&#34;/2021/11/29/bayesian-h-reinforcement-learning/#fnref3&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 &lt;/div&gt;
 </description>
@@ -515,19 +536,18 @@ Zhang, Lei, Lukas Lengersdorff, Nace Mikus, Jan Gläscher, and Claus Lamm. 2020.
       <pubDate>Sun, 21 Mar 2021 00:00:00 +0000</pubDate>
       
       <guid>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</guid><description>
-&lt;script src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/header-attrs/header-attrs.js&#34;&gt;&lt;/script&gt;
 
 
+&lt;p&gt;&lt;strong&gt;Update Feb 1st, 2024: I updated the Stan syntax.&lt;/strong&gt;&lt;/p&gt;
 &lt;div id=&#34;the-initial-problem&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;The initial problem&lt;/h2&gt;
 &lt;p&gt;I wrote what I thought it was the generative process for some modeling work, and it looked too common to not have a name, so I started to ask around in Twitter:&lt;/p&gt;
-&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? &lt;br&gt;Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2&lt;br&gt;2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1&lt;br&gt;3rd, y ~ categorical(p3/(p3+p4),p4/(p3+p4)); y =3&lt;br&gt;4th, it&amp;#39;s y =4&lt;/p&gt;&amp;mdash; @bruno_nicenboim@fediscience.org (@bruno_nicenboim) &lt;a href=&#34;https://twitter.com/bruno_nicenboim/status/1369217174699732995?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
+&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;Prob q: Is there a name for a categorical distribution that whenever you get an outcome you remove it from the set? &lt;br&gt;Ex. 1st draw: y ~ cat(p1,p2,p3,p4) ; y = 2&lt;br&gt;2nd draw y ~ cat(p1/k,p3/k,p4/k) (k = p1+p3+p4); y =1&lt;br&gt;3rd, y ~ categorical(p3/(p3+p4),p4/(p3+p4)); y =3&lt;br&gt;4th, it&amp;#39;s y =4&lt;/p&gt;&amp;mdash; @bruno_nicenboim@fediscience.org (@bruno_nicenboim) &lt;a href=&#34;https://twitter.com/bruno_nicenboim/status/1369217174699732995?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
 &lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
-&lt;/p&gt;
+
+
 &lt;p&gt;One useful clue was this one:&lt;/p&gt;
-&lt;p&gt;&lt;blockquote class=&#34;twitter-tweet&#34;&gt;&lt;p lang=&#34;en&#34; dir=&#34;ltr&#34;&gt;If I understand you correctly, the situation is similar to a (literal) horse-race, as modeled here: &lt;a href=&#34;https://t.co/TGGS1h4xxe&#34;&gt;https://t.co/TGGS1h4xxe&lt;/a&gt;&lt;/p&gt;&amp;mdash; @pavel_logacev@bayes.club (@pavellogacev) &lt;a href=&#34;https://twitter.com/pavellogacev/status/1369226616312901637?ref_src=twsrc%5Etfw&#34;&gt;March 9, 2021&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async src=&#34;https://platform.twitter.com/widgets.js&#34; charset=&#34;utf-8&#34;&gt;&lt;/script&gt;
-&lt;/p&gt;
+
 &lt;p&gt;It turns out that the distribution that I was describing is in general used for rankings or ordered data and it is called an &lt;a href=&#34;https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit&#34;&gt;&lt;em&gt;exploded logit distribution&lt;/em&gt;&lt;/a&gt;.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fn1&#34; class=&#34;footnote-ref&#34; id=&#34;fnref1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/3osxYCsLd9qgsgqpwI/giphy.gif&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;In this post, I’ll show how this model can be fit in the probabilistic programming language &lt;a href=&#34;https://mc-stan.org/&#34;&gt;Stan&lt;/a&gt;, and how it can be used to describe the underlying order of ranking data.&lt;/p&gt;
@@ -542,8 +562,8 @@ library(bayesplot) # Nice Bayesian plots&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 &lt;div id=&#34;ranking-data&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;Ranking data&lt;/h2&gt;
-&lt;p&gt;Ranking data appear when we care about the &lt;em&gt;underlying&lt;/em&gt; order that certain elements have. We might want to know which are the best horses after looking at several races &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-gakisetal2018&#34; role=&#34;doc-biblioref&#34;&gt;Gakis et al. 2018&lt;/a&gt;)&lt;/span&gt;, which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.&lt;/p&gt;
-&lt;p&gt;One way to get a ranking of exemplars of a category, for example, is to present them to participants and ask them to order all (or a subset) of them &lt;span class=&#34;citation&#34;&gt;(see &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Barsalou1985&#34; role=&#34;doc-biblioref&#34;&gt;Barsalou 1985&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;Ranking data appear when we care about the &lt;em&gt;underlying&lt;/em&gt; order that certain elements have. We might want to know which are the best horses after looking at several races &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-gakisetal2018&#34;&gt;Gakis et al. 2018&lt;/a&gt;)&lt;/span&gt;, which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.&lt;/p&gt;
+&lt;p&gt;One way to get a ranking of exemplars of a category, for example, is to present them to participants and ask them to order all (or a subset) of them &lt;span class=&#34;citation&#34;&gt;(see &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Barsalou1985&#34;&gt;Barsalou 1985&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
 &lt;div id=&#34;a-ranking-simulation-using-pizza-toppings&#34; class=&#34;section level3&#34;&gt;
 &lt;h3&gt;A ranking simulation using pizza toppings&lt;/h3&gt;
 &lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/3oEjHZhG9COPG6XjzO/giphy.gif&#34; /&gt;&lt;/p&gt;
@@ -577,60 +597,60 @@ P_toppings &amp;lt;- c(rdirichlet(1, alpha)) %&amp;gt;%
   sort(decreasing = TRUE)
 P_toppings %&amp;gt;%
   round(3)&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt; breakfast bacon          chicken             feta 
-           0.294            0.241            0.087 
-       anchovies sun-dried tomato           olives 
-           0.087            0.077            0.057 
-       pepperoni        artichoke           cheese 
-           0.056            0.049            0.010 
-  Canadian bacon            bacon              ham 
-           0.008            0.008            0.006 
-       meatballs    chili peppers           garlic 
-           0.004            0.004            0.004 
-     ground beef         tomatoes        hot sauce 
-           0.003            0.003            0.002 
-          onions          sausage        pineapple 
+&lt;pre&gt;&lt;code&gt;       artichoke  breakfast bacon           onions 
+           0.387            0.140            0.124 
+     ground beef        hot sauce          spinach 
+           0.091            0.090            0.072 
+sun-dried tomato        anchovies             feta 
+           0.036            0.016            0.010 
+   green peppers            bacon   Canadian bacon 
+           0.006            0.006            0.006 
+   chili peppers        pepperoni           garlic 
+           0.005            0.005            0.003 
+        tomatoes              ham        mushrooms 
+           0.002            0.001            0.001 
+       meatballs          sausage           olives 
            0.000            0.000            0.000 
-         spinach        mushrooms   grilled onions 
+  grilled onions          chicken           cheese 
            0.000            0.000            0.000 
-   green peppers 
+       pineapple 
            0.000 &lt;/code&gt;&lt;/pre&gt;
 &lt;ul&gt;
-&lt;li&gt;Given these values, if I were to ask a participant “What’s the most appropriate topping for a pizza?” I would assume that 29.37 percent of the time, I would get &lt;em&gt;breakfast bacon&lt;/em&gt;.&lt;/li&gt;
+&lt;li&gt;Given these values, if I were to ask a participant “What’s the most appropriate topping for a pizza?” I would assume that 38.74 percent of the time, I would get &lt;em&gt;artichoke&lt;/em&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Essentially, we expect something like this to be happening.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probicat&#34;&gt;\[\begin{equation} 
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probicat&#34;&gt;\[\begin{equation}
 response \sim Categorical(\Theta_{toppings})
 \tag{1}
 \end{equation}\]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;With &lt;span class=&#34;math inline&#34;&gt;\(\Theta_{toppings}\)&lt;/span&gt; representing the different probabilities for each topping. The probability mass function of the categorical distribution is absurdly simple: It’s just the probability of the outcome.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi&#34;&gt;\[\begin{equation} 
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi&#34;&gt;\[\begin{equation}
 p(x = i) = \Theta_i
 \tag{2}
 \end{equation}\]&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(i = \{\)&lt;/span&gt;breakfast bacon, chicken, feta, anchovies, sun-dried tomato, olives, pepperoni, artichoke, cheese, Canadian bacon, bacon, ham, meatballs, chili peppers, garlic, ground beef, tomatoes, hot sauce, onions, sausage, pineapple, spinach, mushrooms, grilled onions, green peppers&lt;span class=&#34;math inline&#34;&gt;\(\}\)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(i = \{\)&lt;/span&gt;artichoke, breakfast bacon, onions, ground beef, hot sauce, spinach, sun-dried tomato, anchovies, feta, green peppers, bacon, Canadian bacon, chili peppers, pepperoni, garlic, tomatoes, ham, mushrooms, meatballs, sausage, olives, grilled onions, chicken, cheese, pineapple&lt;span class=&#34;math inline&#34;&gt;\(\}\)&lt;/span&gt;.&lt;/p&gt;
 &lt;p&gt;We can simulate this with 100 participants as follows:&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;response &amp;lt;- rcat(100, P_toppings, names(P_toppings))&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;And this should match approximately &lt;code&gt;P_toppings&lt;/code&gt;.&lt;/p&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;table(response)/100&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt;response
- breakfast bacon          chicken             feta 
-            0.26             0.19             0.16 
-       anchovies sun-dried tomato           olives 
-            0.07             0.15             0.06 
-       pepperoni        artichoke           cheese 
-            0.01             0.08             0.00 
-  Canadian bacon            bacon              ham 
-            0.02             0.00             0.00 
-       meatballs    chili peppers           garlic 
+       artichoke  breakfast bacon           onions 
+            0.31             0.12             0.17 
+     ground beef        hot sauce          spinach 
+            0.11             0.14             0.04 
+sun-dried tomato        anchovies             feta 
+            0.07             0.02             0.02 
+   green peppers            bacon   Canadian bacon 
             0.00             0.00             0.00 
-     ground beef         tomatoes        hot sauce 
+   chili peppers        pepperoni           garlic 
             0.00             0.00             0.00 
-          onions          sausage        pineapple 
+        tomatoes              ham        mushrooms 
             0.00             0.00             0.00 
-         spinach        mushrooms   grilled onions 
+       meatballs          sausage           olives 
             0.00             0.00             0.00 
-   green peppers 
+  grilled onions          chicken           cheese 
+            0.00             0.00             0.00 
+       pineapple 
             0.00 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;em&gt;It seems that by only asking participants to give the best topping we could already deduce the underlying order…&lt;/em&gt;&lt;/p&gt;
 &lt;p&gt;True, but one motivation for considering ranking data is the amount of information that we gather with a list due to their combinatorial nature. If we ask participants to rank &lt;span class=&#34;math inline&#34;&gt;\(n\)&lt;/span&gt; items, an answer consists in making a single selection out of &lt;span class=&#34;math inline&#34;&gt;\(n!\)&lt;/span&gt; possibilities. Ordering 7 pizza toppings, for example, constitutes making a single selection out of 5040 possibilities!&lt;/p&gt;
@@ -684,10 +704,10 @@ p(x = k) = \frac{\Theta_k}{\sum \Theta_{[-i,-j]}}
                  labels = names(P_toppings))
 # subject 1:
 res[[1]]&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;[1] sun-dried tomato artichoke        olives          
-[4] breakfast bacon  chicken          pepperoni       
-[7] anchovies       
-25 Levels: breakfast bacon chicken feta ... green peppers&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;[1] hot sauce        artichoke        breakfast bacon 
+[4] onions           ground beef      sun-dried tomato
+[7] spinach         
+25 Levels: artichoke breakfast bacon onions ... pineapple&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan//2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/subjects.gif&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;We have simulated ranking data of pizza toppings, can we recover the original probability values and “discover” the underlying order?&lt;/p&gt;
 &lt;/div&gt;
@@ -711,7 +731,7 @@ log(p(x = \{i,j,k,\ldots\})) =&amp;amp; \log(\Theta_i) - log(\sum \Theta) \\
 \tag{5}
 \end{equation}\]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;The following Stan custom function follows this logic but iterating over the rankings. In each iteration, it aggregates in the variable &lt;code&gt;out&lt;/code&gt; the addends of the log probability mass function, and turns the probability of selecting again the already ranked element to zero.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt; real exploded_lpmf(int[] x, vector Theta){
+&lt;pre&gt;&lt;code&gt; real exploded_lpmf(array[] int x, vector Theta){
     real out = 0;
     vector[num_elements(Theta)] thetar = Theta;
     for(pos in x){
@@ -722,7 +742,7 @@ log(p(x = \{i,j,k,\ldots\})) =&amp;amp; \log(\Theta_i) - log(\sum \Theta) \\
  }&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;The whole model named &lt;code&gt;exploded.stan&lt;/code&gt; includes the usual data declaration, the parameter &lt;code&gt;Theta&lt;/code&gt; declared as a simplex (i.e., it sums to one), and a uniform Dirichlet prior for &lt;code&gt;Theta&lt;/code&gt;. (I’m assuming that I don’t know how sparse the probabilities are).&lt;/p&gt;
 &lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;functions {
- real exploded_lpmf(int[] x, vector Theta){
+ real exploded_lpmf(array[] int x, vector Theta){
     real out = 0;
     vector[num_elements(Theta)] thetar = Theta;
     for(pos in x){
@@ -736,7 +756,7 @@ data{
   int N_ranking; //total times the choices were ranked
   int N_ranked; //total choices ranked
   int N_options; //total options
-  int res[N_ranking, N_ranked];
+  array[N_ranking, N_ranked] int res;
 }
 parameters {
   simplex[N_options] Theta;
@@ -765,16 +785,16 @@ f_exploded &amp;lt;- m_expl$sample(
 
 f_exploded&lt;/code&gt;&lt;/pre&gt;
 &lt;pre&gt;&lt;code&gt; variable    mean  median   sd  mad      q5     q95 rhat ess_bulk ess_tail
- lp__     -724.91 -724.59 3.59 3.49 -731.39 -719.59 1.00     1262     2290
- Theta[1]    0.29    0.29 0.04 0.04    0.23    0.35 1.00     5575     2538
- Theta[2]    0.27    0.27 0.04 0.04    0.21    0.33 1.00     5320     3114
- Theta[3]    0.08    0.08 0.01 0.01    0.06    0.10 1.00     6830     3167
- Theta[4]    0.09    0.08 0.01 0.01    0.06    0.11 1.00     5790     2746
- Theta[5]    0.07    0.07 0.01 0.01    0.05    0.09 1.00     6440     3142
- Theta[6]    0.05    0.04 0.01 0.01    0.03    0.06 1.00     6608     3177
- Theta[7]    0.04    0.04 0.01 0.01    0.03    0.06 1.00     6373     2697
- Theta[8]    0.05    0.05 0.01 0.01    0.03    0.06 1.00     5620     2863
- Theta[9]    0.01    0.01 0.00 0.00    0.00    0.01 1.00     7235     2664
+ lp__     -688.83 -688.43 3.67 3.67 -695.50 -683.60 1.00     1381     2171
+ Theta[1]    0.35    0.35 0.04 0.04    0.28    0.42 1.00     5554     2867
+ Theta[2]    0.16    0.16 0.02 0.02    0.13    0.20 1.00     5578     2692
+ Theta[3]    0.13    0.13 0.02 0.02    0.10    0.17 1.00     5535     2966
+ Theta[4]    0.08    0.08 0.01 0.01    0.06    0.11 1.00     5656     3210
+ Theta[5]    0.10    0.10 0.01 0.01    0.08    0.12 1.00     6052     2845
+ Theta[6]    0.06    0.06 0.01 0.01    0.04    0.08 1.00     5893     3232
+ Theta[7]    0.04    0.04 0.01 0.01    0.03    0.05 1.00     5861     3159
+ Theta[8]    0.02    0.02 0.00 0.00    0.01    0.03 1.00     6491     3193
+ Theta[9]    0.01    0.01 0.00 0.00    0.00    0.01 1.00     5362     2888
 
  # showing 10 of 26 rows (change via &amp;#39;max_rows&amp;#39; argument or &amp;#39;cmdstanr_max_rows&amp;#39; option)&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;I plot the posterior distributions of the probability values and the true probability values below.&lt;/p&gt;
@@ -784,7 +804,7 @@ f_exploded&lt;/code&gt;&lt;/pre&gt;
                     list(scales = &amp;quot;fixed&amp;quot;, ncol = 3)) +
   theme(legend.position=&amp;quot;bottom&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan//2021/03/21/a-simple-way-to-model-rankings-with-stan/index_files/figure-html/unnamed-chunk-10-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
-&lt;p&gt;It looks reasonable. However, if we really want to be sure that this is working, we should probably use simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-taltsValidatingBayesianInference2018&#34; role=&#34;doc-biblioref&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;It looks reasonable. However, if we really want to be sure that this is working, we should probably use simulation based calibration &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-taltsValidatingBayesianInference2018&#34;&gt;Talts et al. 2018&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&#34;what-is-this-good-for&#34; class=&#34;section level2&#34;&gt;
 &lt;h2&gt;What is this good for?&lt;/h2&gt;
@@ -794,21 +814,21 @@ f_exploded&lt;/code&gt;&lt;/pre&gt;
 &lt;h2&gt;Could this be used as a cognitive model of people’s rankings?&lt;/h2&gt;
 &lt;p&gt;&lt;img src=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/https://media.giphy.com/media/dXcwxFuXCd8sI3VcFb/giphy.gif&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;Maybe. And I enter here in the realm of half baked research, ideal for a blog post.&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;Lee, Steyvers, and Miller&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Lee2014&#34; role=&#34;doc-biblioref&#34;&gt;2014&lt;/a&gt;)&lt;/span&gt; show the implementation of a cognitive model for rank order data from the latent knowledge of participants, which is
-based on Thurstonian models &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1927law&#34; role=&#34;doc-biblioref&#34;&gt;Thurstone 1927&lt;/a&gt;, &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1931rank&#34; role=&#34;doc-biblioref&#34;&gt;1931&lt;/a&gt;)&lt;/span&gt; fitted with Bayesian methods in JAGS &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Johnson2013&#34; role=&#34;doc-biblioref&#34;&gt;Johnson and Kuhn 2013&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;citation&#34;&gt;Lee, Steyvers, and Miller (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Lee2014&#34;&gt;2014&lt;/a&gt;)&lt;/span&gt; show the implementation of a cognitive model for rank order data from the latent knowledge of participants, which is
+based on Thurstonian models &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1927law&#34;&gt;Thurstone 1927&lt;/a&gt;, &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-thurstone1931rank&#34;&gt;1931&lt;/a&gt;)&lt;/span&gt; fitted with Bayesian methods in JAGS &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Johnson2013&#34;&gt;Johnson and Kuhn 2013&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
 &lt;p&gt;The exploded logit model seems to be closely related to the Thurstonian model. The Thurstonian model assumes that each participant assigns an underlying score to each item of a set, which is drawn from a true score with normally distributed error. The score determines the order that the participant gives. We can think about the exploded logit similarly. While I modeled the underlying ranking based on probability values, one could assume that each participant &lt;span class=&#34;math inline&#34;&gt;\(s\)&lt;/span&gt; had their own score &lt;span class=&#34;math inline&#34;&gt;\(mu_{is}\)&lt;/span&gt; for each item (or pizza topping) &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;, which is built as a common score &lt;span class=&#34;math inline&#34;&gt;\(mu_i\)&lt;/span&gt; together with some individual deviation &lt;span class=&#34;math inline&#34;&gt;\(\epsilon_{is}\)&lt;/span&gt;:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:muis&#34;&gt;\[\begin{equation} 
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:muis&#34;&gt;\[\begin{equation}
 \mu_{is}  = \mu_i + \epsilon_{is}
 \tag{6}
 \end{equation}\]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;If we assume that &lt;span class=&#34;math inline&#34;&gt;\(\epsilon_{is}\)&lt;/span&gt; has a &lt;a href=&#34;https://en.wikipedia.org/wiki/Gumbel_distribution&#34;&gt;Gumbel&lt;/a&gt; distribution, then the probability of &lt;span class=&#34;math inline&#34;&gt;\(\mu_{is}\)&lt;/span&gt; being ranked first out of N options is determined by a softmax function:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi2&#34;&gt;\[\begin{equation} 
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probi2&#34;&gt;\[\begin{equation}
 P(i) = \frac{\exp(\mu_i)}{\sum \exp(\mu)}
 \tag{7}
 \end{equation}\]&lt;/span&gt;&lt;/p&gt;
 &lt;p&gt;where &lt;span class=&#34;math inline&#34;&gt;\(\mu\)&lt;/span&gt; is the vector of scores for all elements of the set.&lt;/p&gt;
 &lt;p&gt;And the probability of ordering &lt;span class=&#34;math inline&#34;&gt;\(j\)&lt;/span&gt; second is:&lt;/p&gt;
-&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probj2&#34;&gt;\[\begin{equation} 
+&lt;p&gt;&lt;span class=&#34;math display&#34; id=&#34;eq:probj2&#34;&gt;\[\begin{equation}
 P(i,j,\ldots) = \frac{\exp(\mu_j)}{\sum \exp(\mu_{[-i]} )}
 \tag{8}
 \end{equation}\]&lt;/span&gt;&lt;/p&gt;
@@ -816,37 +836,42 @@ P(i,j,\ldots) = \frac{\exp(\mu_j)}{\sum \exp(\mu_{[-i]} )}
 &lt;p&gt;These last equations are essentially the same categorical distributions that I used before in &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#eq:probi&#34;&gt;(2)&lt;/a&gt; and &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#eq:probj&#34;&gt;(3)&lt;/a&gt;, but the softmax function converts the unbounded scores into probabilities first. However, with the exploded logit, the error term goes away leading to a more tractable model. This is not the case for the Thurstonian model. The Thurstonian model is more complex, but at the same time we gain more flexibility. With the error term, the Thurstonian model can incorporate the reliability of the participants’ judgments and even correlations, which, as far as I know, can’t be included in the exploded logit model.&lt;/p&gt;
 &lt;/div&gt;
 &lt;div id=&#34;session-info&#34; class=&#34;section level2&#34;&gt;
-&lt;h2&gt;Session info&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fn2&#34; class=&#34;footnote-ref&#34; id=&#34;fnref2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
+&lt;h2&gt;Session info &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fn2&#34; class=&#34;footnote-ref&#34; id=&#34;fnref2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/h2&gt;
 &lt;pre class=&#34;r&#34;&gt;&lt;code&gt;sessionInfo()&lt;/code&gt;&lt;/pre&gt;
-&lt;pre&gt;&lt;code&gt;R version 4.1.1 (2021-08-10)
+&lt;pre&gt;&lt;code&gt;R version 4.3.2 (2023-10-31)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 20.04.3 LTS
+Running under: Ubuntu 22.04.3 LTS
 
 Matrix products: default
-BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
-LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0 
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0
 
 locale:
  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=nl_NL.UTF-8   
  [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=nl_NL.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
 [11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
 
+time zone: Europe/Amsterdam
+tzcode source: system (glibc)
+
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bayesplot_1.8.1     cmdstanr_0.4.0.9000 rcorpora_2.0.0      extraDistr_1.9.1    ggplot2_3.3.5       purrr_0.3.4         dplyr_1.0.7        
+[1] bayesplot_1.10.0   cmdstanr_0.7.1     rcorpora_2.0.0     extraDistr_1.9.1   ggplot2_3.4.4.9000 purrr_1.0.2        dplyr_1.1.3       
 
 loaded via a namespace (and not attached):
- [1] tidyselect_1.1.1     xfun_0.26            bslib_0.3.0          reshape2_1.4.4       colorspace_2.0-2     vctrs_0.3.8          generics_0.1.1      
- [8] htmltools_0.5.2      yaml_2.2.1           utf8_1.2.2           rlang_0.4.12         jquerylib_0.1.4      pillar_1.6.4         glue_1.5.1          
-[15] withr_2.4.2          DBI_1.1.1            distributional_0.2.2 matrixStats_0.60.1   lifecycle_1.0.1      plyr_1.8.6           stringr_1.4.0       
-[22] posterior_1.1.0      munsell_0.5.0        blogdown_1.5.2       gtable_0.3.0         evaluate_0.14        labeling_0.4.2       papaja_0.1.0.9997   
-[29] knitr_1.36           fastmap_1.1.0        ps_1.6.0             fansi_0.5.0          highr_0.9            Rcpp_1.0.7           scales_1.1.1        
-[36] backports_1.2.1      checkmate_2.0.0      jsonlite_1.7.2       abind_1.4-5          farver_2.1.0         tensorA_0.36.2       digest_0.6.28       
-[43] stringi_1.7.6        processx_3.5.2       bookdown_0.22        grid_4.1.1           tools_4.1.1          magrittr_2.0.1       sass_0.4.0          
-[50] tibble_3.1.5         crayon_1.4.2         pkgconfig_2.0.3      ellipsis_0.3.2       data.table_1.14.2    ggridges_0.5.3       assertthat_0.2.1    
-[57] rmarkdown_2.11       R6_2.5.1             compiler_4.1.1      &lt;/code&gt;&lt;/pre&gt;
+ [1] gtable_0.3.4         tensorA_0.36.2.1     xfun_0.41            bslib_0.5.1          processx_3.8.3       papaja_0.1.2         vctrs_0.6.5         
+ [8] tools_4.3.2          ps_1.7.6             generics_0.1.3       tibble_3.2.1         fansi_1.0.6          highr_0.10           RefManageR_1.4.0    
+[15] pkgconfig_2.0.3      data.table_1.14.10   checkmate_2.3.1      distributional_0.3.2 lifecycle_1.0.4      compiler_4.3.2       farver_2.1.1        
+[22] stringr_1.5.0        munsell_0.5.0        tinylabels_0.2.4     httpuv_1.6.12        htmltools_0.5.7      sass_0.4.7           yaml_2.3.7          
+[29] later_1.3.1          pillar_1.9.0         jquerylib_0.1.4      ellipsis_0.3.2       cachem_1.0.8         abind_1.4-5          mime_0.12           
+[36] posterior_1.5.0      tidyselect_1.2.0     digest_0.6.34        stringi_1.8.1        reshape2_1.4.4       bookdown_0.36        labeling_0.4.3      
+[43] bibtex_0.5.1         fastmap_1.1.1        grid_4.3.2           colorspace_2.1-0     cli_3.6.2            magrittr_2.0.3       utf8_1.2.4          
+[50] withr_3.0.0          promises_1.2.1       scales_1.3.0         backports_1.4.1      lubridate_1.9.3      timechange_0.2.0     rmarkdown_2.25      
+[57] httr_1.4.7           matrixStats_1.2.0    blogdown_1.18        shiny_1.7.5.1        evaluate_0.23        knitr_1.45           rlang_1.1.3         
+[64] Rcpp_1.0.12          xtable_1.8-4         glue_1.7.0           xml2_1.3.5           rstudioapi_0.15.0    jsonlite_1.8.8       R6_2.5.1            
+[71] plyr_1.8.9          &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 &lt;div id=&#34;references&#34; class=&#34;section level2 unnumbered&#34;&gt;
 &lt;h2&gt;References&lt;/h2&gt;
@@ -859,6 +884,9 @@ Beggs, S, S Cardell, and J Hausman. 1981. &lt;span&gt;“Assessing the Potential
 &lt;/div&gt;
 &lt;div id=&#34;ref-R-shiny&#34; class=&#34;csl-entry&#34;&gt;
 Chang, Winston, Joe Cheng, JJ Allaire, Carson Sievert, Barret Schloerke, Yihui Xie, Jeff Allen, Jonathan McPherson, Alan Dipert, and Barbara Borges. 2021. &lt;em&gt;Shiny: Web Application Framework for r&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=shiny&#34;&gt;https://CRAN.R-project.org/package=shiny&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-htmltools&#34; class=&#34;csl-entry&#34;&gt;
+Cheng, Joe, Carson Sievert, Barret Schloerke, Winston Chang, Yihui Xie, and Jeff Allen. 2023. &lt;em&gt;Htmltools: Tools for HTML&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=htmltools&#34;&gt;https://CRAN.R-project.org/package=htmltools&lt;/a&gt;.
 &lt;/div&gt;
 &lt;div id=&#34;ref-R-cmdstanr&#34; class=&#34;csl-entry&#34;&gt;
 Gabry, Jonah, and Rok Češnovar. 2020. &lt;em&gt;Cmdstanr: R Interface to ’CmdStan’&lt;/em&gt;.
@@ -884,6 +912,9 @@ Lee, Michael D., Mark Steyvers, and Brent Miller. 2014. &lt;span&gt;“A Cogniti
 &lt;div id=&#34;ref-Luce1959&#34; class=&#34;csl-entry&#34;&gt;
 Luce, R. Duncan. 1959. &lt;em&gt;Individual Choice Behavior : A Theoretical Analysis&lt;/em&gt;. Book. Wiley N.Y.
 &lt;/div&gt;
+&lt;div id=&#34;ref-R-RefManageR&#34; class=&#34;csl-entry&#34;&gt;
+McLean, Mathew William. 2017. &lt;span&gt;“RefManageR: Import and Manage BibTeX and BibLaTeX References in r.”&lt;/span&gt; &lt;em&gt;The Journal of Open Source Software&lt;/em&gt;. &lt;a href=&#34;https://doi.org/10.21105/joss.00338&#34;&gt;https://doi.org/10.21105/joss.00338&lt;/a&gt;.
+&lt;/div&gt;
 &lt;div id=&#34;ref-Plackett&#34; class=&#34;csl-entry&#34;&gt;
 Plackett, R. L. 1975. &lt;span&gt;“The Analysis of Permutations.”&lt;/span&gt; &lt;em&gt;Journal of the Royal Statistical Society. Series C (Applied Statistics)&lt;/em&gt; 24 (2): 193–202. &lt;a href=&#34;http://www.jstor.org/stable/2346567&#34;&gt;http://www.jstor.org/stable/2346567&lt;/a&gt;.
 &lt;/div&gt;
@@ -902,22 +933,34 @@ Thurstone, Louis L. 1927. &lt;span&gt;“A Law of Comparative Judgement.”&lt;/
 &lt;div id=&#34;ref-R-ggplot2&#34; class=&#34;csl-entry&#34;&gt;
 Wickham, Hadley. 2016. &lt;em&gt;Ggplot2: Elegant Graphics for Data Analysis&lt;/em&gt;. Springer-Verlag New York. &lt;a href=&#34;https://ggplot2.tidyverse.org&#34;&gt;https://ggplot2.tidyverse.org&lt;/a&gt;.
 &lt;/div&gt;
+&lt;div id=&#34;ref-R-stringr&#34; class=&#34;csl-entry&#34;&gt;
+———. 2022. &lt;em&gt;Stringr: Simple, Consistent Wrappers for Common String Operations&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=stringr&#34;&gt;https://CRAN.R-project.org/package=stringr&lt;/a&gt;.
+&lt;/div&gt;
 &lt;div id=&#34;ref-R-dplyr&#34; class=&#34;csl-entry&#34;&gt;
 Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. &lt;em&gt;Dplyr: A Grammar of Data Manipulation&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=dplyr&#34;&gt;https://CRAN.R-project.org/package=dplyr&lt;/a&gt;.
 &lt;/div&gt;
 &lt;div id=&#34;ref-R-extraDistr&#34; class=&#34;csl-entry&#34;&gt;
 Wolodzko, Tymoteusz. 2020. &lt;em&gt;extraDistr: Additional Univariate and Multivariate Distributions&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=extraDistr&#34;&gt;https://CRAN.R-project.org/package=extraDistr&lt;/a&gt;.
 &lt;/div&gt;
+&lt;div id=&#34;ref-R-knitr&#34; class=&#34;csl-entry&#34;&gt;
+Xie, Yihui. 2015. &lt;em&gt;Dynamic Documents with &lt;span&gt;R&lt;/span&gt; and Knitr&lt;/em&gt;. 2nd ed. Boca Raton, Florida: Chapman; Hall/CRC. &lt;a href=&#34;https://yihui.org/knitr/&#34;&gt;https://yihui.org/knitr/&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-rmarkdown_a&#34; class=&#34;csl-entry&#34;&gt;
+Xie, Yihui, J. J. Allaire, and Garrett Grolemund. 2018. &lt;em&gt;R Markdown: The Definitive Guide&lt;/em&gt;. Boca Raton, Florida: Chapman; Hall/CRC. &lt;a href=&#34;https://bookdown.org/yihui/rmarkdown&#34;&gt;https://bookdown.org/yihui/rmarkdown&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-rmarkdown_b&#34; class=&#34;csl-entry&#34;&gt;
+Xie, Yihui, Christophe Dervieux, and Emily Riederer. 2020. &lt;em&gt;R Markdown Cookbook&lt;/em&gt;. Boca Raton, Florida: Chapman; Hall/CRC. &lt;a href=&#34;https://bookdown.org/yihui/rmarkdown-cookbook&#34;&gt;https://bookdown.org/yihui/rmarkdown-cookbook&lt;/a&gt;.
+&lt;/div&gt;
 &lt;div id=&#34;ref-R-mediumr&#34; class=&#34;csl-entry&#34;&gt;
 Yutani, Hiroaki. 2021. &lt;em&gt;Mediumr: R Interface to ’Medium’ API&lt;/em&gt;.
 &lt;/div&gt;
 &lt;/div&gt;
 &lt;/div&gt;
-&lt;div class=&#34;footnotes&#34;&gt;
+&lt;div class=&#34;footnotes footnotes-end-of-document&#34;&gt;
 &lt;hr /&gt;
 &lt;ol&gt;
-&lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;This model is also called the &lt;em&gt;rank ordered logit model&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-BEGGS19811&#34; role=&#34;doc-biblioref&#34;&gt;Beggs, Cardell, and Hausman 1981&lt;/a&gt;)&lt;/span&gt; or Plackett–Luce model due to &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;Plackett&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Plackett&#34; role=&#34;doc-biblioref&#34;&gt;1975&lt;/a&gt;)&lt;/span&gt; and &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;Luce&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Luce1959&#34; role=&#34;doc-biblioref&#34;&gt;1959&lt;/a&gt;)&lt;/span&gt;, but I liked the explosion part more.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
-&lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;I used R [Version 4.1.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;R Core Team&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-base&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;] and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; [Version 1.8.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;Gabry et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-bayesplot&#34; role=&#34;doc-biblioref&#34;&gt;2019&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;cmdstanr&lt;/em&gt; [Version 0.4.0.9000; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;Gabry and Češnovar&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-cmdstanr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;dplyr&lt;/em&gt; [Version 1.0.7; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;Wickham et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-dplyr&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;extraDistr&lt;/em&gt; [Version 1.9.1; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;Wolodzko&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-extraDistr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;ggplot2&lt;/em&gt; [Version 3.3.5; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-ggplot2&#34; role=&#34;doc-biblioref&#34;&gt;2016&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;mediumr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-mediumr&#34; role=&#34;doc-biblioref&#34;&gt;Yutani 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;purrr&lt;/em&gt; [Version 0.3.4; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;Henry and Wickham&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-purrr&#34; role=&#34;doc-biblioref&#34;&gt;2020&lt;/a&gt;)&lt;/span&gt;], &lt;em&gt;rcorpora&lt;/em&gt; [Version 2.0.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;Kazemi et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rcorpora&#34; role=&#34;doc-biblioref&#34;&gt;2018&lt;/a&gt;)&lt;/span&gt;], and &lt;em&gt;shiny&lt;/em&gt; [Version 1.6.0; &lt;span class=&#34;citation&#34;&gt;&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;Chang et al.&lt;/a&gt; (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-shiny&#34; role=&#34;doc-biblioref&#34;&gt;2021&lt;/a&gt;)&lt;/span&gt;] to generate this document.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&#34;fn1&#34;&gt;&lt;p&gt;This model is also called the &lt;em&gt;rank ordered logit model&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-BEGGS19811&#34;&gt;Beggs, Cardell, and Hausman 1981&lt;/a&gt;)&lt;/span&gt; or Plackett–Luce model due to &lt;span class=&#34;citation&#34;&gt;Plackett (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Plackett&#34;&gt;1975&lt;/a&gt;)&lt;/span&gt; and &lt;span class=&#34;citation&#34;&gt;Luce (&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-Luce1959&#34;&gt;1959&lt;/a&gt;)&lt;/span&gt;, but I liked the explosion part more.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref1&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;li id=&#34;fn2&#34;&gt;&lt;p&gt;I used R &lt;span class=&#34;citation&#34;&gt;(Version 4.3.2; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-base&#34;&gt;R Core Team 2020&lt;/a&gt;)&lt;/span&gt; and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.10.0; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-bayesplot&#34;&gt;Gabry et al. 2019&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;cmdstanr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 0.7.1; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-cmdstanr&#34;&gt;Gabry and Češnovar 2020&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;dplyr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.1.3; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-dplyr&#34;&gt;Wickham et al. 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;extraDistr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.9.1; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-extraDistr&#34;&gt;Wolodzko 2020&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;ggplot2&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 3.4.4.9000; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-ggplot2&#34;&gt;Wickham 2016&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;htmltools&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 0.5.7; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-htmltools&#34;&gt;Cheng et al. 2023&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;knitr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.45; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-knitr&#34;&gt;Xie 2015&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;mediumr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-mediumr&#34;&gt;Yutani 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;purrr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.0.2; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-purrr&#34;&gt;Henry and Wickham 2020&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;rcorpora&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 2.0.0; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rcorpora&#34;&gt;Kazemi et al. 2018&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;RefManageR&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.4.0; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-RefManageR&#34;&gt;McLean 2017&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;rmarkdown&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 2.25; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rmarkdown_a&#34;&gt;Xie, Allaire, and Grolemund 2018&lt;/a&gt;; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-rmarkdown_b&#34;&gt;Xie, Dervieux, and Riederer 2020&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;shiny&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.7.5.1; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-shiny&#34;&gt;Chang et al. 2021&lt;/a&gt;)&lt;/span&gt;, and &lt;em&gt;stringr&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.5.0; &lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#ref-R-stringr&#34;&gt;Wickham 2022&lt;/a&gt;)&lt;/span&gt; to generate this document.&lt;a href=&#34;/2021/03/21/a-simple-way-to-model-rankings-with-stan/#fnref2&#34; class=&#34;footnote-back&#34;&gt;↩︎&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 &lt;/div&gt;
 </description>

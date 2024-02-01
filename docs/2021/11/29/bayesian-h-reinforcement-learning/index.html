@@ -47,6 +47,8 @@
     
     <li><a href="/publications/">Publications and presentations</a></li>
     
+    <li><a href="/team/">Team</a></li>
+    
     <li><a href="/software/">Software</a></li>
     
     <li><a href="/cv/">CV</a></li>
@@ -74,7 +76,7 @@
     <div class="article-content">
     
     
-    Bruno Nicenboim / 2021-11-29 <span class="article-duration">17 min read</span>
+    Bruno Nicenboim / 2021-11-29 <span class="article-duration">18 min read</span>
     <br>
     
   
@@ -103,14 +105,14 @@
 
     
       
-<script src="/2021/11/29/bayesian-h-reinforcement-learning/index_files/header-attrs/header-attrs.js"></script>
 
 
+<p><strong>Update Feb 1st, 2024: I updated the Stan syntax.</strong></p>
 <p><span style="color: red;">
-<strong>⚠️ This post is NOT about “Masheen Lurning”: I’m spelling it like this to avoid luring visitors into this post for the wrong reasons. In the context of “Masheen Lurning,” one teaches a “masheen” to make the most rewarding decisions. In contrast, this post is about fitting human (or possibly also animal) data with decisions made along a number of trials assuming that some type of reinforcement learning occurred.⚠️</strong>
+<strong>⚠️ This post is NOT about “Masheen Lurning”: I’m spelling it like this to avoid luring visitors into this post for the wrong reasons. In the context of “Masheen Lurning”, one teaches a “masheen” to make the most rewarding decisions. In contrast, this post is about fitting human (or possibly also animal) data with decisions made along a number of trials assuming that some type of reinforcement learning occurred.⚠️</strong>
 </span></p>
-<p>I’ll focus on a Bayesian implementation of Q-learning using <a href="https://mc-stan.org/">Stan</a>. Q-learning is a specific type of reinforcement learning (RL) model that can explain how humans (and other organisms) learn behavioral policies (to make decisions) from rewards. <span class="citation"><a href="#ref-niv2009reinforcement" role="doc-biblioref">Niv</a> (<a href="#ref-niv2009reinforcement" role="doc-biblioref">2009</a>)</span> presents a very extensive review of RL in the brain. Readers interested in The Book about RL should see <span class="citation"><a href="#ref-sutton2018reinforcement" role="doc-biblioref">Sutton and Barto</a> (<a href="#ref-sutton2018reinforcement" role="doc-biblioref">2018</a>)</span>.</p>
-<p>I will <em>mostly</em> follow the implementation of <span class="citation"><a href="#ref-vanGeenGerraty2021" role="doc-biblioref">van Geen and Gerraty</a> (<a href="#ref-vanGeenGerraty2021" role="doc-biblioref">2021</a>)</span>, who present a tutorial on a hierarchical Bayesian implementation of Q-learning. However, I think there are places where a different parametrization would be more appropriate. I will also model my own simulated data, especially because I wanted to check if I’m doing things right. Another useful tutorial about Bayesian modeling of RL is <span class="citation"><a href="#ref-ZhangEtAl2020" role="doc-biblioref">Zhang et al.</a> (<a href="#ref-ZhangEtAl2020" role="doc-biblioref">2020</a>)</span>, however, that tutorial uses a Rescorla–Wagner model, rather than Q-learning. Before you continue reading, notice that if you just want to fit data using a RL model and don’t care about the nitty gritty details, you can just use the R package <a href="https://ccs-lab.github.io/hBayesDM/articles/getting_started.html">hBayesDM</a>.</p>
+<p>I’ll focus on a Bayesian implementation of Q-learning using <a href="https://mc-stan.org/">Stan</a>. Q-learning is a specific type of reinforcement learning (RL) model that can explain how humans (and other organisms) learn behavioral policies (to make decisions) from rewards. <span class="citation">Niv (<a href="#ref-niv2009reinforcement">2009</a>)</span> presents a very extensive review of RL in the brain. Readers interested in The Book about RL should see <span class="citation">Sutton and Barto (<a href="#ref-sutton2018reinforcement">2018</a>)</span>.</p>
+<p>I will <em>mostly</em> follow the implementation of <span class="citation">van Geen and Gerraty (<a href="#ref-vanGeenGerraty2021">2021</a>)</span>, who present a tutorial on a hierarchical Bayesian implementation of Q-learning. However, I think there are places where a different parametrization would be more appropriate. I will also model my own simulated data, especially because I wanted to check if I’m doing things right. Another useful tutorial about Bayesian modeling of RL is <span class="citation">Zhang et al. (<a href="#ref-ZhangEtAl2020">2020</a>)</span>, however, that tutorial uses a Rescorla–Wagner model, rather than Q-learning. Before you continue reading, notice that if you just want to fit data using a RL model and don’t care about the nitty gritty details, you can just use the R package <a href="https://ccs-lab.github.io/hBayesDM/articles/getting_started.html">hBayesDM</a>.</p>
 <p>The rest of the post is about simulating one subject doing an experiment and fitting it with Stan, and then simulating several subjects doing the same experiment and fitting that data with Stan.</p>
 <p>First, I’m going to load some R packages that will be useful throughout this post and set a seed, so that the simulated data will be always the same.</p>
 <pre class="r"><code>library(dplyr) # Data manipulation
@@ -190,7 +192,7 @@ Q_{t=1,a = 2} &amp;= .5 \\
 <p>Whether the subject decides arm 1 or arm 2 depends on <span class="math inline">\(\theta\)</span>:</p>
 <p><span class="math display">\[\begin{equation}
 action \sim
-\begin{cases} 
+\begin{cases}
 1 \text{ with probability } 1-\theta_t\\
 2 \text{ with probability } \theta_t
 \end{cases}
@@ -215,8 +217,8 @@ Q_{t + 1, -action} = Q_{t, -action}
 \end{equation}\]</span></p>
 <p>Again, and for every trial, whether the subject decides arm 1 or arm 2 depends on <span class="math inline">\(\theta\)</span>:
 <span class="math display">\[\begin{equation}
-action \sim 
-\begin{cases} 
+action \sim
+\begin{cases}
 1 \text{ with probability } 1-\theta_t\\
 2 \text{ with probability } \theta_t
 \end{cases}
@@ -266,7 +268,7 @@ for (t in 1:N_trials) {
  8                 0.272 -0.131       0.188     -0.103       2
  9                 0.272 -0.122       0.119     -0.0344      1
 10                 0.226 -0.122       0.0746    -0.0791      1
-# … with 990 more rows</code></pre>
+# ℹ 990 more rows</code></pre>
 <p>Let’s see what would this subject choose in each trial.</p>
 <pre class="r"><code>d_res &lt;- tibble(
   arm = ifelse(action == 1, &quot;arm_1&quot;, &quot;arm_2&quot;),
@@ -299,12 +301,12 @@ ggplot(d_exp, aes(x = trial, y = reward, color = arm)) +
 <p>The complete code is shown below.</p>
 <pre class="stan"><code>data {
   int&lt;lower=0&gt; N_trials;
-  int action[N_trials];
+  array[N_trials] int action;
   int N_arms;
   matrix[N_trials,N_arms] R;
 }
 transformed data {
-  int response[N_trials];
+  array[N_trials] int response;
   for(n in 1:N_trials)
     response[n] = action[n] - 1;
 }
@@ -342,9 +344,9 @@ fit_ql &lt;- m_ql$sample(
 <pre><code># A tibble: 3 × 10
   variable  mean median     sd    mad    q5   q95  rhat ess_bulk ess_tail
   &lt;chr&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-1 alpha    0.266  0.260 0.0498 0.0477 0.196 0.357  1.00    2714.    1922.
-2 beta_0   0.589  0.588 0.121  0.121  0.393 0.788  1.00    2998.    2964.
-3 beta_1   2.98   2.97  0.249  0.245  2.58  3.41   1.00    2605.    2370.</code></pre>
+1 alpha    0.266  0.261 0.0497 0.0469 0.196 0.355  1.00    2258.    1790.
+2 beta_0   0.586  0.586 0.119  0.121  0.390 0.782  1.00    2906.    3191.
+3 beta_1   2.98   2.97  0.246  0.243  2.59  3.39   1.00    2704.    2881.</code></pre>
 <p>The recovery of the parameters seems fine.</p>
 <pre class="r"><code>mcmc_recover_hist(fit_ql$draws(c(&quot;alpha&quot;, &quot;beta_0&quot;, &quot;beta_1&quot;)),
   true = c(alpha, beta_0, beta_1)
@@ -355,7 +357,7 @@ fit_ql &lt;- m_ql$sample(
 <div id="a-hierarchical-q-learning-model" class="section level2">
 <h2>A hierarchical Q-learning model</h2>
 <p>Now let’s try to implement this hierarchically. I have several subjects (<code>N_subj</code>), they all have their own bias, their own learning rate, and their own inverse temperature, but these values are not that different from subject to subject (there is shrinkage). I also assume that somehow these three parameters are mildly correlated, people with more bias also have a stronger learning rate and inverse temperature.</p>
-<p>Here, I diverge a bit from the model of <span class="citation"><a href="#ref-vanGeenGerraty2021" role="doc-biblioref">van Geen and Gerraty</a> (<a href="#ref-vanGeenGerraty2021" role="doc-biblioref">2021</a>)</span>. I just assume that all the individual differences are generated from the same multinormal distribution. This allows me to model the variance (or SD) of the parameters and to assume that they could be correlated (or not).</p>
+<p>Here, I diverge a bit from the model of <span class="citation">van Geen and Gerraty (<a href="#ref-vanGeenGerraty2021">2021</a>)</span>. I just assume that all the individual differences are generated from the same multinormal distribution. This allows me to model the variance (or SD) of the parameters and to assume that they could be correlated (or not).</p>
 <p>This means that in the hierarchical model, rather than <span class="math inline">\(\alpha\)</span> I use <span class="math inline">\(\alpha + u_{i,1}\)</span>, rather than <span class="math inline">\(\beta_0\)</span>, <span class="math inline">\(\beta_0 + u_{i,2}\)</span>, and rather than <span class="math inline">\(\beta_1\)</span>, <span class="math inline">\(beta_1 + u_{i,3}\)</span>. Where <span class="math inline">\(u\)</span> is a matrix generated as follows.</p>
 <p><span class="math display">\[\begin{equation}
     {\begin{pmatrix}
@@ -370,7 +372,7 @@ fit_ql &lt;- m_ql$sample(
     0\\
     0
    \end{pmatrix}}
- ,\boldsymbol{\Sigma_u} \right)
+,\boldsymbol{\Sigma_u} \right)
 \end{equation}\]</span></p>
 <p>with <span class="math inline">\(i\)</span> indexing subjects.</p>
 <p>I simulate all this below with the following parameters. More details about how this works can be found in <a href="https://vasishth.github.io/bayescogsci/book/ch-complexstan.html">chapter 11 of the book about Bayesian modeling</a> that I’m writting with Daniel Schad and Shravan Vasishth.</p>
@@ -424,11 +426,11 @@ action_matrix &lt;- matrix(as.integer(unlist(action)), ncol = N_subj)</code></pr
   int&lt;lower = 0&gt; N_subj;
   int&lt;lower = 0&gt; N_arms;
   matrix[N_trials, N_arms] R;
-  int action[N_trials, N_subj];
+  array[N_trials, N_subj] int action;
 }
 transformed data{
   int N_adj = 3;
-  int response[N_trials, N_subj];
+  array[N_trials, N_subj] int response;
     for(i in 1:N_subj)
       for(n in 1:N_trials)
         response[n,i] = action[n,i] - 1;
@@ -477,16 +479,16 @@ fit_ql_h &lt;- m_ql_h$sample(
 <p>It took 7 minutes in my computer.</p>
 <pre class="r"><code>fit_ql_h</code></pre>
 <pre><code> variable     mean   median   sd  mad       q5      q95 rhat ess_bulk ess_tail
- lp__     -4956.49 -4956.23 7.49 7.51 -4969.52 -4944.79 1.00      883     1950
- alpha        0.29     0.29 0.01 0.01     0.27     0.32 1.00     3257     2670
- beta_0       0.46     0.46 0.05 0.05     0.38     0.54 1.00     2563     2825
- beta_1       2.86     2.86 0.09 0.09     2.71     3.00 1.00     2518     2751
- tau_u[1]     0.11     0.10 0.08 0.08     0.01     0.27 1.00     1326     1474
- tau_u[2]     0.18     0.18 0.05 0.04     0.11     0.26 1.00     2025     2351
- tau_u[3]     0.31     0.31 0.08 0.08     0.19     0.45 1.00     1781     2078
- z_u[1,1]    -0.21    -0.21 0.85 0.82    -1.59     1.25 1.00     3810     2686
- z_u[2,1]    -0.33    -0.32 0.67 0.64    -1.44     0.73 1.00     3351     2839
- z_u[3,1]     0.43     0.42 0.77 0.75    -0.81     1.69 1.00     4149     2744
+ lp__     -4568.72 -4568.26 7.88 7.83 -4582.50 -4556.30 1.00      864     1691
+ alpha        0.31     0.31 0.02 0.01     0.29     0.34 1.00     2777     2099
+ beta_0       0.60     0.60 0.06 0.06     0.51     0.70 1.00     2325     2887
+ beta_1       3.02     3.02 0.10 0.09     2.87     3.18 1.00     2635     2415
+ tau_u[1]     0.13     0.12 0.09 0.10     0.01     0.30 1.00     1548     2187
+ tau_u[2]     0.23     0.22 0.05 0.05     0.15     0.33 1.00     1713     2583
+ tau_u[3]     0.36     0.35 0.09 0.09     0.22     0.52 1.00     1811     2552
+ z_u[1,1]     0.44     0.47 0.91 0.88    -1.12     1.89 1.00     1517     2751
+ z_u[2,1]     1.06     1.06 0.66 0.65    -0.01     2.13 1.00     3463     3017
+ z_u[3,1]     0.58     0.58 0.75 0.74    -0.66     1.80 1.00     4226     2838
 
  # showing 10 of 136 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
 <p>Let’s check if I could recover the parameters.</p>
@@ -496,49 +498,55 @@ fit_ql_h &lt;- m_ql_h$sample(
 true = c(alpha, beta_0, beta_1, tau_u)
 )</code></pre>
 <p><img src="/2021/11/29/bayesian-h-reinforcement-learning/index_files/figure-html/unnamed-chunk-22-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>It seems relatively good, but I should probably check it with simulation based calibration <span class="citation">(<a href="#ref-taltsValidatingBayesianInference2018" role="doc-biblioref">Talts et al. 2018</a>)</span>.</p>
+<p>It seems relatively good, but I should probably check it with simulation based calibration <span class="citation">(<a href="#ref-taltsValidatingBayesianInference2018">Talts et al. 2018</a>)</span>.</p>
 </div>
 <div id="where-do-we-go-from-here" class="section level2">
 <h2>Where do we go from here?</h2>
-<p>One could compare the fit and the predictions of this flavor of Q-learning with another flavor, or with another RL model. The idea would be that each model reflects different theoretical assumptions. It’s also possible to use posterior predictive checks to investigate where the a specific RL model fails and how it should be modified. Finally, RL could be part of a larger model, as in the case of <span class="citation"><a href="#ref-pedersen2017drift" role="doc-biblioref">Pedersen, Frank, and Biele</a> (<a href="#ref-pedersen2017drift" role="doc-biblioref">2017</a>)</span>, who combined drift diffusion with RL.</p>
+<p>One could compare the fit and the predictions of this flavor of Q-learning with another flavor, or with another RL model. The idea would be that each model reflects different theoretical assumptions. It’s also possible to use posterior predictive checks to investigate where the a specific RL model fails and how it should be modified. Finally, RL could be part of a larger model, as in the case of <span class="citation">Pedersen, Frank, and Biele (<a href="#ref-pedersen2017drift">2017</a>)</span>, who combined drift diffusion with RL.</p>
 </div>
 <div id="session-info" class="section level2">
-<h2>Session info<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></h2>
+<h2>Session info <a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></h2>
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>R version 4.1.1 (2021-08-10)
+<pre><code>R version 4.3.2 (2023-10-31)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 20.04.3 LTS
+Running under: Ubuntu 22.04.3 LTS
 
 Matrix products: default
-BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
-LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0 
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0
 
 locale:
  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=nl_NL.UTF-8   
  [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=nl_NL.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
 [11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
 
+time zone: Europe/Amsterdam
+tzcode source: system (glibc)
+
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bayesplot_1.8.1     cmdstanr_0.4.0.9000 MASS_7.3-54         extraDistr_1.9.1    ggplot2_3.3.5       purrr_0.3.4         tidyr_1.1.4        
-[8] dplyr_1.0.7        
+[1] bayesplot_1.10.0   cmdstanr_0.7.1     MASS_7.3-60        extraDistr_1.9.1   ggplot2_3.4.4.9000 purrr_1.0.2        tidyr_1.3.0        dplyr_1.1.3       
 
 loaded via a namespace (and not attached):
- [1] Rcpp_1.0.7           lubridate_1.8.0      ps_1.6.0             assertthat_0.2.1     digest_0.6.28        utf8_1.2.2           R6_2.5.1            
- [8] plyr_1.8.6           ggridges_0.5.3       backports_1.2.1      evaluate_0.14        highr_0.9            blogdown_1.5.2       pillar_1.6.4        
-[15] rlang_0.4.12         rstudioapi_0.13      data.table_1.14.2    jquerylib_0.1.4      checkmate_2.0.0      rmarkdown_2.11       labeling_0.4.2      
-[22] stringr_1.4.0        munsell_0.5.0        compiler_4.1.1       xfun_0.26            pkgconfig_2.0.3      papaja_0.1.0.9997    htmltools_0.5.2     
-[29] tidyselect_1.1.1     tibble_3.1.5         tensorA_0.36.2       bookdown_0.22        matrixStats_0.60.1   emo_0.0.0.9000       fansi_0.5.0         
-[36] crayon_1.4.2         withr_2.4.2          grid_4.1.1           distributional_0.2.2 jsonlite_1.7.2       gtable_0.3.0         lifecycle_1.0.1     
-[43] DBI_1.1.1            magrittr_2.0.1       posterior_1.1.0      scales_1.1.1         cli_3.1.0            stringi_1.7.6        reshape2_1.4.4      
-[50] farver_2.1.0         bslib_0.3.0          ellipsis_0.3.2       generics_0.1.1       vctrs_0.3.8          tools_4.1.1          glue_1.5.1          
-[57] processx_3.5.2       abind_1.4-5          fastmap_1.1.0        yaml_2.2.1           colorspace_2.0-2     knitr_1.36           sass_0.4.0          </code></pre>
+ [1] gtable_0.3.4         tensorA_0.36.2.1     xfun_0.41            bslib_0.5.1          processx_3.8.3       papaja_0.1.2         vctrs_0.6.5         
+ [8] tools_4.3.2          ps_1.7.6             generics_0.1.3       tibble_3.2.1         fansi_1.0.6          highr_0.10           RefManageR_1.4.0    
+[15] pkgconfig_2.0.3      data.table_1.14.10   checkmate_2.3.1      distributional_0.3.2 assertthat_0.2.1     lifecycle_1.0.4      rcorpora_2.0.0      
+[22] compiler_4.3.2       farver_2.1.1         stringr_1.5.0        munsell_0.5.0        tinylabels_0.2.4     htmltools_0.5.7      sass_0.4.7          
+[29] yaml_2.3.7           pillar_1.9.0         crayon_1.5.2         jquerylib_0.1.4      cachem_1.0.8         abind_1.4-5          posterior_1.5.0     
+[36] tidyselect_1.2.0     digest_0.6.34        stringi_1.8.1        reshape2_1.4.4       bookdown_0.36        labeling_0.4.3       bibtex_0.5.1        
+[43] fastmap_1.1.1        grid_4.3.2           colorspace_2.1-0     cli_3.6.2            magrittr_2.0.3       emo_0.0.0.9000       utf8_1.2.4          
+[50] withr_3.0.0          scales_1.3.0         backports_1.4.1      lubridate_1.9.3      timechange_0.2.0     httr_1.4.7           rmarkdown_2.25      
+[57] matrixStats_1.2.0    blogdown_1.18        evaluate_0.23        knitr_1.45           rlang_1.1.3          Rcpp_1.0.12          glue_1.7.0          
+[64] xml2_1.3.5           rstudioapi_0.15.0    jsonlite_1.8.8       R6_2.5.1             plyr_1.8.9          </code></pre>
 </div>
 <div id="references" class="section level2 unnumbered">
 <h2>References</h2>
 <div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-R-htmltools" class="csl-entry">
+Cheng, Joe, Carson Sievert, Barret Schloerke, Winston Chang, Yihui Xie, and Jeff Allen. 2023. <em>Htmltools: Tools for HTML</em>. <a href="https://CRAN.R-project.org/package=htmltools">https://CRAN.R-project.org/package=htmltools</a>.
+</div>
 <div id="ref-R-cmdstanr" class="csl-entry">
 Gabry, Jonah, and Rok Češnovar. 2021. <em>Cmdstanr: R Interface to ’CmdStan’</em>.
 </div>
@@ -550,6 +558,9 @@ Henry, Lionel, and Hadley Wickham. 2020. <em>Purrr: Functional Programming Tools
 </div>
 <div id="ref-R-rcorpora" class="csl-entry">
 Kazemi, Darius, Cole Willsea, Serin Delaunay, Karl Swedberg, Matthew Rothenberg, Greg Kennedy, Nathaniel Mitchell, et al. 2018. <em>Rcorpora: A Collection of Small Text Corpora of Interesting Data</em>. <a href="https://CRAN.R-project.org/package=rcorpora">https://CRAN.R-project.org/package=rcorpora</a>.
+</div>
+<div id="ref-R-RefManageR" class="csl-entry">
+McLean, Mathew William. 2017. <span>“RefManageR: Import and Manage BibTeX and BibLaTeX References in r.”</span> <em>The Journal of Open Source Software</em>. <a href="https://doi.org/10.21105/joss.00338">https://doi.org/10.21105/joss.00338</a>.
 </div>
 <div id="ref-niv2009reinforcement" class="csl-entry">
 Niv, Yael. 2009. <span>“Reinforcement Learning in the Brain.”</span> <em>Journal of Mathematical Psychology</em> 53 (3): 139–54.
@@ -572,11 +583,23 @@ van Geen, Camilla, and Raphael T. Gerraty. 2021. <span>“Hierarchical <span>Bay
 <div id="ref-R-ggplot2" class="csl-entry">
 Wickham, Hadley. 2016. <em>Ggplot2: Elegant Graphics for Data Analysis</em>. Springer-Verlag New York. <a href="https://ggplot2.tidyverse.org">https://ggplot2.tidyverse.org</a>.
 </div>
+<div id="ref-R-stringr" class="csl-entry">
+———. 2022. <em>Stringr: Simple, Consistent Wrappers for Common String Operations</em>. <a href="https://CRAN.R-project.org/package=stringr">https://CRAN.R-project.org/package=stringr</a>.
+</div>
 <div id="ref-R-dplyr" class="csl-entry">
 Wickham, Hadley, Romain François, Lionel Henry, and Kirill Müller. 2021. <em>Dplyr: A Grammar of Data Manipulation</em>. <a href="https://CRAN.R-project.org/package=dplyr">https://CRAN.R-project.org/package=dplyr</a>.
 </div>
 <div id="ref-R-extraDistr" class="csl-entry">
 Wolodzko, Tymoteusz. 2020. <em>extraDistr: Additional Univariate and Multivariate Distributions</em>. <a href="https://CRAN.R-project.org/package=extraDistr">https://CRAN.R-project.org/package=extraDistr</a>.
+</div>
+<div id="ref-R-knitr" class="csl-entry">
+Xie, Yihui. 2015. <em>Dynamic Documents with <span>R</span> and Knitr</em>. 2nd ed. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://yihui.org/knitr/">https://yihui.org/knitr/</a>.
+</div>
+<div id="ref-R-rmarkdown_a" class="csl-entry">
+Xie, Yihui, J. J. Allaire, and Garrett Grolemund. 2018. <em>R Markdown: The Definitive Guide</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/rmarkdown">https://bookdown.org/yihui/rmarkdown</a>.
+</div>
+<div id="ref-R-rmarkdown_b" class="csl-entry">
+Xie, Yihui, Christophe Dervieux, and Emily Riederer. 2020. <em>R Markdown Cookbook</em>. Boca Raton, Florida: Chapman; Hall/CRC. <a href="https://bookdown.org/yihui/rmarkdown-cookbook">https://bookdown.org/yihui/rmarkdown-cookbook</a>.
 </div>
 <div id="ref-ZhangEtAl2020" class="csl-entry">
 Zhang, Lei, Lukas Lengersdorff, Nace Mikus, Jan Gläscher, and Claus Lamm. 2020. <span>“<span class="nocase">Using reinforcement learning models in social neuroscience: frameworks, pitfalls and suggestions of best practices</span>.”</span> <em>Social Cognitive and Affective Neuroscience</em> 15 (6): 695–707. <a href="https://doi.org/10.1093/scan/nsaa089">https://doi.org/10.1093/scan/nsaa089</a>.
@@ -584,12 +607,12 @@ Zhang, Lei, Lukas Lengersdorff, Nace Mikus, Jan Gläscher, and Claus Lamm. 2020.
 </div>
 </div>
 </div>
-<div class="footnotes">
+<div class="footnotes footnotes-end-of-document">
 <hr />
 <ol>
 <li id="fn1"><p>I actually forgot to bound the parameter at one point, and I could verify that the chains of the MCMC sampler got stuck at different modes.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
 <li id="fn2"><p>A <a href="https://xkcd.com/2303/">Type-V Error</a>.<a href="#fnref2" class="footnote-back">↩︎</a></p></li>
-<li id="fn3"><p>I used R [Version 4.1.1; <span class="citation"><a href="#ref-R-base" role="doc-biblioref">R Core Team</a> (<a href="#ref-R-base" role="doc-biblioref">2021</a>)</span>] and the R-packages <em>bayesplot</em> [Version 1.8.1; <span class="citation"><a href="#ref-R-bayesplot" role="doc-biblioref">Gabry et al.</a> (<a href="#ref-R-bayesplot" role="doc-biblioref">2019</a>)</span>], <em>cmdstanr</em> [Version 0.4.0.9000; <span class="citation"><a href="#ref-R-cmdstanr" role="doc-biblioref">Gabry and Češnovar</a> (<a href="#ref-R-cmdstanr" role="doc-biblioref">2021</a>)</span>], <em>dplyr</em> [Version 1.0.7; <span class="citation"><a href="#ref-R-dplyr" role="doc-biblioref">Wickham et al.</a> (<a href="#ref-R-dplyr" role="doc-biblioref">2021</a>)</span>], <em>extraDistr</em> [Version 1.9.1; <span class="citation"><a href="#ref-R-extraDistr" role="doc-biblioref">Wolodzko</a> (<a href="#ref-R-extraDistr" role="doc-biblioref">2020</a>)</span>], <em>ggplot2</em> [Version 3.3.5; <span class="citation"><a href="#ref-R-ggplot2" role="doc-biblioref">Wickham</a> (<a href="#ref-R-ggplot2" role="doc-biblioref">2016</a>)</span>], <em>purrr</em> [Version 0.3.4; <span class="citation"><a href="#ref-R-purrr" role="doc-biblioref">Henry and Wickham</a> (<a href="#ref-R-purrr" role="doc-biblioref">2020</a>)</span>], and <em>rcorpora</em> [Version 2.0.0; <span class="citation"><a href="#ref-R-rcorpora" role="doc-biblioref">Kazemi et al.</a> (<a href="#ref-R-rcorpora" role="doc-biblioref">2018</a>)</span>] to generate this document.<a href="#fnref3" class="footnote-back">↩︎</a></p></li>
+<li id="fn3"><p>I used R <span class="citation">(Version 4.3.2; <a href="#ref-R-base">R Core Team 2021</a>)</span> and the R-packages <em>bayesplot</em> <span class="citation">(Version 1.10.0; <a href="#ref-R-bayesplot">Gabry et al. 2019</a>)</span>, <em>cmdstanr</em> <span class="citation">(Version 0.7.1; <a href="#ref-R-cmdstanr">Gabry and Češnovar 2021</a>)</span>, <em>dplyr</em> <span class="citation">(Version 1.1.3; <a href="#ref-R-dplyr">Wickham et al. 2021</a>)</span>, <em>extraDistr</em> <span class="citation">(Version 1.9.1; <a href="#ref-R-extraDistr">Wolodzko 2020</a>)</span>, <em>ggplot2</em> <span class="citation">(Version 3.4.4.9000; <a href="#ref-R-ggplot2">Wickham 2016</a>)</span>, <em>htmltools</em> <span class="citation">(Version 0.5.7; <a href="#ref-R-htmltools">Cheng et al. 2023</a>)</span>, <em>knitr</em> <span class="citation">(Version 1.45; <a href="#ref-R-knitr">Xie 2015</a>)</span>, <em>purrr</em> <span class="citation">(Version 1.0.2; <a href="#ref-R-purrr">Henry and Wickham 2020</a>)</span>, <em>rcorpora</em> <span class="citation">(Version 2.0.0; <a href="#ref-R-rcorpora">Kazemi et al. 2018</a>)</span>, <em>RefManageR</em> <span class="citation">(Version 1.4.0; <a href="#ref-R-RefManageR">McLean 2017</a>)</span>, <em>rmarkdown</em> <span class="citation">(Version 2.25; <a href="#ref-R-rmarkdown_a">Xie, Allaire, and Grolemund 2018</a>; <a href="#ref-R-rmarkdown_b">Xie, Dervieux, and Riederer 2020</a>)</span>, and <em>stringr</em> <span class="citation">(Version 1.5.0; <a href="#ref-R-stringr">Wickham 2022</a>)</span> to generate this document.<a href="#fnref3" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
 
@@ -599,12 +622,12 @@ Zhang, Lei, Lukas Lengersdorff, Nace Mikus, Jan Gläscher, and Claus Lamm. 2020.
   </article>
 
 
-
  
  <div class="row justify-content-center">
         <div class="blog-post-footer">
           <div style = "text-align: left;">
-          <h3>Citation:</h3>
+            
+<h3>Citation:</h3>
 <p>For attribution, please cite this work as</p>
 <code>
 Bruno Nicenboim. (2021). "Not a tutorial of a Bayesian implementation of a reinforcement learning model". Retrieved from /2021/11/29/bayesian-h-reinforcement-learning/. 

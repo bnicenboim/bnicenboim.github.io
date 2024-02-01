@@ -1,5 +1,5 @@
 functions {
- real exploded_lpmf(int[] x, vector Theta){
+ real exploded_lpmf(array[] int x, vector Theta){
     real out = 0;
     vector[num_elements(Theta)] thetar = Theta;
     for(pos in x){
@@ -13,7 +13,7 @@ data{
   int N_ranking; //total times the choices were ranked
   int N_ranked; //total choices ranked
   int N_options; //total options
-  int res[N_ranking, N_ranked];
+  array[N_ranking, N_ranked] int res;
 }
 parameters {
   simplex[N_options] Theta;
