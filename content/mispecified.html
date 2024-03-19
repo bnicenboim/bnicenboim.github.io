@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Bruno Nicenboim" />
+
+<meta name="date" content="2024-03-19" />
+
+<title>Case study: Mispecified models of reaction times and choice</title>
+
+<script src="cv-bf_files/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="cv-bf_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="cv-bf_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="cv-bf_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="cv-bf_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="cv-bf_files/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="cv-bf_files/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="cv-bf_files/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="cv-bf_files/navigation-1.1/tabsets.js"></script>
+<script src="cv-bf_files/navigation-1.1/codefolding.js"></script>
+<script src="cv-bf_files/accessible-code-block-0.0.1/empty-anchor.js"></script>
+<link href="cv-bf_files/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="cv-bf_files/pagedtable-1.1/js/pagedtable.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    background-color: #ffffff;
+    color: #a0a0a0;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #a0a0a0;  padding-left: 4px; }
+div.sourceCode
+  { color: #1f1c1b; background-color: #ffffff; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #1f1c1b; } /* Normal */
+code span.al { color: #bf0303; background-color: #f7e6e6; font-weight: bold; } /* Alert */
+code span.an { color: #ca60ca; } /* Annotation */
+code span.at { color: #0057ae; } /* Attribute */
+code span.bn { color: #b08000; } /* BaseN */
+code span.bu { color: #644a9b; font-weight: bold; } /* BuiltIn */
+code span.cf { color: #1f1c1b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #924c9d; } /* Char */
+code span.cn { color: #aa5500; } /* Constant */
+code span.co { color: #898887; } /* Comment */
+code span.cv { color: #0095ff; } /* CommentVar */
+code span.do { color: #607880; } /* Documentation */
+code span.dt { color: #0057ae; } /* DataType */
+code span.dv { color: #b08000; } /* DecVal */
+code span.er { color: #bf0303; text-decoration: underline; } /* Error */
+code span.ex { color: #0095ff; font-weight: bold; } /* Extension */
+code span.fl { color: #b08000; } /* Float */
+code span.fu { color: #644a9b; } /* Function */
+code span.im { color: #ff5500; } /* Import */
+code span.in { color: #b08000; } /* Information */
+code span.kw { color: #1f1c1b; font-weight: bold; } /* Keyword */
+code span.op { color: #1f1c1b; } /* Operator */
+code span.ot { color: #006e28; } /* Other */
+code span.pp { color: #006e28; } /* Preprocessor */
+code span.re { color: #0057ae; background-color: #e0e9f8; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #ff5500; } /* SpecialString */
+code span.st { color: #bf0303; } /* String */
+code span.va { color: #0057ae; } /* Variable */
+code span.vs { color: #bf0303; } /* VerbatimString */
+code span.wa { color: #bf0303; } /* Warning */
+
+.sourceCode .row {
+  width: 100%;
+}
+.sourceCode {
+  overflow-x: auto;
+}
+.code-folding-btn {
+  margin-right: -30px;
+}
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Case study: Mispecified models of reaction times and choice</h1>
+<h4 class="author">Bruno Nicenboim</h4>
+<h4 class="date">2024-03-19</h4>
+
+</div>
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>papaja<span class="op">::</span><span class="kw">r_refs</span>(<span class="st">&quot;r-references.bib&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="co">## Global options</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">options</span>(<span class="dt">max.print =</span> <span class="st">&quot;75&quot;</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>        <span class="dt">width =</span> <span class="dv">80</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>        <span class="dt">tibble.width =</span> <span class="dv">80</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="kw">options</span>(<span class="dt">scipen =</span> <span class="dv">1</span>, <span class="dt">digits =</span> <span class="dv">2</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">echo =</span> <span class="ot">TRUE</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>                    <span class="dt">cache =</span> <span class="ot">TRUE</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>                    <span class="dt">prompt =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>                    <span class="dt">cache.lazy =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>                    <span class="dt">tidy =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>                    <span class="dt">comment =</span> <span class="ot">NA</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>                    <span class="dt">message =</span> <span class="ot">FALSE</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>                    <span class="dt">warning =</span> <span class="ot">TRUE</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>knitr<span class="op">::</span>opts_knit<span class="op">$</span><span class="kw">set</span>(<span class="dt">width =</span> <span class="dv">80</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">cache.extra =</span> knitr<span class="op">::</span>rand_seed)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="co"># Packages in use</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="kw">library</span>(rtdists)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">library</span>(tidytable) <span class="co"># faster replacement of dplyr</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">library</span>(ggplot2)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="kw">library</span>(latex2exp) <span class="co"># for math symbols in ggplots</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="kw">library</span>(rstan)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a><span class="kw">library</span>(bayesplot)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a><span class="kw">library</span>(posterior)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a><span class="kw">library</span>(bridgesampling)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a><span class="kw">library</span>(loo)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a><span class="kw">options</span>(<span class="dt">mc.cores =</span> parallel<span class="op">::</span><span class="kw">detectCores</span>())</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a><span class="kw">source</span>(<span class="st">&quot;aux.R&quot;</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a><span class="co"># Plots</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a><span class="kw">bayesplot_theme_set</span>(<span class="kw">theme_light</span>())</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a><span class="kw">theme_set</span>(<span class="kw">theme_light</span>())</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a><span class="kw">theme_update</span>(<span class="dt">plot.title =</span> <span class="kw">element_text</span>(<span class="dt">hjust =</span> <span class="fl">0.5</span>))</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a><span class="kw">options</span>(<span class="dt">ggplot2.continuous.colour =</span> scale_color_viridis_c)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a><span class="kw">options</span>(<span class="dt">ggplot2.continuous.fill =</span> scale_fill_viridis_c)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a><span class="kw">options</span>(<span class="dt">ggplot2.discrete.colour =</span> scale_color_viridis_d)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a><span class="kw">options</span>(<span class="dt">ggplot2.discrete.fill =</span> scale_fill_viridis_d)</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a><span class="kw">color_scheme_set</span>(<span class="st">&quot;viridis&quot;</span>)</span></code></pre></div>
+<p>To illustrate the effect of mispecified models in model comparison, I will use simulated response times and choice data. These data could be from an experiment representing either a motion detection task, where participants decide the direction of moving dots, or a lexical decision task, which involves determining whether letter strings are real words or nonsensical sequences.</p>
+<p><strong>TL;DR;</strong></p>
+<p>For both BF and CV:</p>
+<ul>
+<li>A model that is closer to the truth is not necessarily the one with the best predictions.</li>
+<li>A flexible theory-agnostic model might yield the best predictions even if it doesn’t resemble the generative process of the data.</li>
+</ul>
+<p>For BF:</p>
+<ul>
+<li>The comparison of (cognitive) models that entail very different generative processes but can mimic the data well (for different reasons) is strongly prior dependent.</li>
+<li>Even the selection of a model that relatively closely resembles the data generative process and has a better fit to the data can be (but not always) also strongly prior dependent.</li>
+</ul>
+<p>For CV:</p>
+<ul>
+<li>Unless there is a clear gain in predictions, CV will be undecided. This is regardless of how close a model is to the true generative process and how good the fit is.</li>
+</ul>
+<div id="true-data-generating-process-with-the-linear-ballistic-accumulator-model" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> True data generating process with the Linear Ballistic Accumulator Model</h1>
+<p>I’m going to assume that the true generative model for this simulated experiment is a Linear Ballistic Accumulator model <span class="citation">(LBA: Brown and Heathcote 2008)</span> with a Gamma distribution for the accumulation rates <span class="citation">(Terry et al. 2015)</span>. The LBA model conceptualizes decision-making as a race among several accumulators, each gathering evidence for a different decision option. The first accumulator to reach a predetermined threshold dictates the decision.</p>
+<div class="figure"><span style="display:block;" id="fig:drawing"></span>
+<img src="cv-bf_files/figure-html/drawing-1.png" alt="The figure depicts the parameters for one linear ballistic accumulator." width="672" />
+<p class="caption">
+Figure 1.1: The figure depicts the parameters for one linear ballistic accumulator.
+</p>
+</div>
+<p>The key parameters of the model are the following:</p>
+<ul>
+<li><span class="math inline">\(v_i\)</span>: The rate of evidence accumulation (drift rate) for choice <span class="math inline">\(i\)</span>. This parameter represents how quickly evidence supporting choice <span class="math inline">\(i\)</span> is gathered.</li>
+<li><span class="math inline">\(p_i\)</span>: The starting point of evidence accumulation for choice <span class="math inline">\(i\)</span>. This parameter accounts for any initial bias or prior evidence in favor of choice <span class="math inline">\(i\)</span>.</li>
+<li><span class="math inline">\(t\)</span>: Time since the start of the decision process.</li>
+<li><span class="math inline">\(b_i\)</span>: The evidence threshold that must be reached for decision <span class="math inline">\(i\)</span> to be made. Once the accumulated evidence <span class="math inline">\(d_i(t)\)</span> for any choice <span class="math inline">\(i\)</span> exceeds <span class="math inline">\(b_i\)</span>, a decision is made in favor of that choice.</li>
+<li><span class="math inline">\(D_i(t)\)</span>: The amount of evidence accumulated for choice <span class="math inline">\(i\)</span> at time <span class="math inline">\(t\)</span>, defined as <span class="math inline">\(D_i(t) = v_i \cdot t + p_i\)</span></li>
+</ul>
+<p>The LBA model assumes that the rates of evidence accumulation (<span class="math inline">\(v_i\)</span>) for different choices are independent and can vary between trials. The model also allows for variability in the starting points (<span class="math inline">\(p_i\)</span>), reflecting differences in initial bias or predisposition towards certain choices.</p>
+<div id="true-values-for-the-parameters" class="section level2" number="1.1">
+<h2><span class="header-section-number">1.1</span> True values for the Parameters</h2>
+<p>Below, I define the true values for the model’s parameters under four distinct conditions.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>df_pars &lt;-<span class="st"> </span><span class="kw">tribble</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  <span class="op">~</span>difficulty,    <span class="op">~</span>emphasis,   <span class="op">~</span>A,   <span class="op">~</span>b, <span class="op">~</span>scale_v1, <span class="op">~</span>shape_v1, <span class="op">~</span>scale_v2, <span class="op">~</span>shape_v2, <span class="op">~</span>t0,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>   <span class="st">&quot;easy&quot;</span>,         <span class="st">&quot;accuracy&quot;</span>,  <span class="fl">.5</span>,   <span class="fl">5.1</span>,   <span class="dv">5</span>,       <span class="dv">6</span>,         <span class="dv">12</span>,       <span class="dv">1</span>,         <span class="fl">.1</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>   <span class="st">&quot;hard&quot;</span>,         <span class="st">&quot;accuracy&quot;</span>,  <span class="fl">.5</span>,   <span class="fl">5.1</span>,  <span class="fl">4.2</span>,      <span class="dv">6</span>,         <span class="dv">12</span>,       <span class="dv">1</span>,         <span class="fl">.1</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>   <span class="st">&quot;easy&quot;</span>,         <span class="st">&quot;speed&quot;</span>,    <span class="fl">3.9</span>,   <span class="fl">4.1</span>,   <span class="dv">5</span>,       <span class="dv">6</span>,         <span class="dv">12</span>,       <span class="dv">1</span>,         <span class="fl">.1</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>   <span class="st">&quot;hard&quot;</span>,         <span class="st">&quot;speed&quot;</span>,    <span class="fl">3.9</span>,   <span class="fl">4.1</span>,  <span class="fl">4.2</span>,      <span class="dv">6</span>,         <span class="dv">12</span>,       <span class="dv">1</span>,         <span class="fl">.1</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>df_pars</span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["difficulty"],"name":[1],"type":["chr"],"align":["left"]},{"label":["emphasis"],"name":[2],"type":["chr"],"align":["left"]},{"label":["A"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["b"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["scale_v1"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["shape_v1"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["scale_v2"],"name":[7],"type":["dbl"],"align":["right"]},{"label":["shape_v2"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["t0"],"name":[9],"type":["dbl"],"align":["right"]}],"data":[{"1":"easy","2":"accuracy","3":"0.5","4":"5.1","5":"5.0","6":"6","7":"12","8":"1","9":"0.1"},{"1":"hard","2":"accuracy","3":"0.5","4":"5.1","5":"4.2","6":"6","7":"12","8":"1","9":"0.1"},{"1":"easy","2":"speed","3":"3.9","4":"4.1","5":"5.0","6":"6","7":"12","8":"1","9":"0.1"},{"1":"hard","2":"speed","3":"3.9","4":"4.1","5":"4.2","6":"6","7":"12","8":"1","9":"0.1"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="simulated-data" class="section level2" number="1.2">
+<h2><span class="header-section-number">1.2</span> Simulated data</h2>
+<p>I generate data from a LBA with Gamma likelihood using the <code>rtdists</code> package. The differences in emphasis do not alter the parameters that relate to the speed or noise in the accumulation process. Instead, they affect the parameters that control the distance that needs to be accumulated. This is achieved by increasing the likelihood that the initial position (<span class="math inline">\(p\)</span>) is near the threshold (by increasing <span class="math inline">\(A\)</span>) and by decreasing the distance to the threshold (<span class="math inline">\(b\)</span>). In datasets like this, the emphasis on accuracy could be the result of instructions from the experimenter or the intrinsic motivation of the participant.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>N_cond &lt;-<span class="st"> </span><span class="dv">400</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>df_sim &lt;-<span class="st"> </span>df_pars <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="st">  </span><span class="kw">pmap_df</span>(<span class="cf">function</span>(A,b,t0, scale_v1, scale_v2, shape_v1, shape_v2, difficulty, emphasis, ...) {</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>    <span class="kw">rLBA</span>(N_cond, <span class="dt">A =</span> A, <span class="dt">b =</span> b, <span class="dt">t0 =</span> t0,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>         <span class="dt">scale_v =</span> <span class="kw">c</span>(scale_v1, scale_v2),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>         <span class="dt">shape_v =</span> <span class="kw">c</span>(shape_v1, shape_v2),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>         <span class="dt">distribution =</span> <span class="st">&quot;gamma&quot;</span> ) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a><span class="st">      </span><span class="kw">mutate</span>(<span class="dt">rt =</span> rt <span class="op">*</span><span class="st"> </span><span class="dv">1000</span>, <span class="co"># to ms</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>             <span class="dt">difficulty =</span> difficulty,</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>             <span class="dt">emphasis =</span> emphasis)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>  }) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">diff =</span> <span class="kw">ifelse</span>(difficulty <span class="op">==</span><span class="st"> &quot;hard&quot;</span>,<span class="dv">1</span>,<span class="op">-</span><span class="dv">1</span>),</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a>               <span class="dt">emph =</span> <span class="kw">ifelse</span>(emphasis <span class="op">==</span><span class="st">&quot;speed&quot;</span>,<span class="dv">1</span>,<span class="op">-</span><span class="dv">1</span>),</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a>               <span class="dt">resp =</span> <span class="kw">ifelse</span>(response <span class="op">==</span><span class="dv">1</span>, <span class="st">&quot;correct&quot;</span>,<span class="st">&quot;incorrect&quot;</span>),</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a>               <span class="dt">acc=</span> <span class="kw">ifelse</span>(response <span class="op">==</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>))</span></code></pre></div>
+<p>The simulated data mimic several patterns observed in real-world data, including (i) a predominance of correct over incorrect responses, (ii) a positive skew in response times, (iii) the standard deviation of response times increasing alongside the mean, and (iv) an increase in difficulty resulting in both more incorrect responses and prolonged response times. Additionally, it reflects a speed-accuracy trade-off, where faster decisions tend to be less accurate and slower decisions are more accurate. When speed is emphasized, response times for errors are shorter compared to when accuracy is emphasized, attributable to the shorter distance to the decision threshold.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>df_sim <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">summarize</span>(<span class="dt">correct =</span> <span class="kw">mean</span>(response<span class="op">==</span><span class="dv">1</span>),</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>                    <span class="dt">rt_correct =</span> <span class="kw">mean</span>(rt[response<span class="op">==</span><span class="dv">1</span>]),</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>                    <span class="dt">sd_correct =</span> <span class="kw">sd</span>(rt[response<span class="op">==</span><span class="dv">1</span>]),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>                    <span class="dt">rt_incorrect =</span> <span class="kw">mean</span>(rt[response<span class="op">==</span><span class="dv">2</span>]),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>                    <span class="dt">sd_incorrect =</span> <span class="kw">sd</span>(rt[response<span class="op">==</span><span class="dv">2</span>]),</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>                    <span class="dt">.by =</span> <span class="kw">c</span>(<span class="st">&quot;emphasis&quot;</span>,<span class="st">&quot;difficulty&quot;</span>))</span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["emphasis"],"name":[1],"type":["chr"],"align":["left"]},{"label":["difficulty"],"name":[2],"type":["chr"],"align":["left"]},{"label":["correct"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["rt_correct"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["sd_correct"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["rt_incorrect"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["sd_incorrect"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"accuracy","2":"easy","3":"0.89","4":"281","5":"79","6":"305","7":"112"},{"1":"accuracy","2":"hard","3":"0.85","4":"311","5":"95","6":"323","7":"145"},{"1":"speed","2":"easy","3":"0.81","4":"179","5":"61","6":"164","7":"47"},{"1":"speed","2":"hard","3":"0.78","4":"184","5":"58","6":"171","7":"50"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">ggplot</span>(df_sim, <span class="kw">aes</span>(<span class="dt">x =</span> rt, <span class="dt">y =</span> resp)) <span class="op">+</span><span class="st"> </span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_violin</span>(<span class="dt">draw_quantiles =</span> <span class="kw">c</span>(.<span class="dv">025</span>,.<span class="dv">5</span>,.<span class="dv">975</span>), <span class="dt">scale =</span> <span class="st">&quot;count&quot;</span>, <span class="dt">alpha =</span> <span class="fl">.5</span>) <span class="op">+</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_jitter</span>(<span class="dt">alpha =</span> <span class="fl">.2</span>, <span class="dt">width =</span> <span class="dv">0</span>, <span class="dt">height =</span> <span class="fl">.25</span>) <span class="op">+</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a><span class="st">  </span><span class="kw">facet_grid</span>(emphasis <span class="op">~</span><span class="st"> </span>difficulty) <span class="op">+</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a><span class="st">  </span><span class="kw">xlab</span>(<span class="st">&quot;Response time [ms]&quot;</span>) <span class="op">+</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a><span class="st">  </span><span class="kw">ylab</span>(<span class="st">&quot;Accuracy&quot;</span>)</span></code></pre></div>
+<p><img src="cv-bf_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+</div>
+<div id="case-1.-speed-emphasis" class="section level2" number="1.3">
+<h2><span class="header-section-number">1.3</span> Case 1. Speed emphasis</h2>
+<p>Next, I investigate what would happen if all the data obtained is from a participant who emphazises speed.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>df_sim_speed &lt;-<span class="st"> </span>df_sim <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(emphasis <span class="op">==</span><span class="st"> &quot;speed&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a><span class="st">  </span><span class="kw">group_by</span>(difficulty) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">train =</span> <span class="kw">rbinom</span>(<span class="kw">n</span>(), <span class="dv">1</span>, <span class="fl">.9</span>))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>df_sim_speed_train &lt;-<span class="st">  </span>df_sim_speed <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(train <span class="op">==</span><span class="st"> </span><span class="dv">1</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a>dsim_speed_list &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">N =</span> <span class="kw">nrow</span>(df_sim_speed_train),</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a>                  <span class="dt">rt =</span>df_sim_speed_train<span class="op">$</span>rt,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>                  <span class="dt">response =</span> df_sim_speed_train<span class="op">$</span>response,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a>                  <span class="dt">K =</span> <span class="dv">1</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a>                  <span class="dt">X =</span> <span class="kw">model.matrix</span>(<span class="op">~</span><span class="st"> </span><span class="dv">0</span> <span class="op">+</span><span class="st"> </span>diff, df_sim_speed_train),</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a>                  <span class="dt">only_prior =</span> <span class="dv">0</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a>fits_speed &lt;-<span class="st"> </span><span class="kw">list</span>()</span></code></pre></div>
+<div id="case-1.a.-log-normal-race-model-vs.-theory-agnostic-models" class="section level3" number="1.3.1">
+<h3><span class="header-section-number">1.3.1</span> Case 1.a. Log-Normal race model vs. theory-agnostic models</h3>
+<p>I start with three models under consideration:</p>
+<p><strong>1. Log-Normal Race (LNR) model</strong></p>
+<p>Similarly to the LBA, the LNR model describes the decision-making process as a race between several accumulators, each representing a different decision alternative <span class="citation">(Heathcote and Love 2012; Rouder et al. 2015)</span>. The time it takes for each accumulator to reach a decision threshold is assumed to follow a log-normal distribution. Unlike the LBA, there is no moving starting point, and all the accumulators start from the same initial point. Furthermore, the threshold and accumulation rate cannot be disentangled: a manipulation that affects the rate or the decision threshold will affect the location of the distribution in the same way <span class="citation">(also see Rouder et al. 2015)</span>. Another important observation is that the decision time (<span class="math inline">\(T\)</span>) won’t have a log-normal distribution when the distance to the threshold is not log-normally distributed or constant.</p>
+<p>Following <span class="citation">Rouder et al. (2015)</span>, we assume that the noise parameter is the same for each accumulator, since this means that contrasts between finishing time distributions are captured completely by contrasts of the locations of the log-normal distributions.</p>
+<!-- In a race of accumulators model, the assumption is that the time $T$ taken for each accumulator $i$ of evidence to reach the threshold at distance $D$ is simply defined by -->
+<!-- \begin{equation} -->
+<!-- t_i = d_i/v_i -->
+<!-- \end{equation} -->
+<!-- where the denominator vV$ is the rate (velocity, sometimes also called  drift rate) of  evidence accumulation. -->
+<!-- The log-normal race model assumes that the  rate in each trial is sampled from a log-normal distribution: -->
+<!-- \begin{equation} -->
+<!-- V_i \sim \mathit{LogNormal}(\mu_vi, \sigma_vi) -->
+<!-- \end{equation} -->
+<!-- The observed reaction time corresponds to the sum of a non decision time $T_{0}$ -->
+<!-- and the decision time which is the shortest time taken for an accumulator. The choice made corresponds to the accumulator that reach the threshold faster. -->
+<span class="math display">\[\begin{aligned}
+\mu_1 &amp;= \alpha_1 \cdot \text{diff}_n \cdot \beta_1\\
+\mu_2 &amp;= \alpha_2 \cdot \text{diff}_n \cdot \beta_2
+\end{aligned}\]</span>
+<p><span class="math display">\[\begin{equation}
+(rt_n; \text{response}_n ) \sim \text{LNR}(\{\mu_1;\mu_2\}, \sigma, T_0)
+\end{equation}\]</span></p>
+<p>with <span class="math inline">\(\text{diff}\)</span> sum coded to <span class="math inline">\(-1\)</span> for easy and <span class="math inline">\(1\)</span> for hard.</p>
+<p>For this model, I set the following (very weak and not that good) priors:</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \text{Normal}(0, 100) \\
+\beta &amp;\sim \text{Normal}(0, 10) \\
+\sigma &amp;\sim \text{Normal}_+(0, 100) \\
+ T_{0} &amp;\sim \text{Normal}(150, 100) \quad \text{with } T_0 &gt; \min(rt)
+ \end{aligned}\]</span>
+<p>This is implemented in Stan <span class="citation">(Stan Development Team 2023b)</span>.</p>
+<pre class="stan"><code>functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma) +
+        lognormal_lccdf(T | mu[2], sigma);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma) +
+        lognormal_lccdf(T | mu[1], sigma);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma);
+    real rt2 = lognormal_rng(mu[2], sigma);
+    array[2] real out;
+    if(rt1 &lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[2] real alpha;
+  array[2] vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+  real&lt;lower = 0, upper = min(rt)&gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                       {alpha[1] + X[n] * beta[1],
+                                        alpha[2] + X[n] * beta[2]},
+                                       sigma);
+    }
+}
+model {
+  target += normal_lpdf(alpha | 0, 100);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 10);
+  target += normal_lpdf(sigma | 0, 100)
+    - normal_lccdf(0 | 0, 100);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             sigma);
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}</code></pre>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>fits_speed<span class="op">$</span>LNRace &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./LogNormalRace_badpriors.stan&quot;</span>,</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>                          <span class="dt">data =</span> dsim_speed_list,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>                          <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>                          <span class="dt">iter =</span> <span class="dv">10000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">print_model</span>(fits_speed<span class="op">$</span>LNRace)   </span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["variable"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mean"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["2.5%"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["97.5%"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["rhat"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["ess_bulk"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ess_tail"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"alpha[1]","2":"4.4e+00","3":"4.302","4":"4.509","5":"1","6":"19752","7":"20284"},{"1":"alpha[2]","2":"5.1e+00","3":"5.041","4":"5.229","5":"1","6":"33622","7":"22983"},{"1":"beta[1,1]","2":"4.6e-02","3":"-0.016","4":"0.110","5":"1","6":"35472","7":"23329"},{"1":"beta[2,1]","2":"7.7e-06","3":"-0.085","4":"0.085","5":"1","6":"35063","7":"24533"},{"1":"sigma","2":"8.2e-01","3":"0.728","4":"0.910","5":"1","6":"17778","7":"19377"},{"1":"T_nd","2":"9.4e+01","3":"88.227","4":"98.885","5":"1","6":"16871","7":"17635"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p><strong>2. Theory-agnostic model</strong></p>
+<p>This model simultaneously addresses response time and binary choice data without any commitment to any theory. It incorporates predictors to explain variability in both outcomes, treating response times as normally distributed and choices as following a Bernoulli distribution.</p>
+<span class="math display">\[\begin{aligned}
+rt &amp;\sim \text{Normal}(\alpha + \text{diff} \cdot \beta_1, \sigma)\\
+acc &amp;\sim \text{Bernoulli}(logit(\text{prob}) + \text{diff} \cdot \beta_2)
+\end{aligned}\]</span>
+<p>I define the following regularizing priors.</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \text{Normal}(500, 50) \\
+\text{prob} &amp;\sim \text{Beta}(900, 100) \\
+\beta_1 &amp;\sim \text{Normal}(0, 50) \\
+\beta_2 &amp;\sim \text{Normal}(0, 0.5) \\
+\sigma &amp;\sim \text{Normal}_+(100, 100)
+\end{aligned}\]</span>
+<p>This is implemented in Stan <span class="citation">(Stan Development Team 2023b)</span>.</p>
+<pre class="stan"><code>data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+transformed data {
+  array[N] int acc;
+  for(n in 1:N)
+    if(response[n] == 1)
+      acc[n] = 1;
+    else
+      acc[n] = 0;
+}
+parameters {
+  real alpha;
+  real&lt;lower=0, upper=1&gt; prob;
+  array[2] vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = normal_lpdf(rt[n] | alpha + X[n] * beta[1], sigma) +
+        bernoulli_logit_lpmf(acc[n] | logit(prob) + X[n] * beta[2]);
+    }
+}
+model {
+  target += normal_lpdf(alpha | 500, 50);
+  target += beta_lpdf(prob | 900, 100);
+  
+  target += normal_lpdf(beta[1] | 0, 50);
+  target += normal_lpdf(beta[2] | 0, .5);
+  target += normal_lpdf(sigma | 100, 100)
+    - normal_lccdf(0 | 100, 100);
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    int pacc = bernoulli_logit_rng(logit(prob) + X[n] * beta[2]);
+    if(pacc==1)
+      pred_response[n] = 1;
+    else
+      pred_response[n] = 2;
+    
+    pred_rt[n] = normal_rng(alpha + X[n] * beta[1], sigma);
+    }
+}</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a>fits_speed<span class="op">$</span>agnostic &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./Agnostic.stan&quot;</span>, </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a>                            <span class="dt">data =</span> dsim_speed_list,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a>                            <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>                            <span class="dt">iter =</span> <span class="dv">10000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="kw">print_model</span>(fits_speed<span class="op">$</span>agnostic) </span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["variable"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mean"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["2.5%"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["97.5%"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["rhat"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["ess_bulk"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ess_tail"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"alpha","2":"179.848","3":"175.57","4":"184.13","5":"1","6":"46335","7":"29530"},{"1":"prob","2":"0.852","3":"0.83","4":"0.87","5":"1","6":"43740","7":"26211"},{"1":"beta[1,1]","2":"2.110","3":"-2.16","4":"6.39","5":"1","6":"47517","7":"29189"},{"1":"beta[2,1]","2":"-0.098","3":"-0.30","4":"0.10","5":"1","6":"40837","7":"28146"},{"1":"sigma","2":"58.670","3":"55.72","4":"61.82","5":"1","6":"45872","7":"30059"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p><strong>3. Theory-agnostic model with Log-likelihood</strong></p>
+<p>This model is similar to the previous one, but treats response times as shifted log-normally distributed.</p>
+<span class="math display">\[\begin{aligned}
+(rt - T_{\text{shift}}) &amp;\sim \text{LogNormal}(\alpha + \text{diff} \cdot \beta_1, \sigma)\\
+acc &amp;\sim \text{Bernoulli}(logit(\text{prob}) + \text{diff} \cdot \beta_2)
+\end{aligned}\]</span>
+<p>I define the following very weak priors.</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \text{Normal}(0, 100) \\
+\text{prob} &amp;\sim \text{Beta}(1, 1) \\
+\beta_1 &amp;\sim \text{Normal}(0, 10) \\
+\beta_2 &amp;\sim \text{Normal}(0, 10) \\
+\sigma &amp;\sim \text{Normal}_+(0, 100) \\
+T_{\text{shift}} &amp;\sim \text{Normal}_+(150, 100) \quad \text{with }  T_{\text{shift}} &gt; min(rt)
+\end{aligned}\]</span>
+<p>This is implemented in Stan <span class="citation">(Stan Development Team 2023b)</span>.</p>
+<pre class="stan"><code>data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+transformed data {
+  array[N] int acc;
+  for(n in 1:N)
+    if(response[n] == 1)
+      acc[n] = 1;
+    else
+      acc[n] = 0;
+}
+parameters {
+  real alpha;
+  real&lt;lower=0, upper=1&gt; prob;
+  array[2] vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+  real&lt;lower = 0, upper = min(rt)&gt; T_shift;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormal_lpdf(rt[n] - T_shift | alpha + X[n] * beta[1], sigma) +
+        bernoulli_logit_lpmf(acc[n] | logit(prob) + X[n] * beta[2]);
+    }
+}
+model {
+  target += beta_lpdf(prob | 1, 1);
+  target += normal_lpdf(alpha | 0, 100);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 10);
+  target += normal_lpdf(sigma | 0, 100)
+    - normal_lccdf(0 | 0, 100);
+  target += normal_lpdf(T_shift | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    int pacc = bernoulli_logit_rng(logit(prob) + X[n] * beta[2]);
+    if(pacc==1)
+      pred_response[n] = 1;
+    else
+      pred_response[n] = 2;
+    
+    pred_rt[n] = lognormal_rng(alpha + X[n] * beta[1], sigma) + T_shift;
+    }
+}</code></pre>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a>fits_speed<span class="op">$</span>agnosticLog &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./AgnosticLog.stan&quot;</span>,</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>                               <span class="dt">data =</span> dsim_speed_list,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a>                               <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a>                               <span class="dt">iter =</span> <span class="dv">10000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="kw">print_model</span>(fits_speed<span class="op">$</span>agnosticLog)</span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["variable"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mean"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["2.5%"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["97.5%"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["rhat"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["ess_bulk"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ess_tail"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"alpha","2":"4.306","3":"4.190","4":"4.433","5":"1","6":"13856","7":"17907"},{"1":"prob","2":"0.785","3":"0.754","4":"0.814","5":"1","6":"30119","7":"23631"},{"1":"beta[1,1]","2":"0.031","3":"-0.016","4":"0.079","5":"1","6":"31198","7":"23193"},{"1":"beta[2,1]","2":"-0.076","3":"-0.254","4":"0.103","5":"1","6":"32006","7":"23682"},{"1":"sigma","2":"0.633","3":"0.555","4":"0.711","5":"1","6":"14288","7":"19068"},{"1":"T_shift","2":"89.265","3":"81.415","4":"95.291","5":"1","6":"13361","7":"17733"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<div id="relationship-between-the-models-and-true-generating-process" class="section level4" number="1.3.1.1">
+<h4><span class="header-section-number">1.3.1.1</span> Relationship between the models and true generating process</h4>
+<p>The LNR model is the closest to the true generating process, but the priors are relatively ill-defined, much weaker than what we actually know. The theory-agnostic models are very flexible, with the second one allowing for a closer fit to the positively skewed response time.</p>
+</div>
+<div id="posterior-predictive-checks" class="section level4" number="1.3.1.2">
+<h4><span class="header-section-number">1.3.1.2</span> Posterior predictive checks</h4>
+<p>Posterior predictive checks for the general shape of the distribution of RTs show that no fit is perfect. However, the fit to the proportion of predicted correct vs incorrect responses (area of the violin plots) seems to be approximately fine.</p>
+<!-- ```{r} -->
+<!-- dens_speed <- map2(fits_speed, names(fits_speed), -->
+<!--                    ~ ppc_dens_overlay_grouped(df_sim_speed_train$rt, -->
+<!--                                               yrep = extract(.x,pars = "pred_rt")[[1]][1:200,, drop = FALSE], -->
+<!--                                               group = df_sim_speed_train$difficulty) + -->
+<!--                      ggtitle(.y)) -->
+<!-- walk(dens_speed, ~ plot(.x)) -->
+<!-- ``` -->
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a>violins &lt;-<span class="st"> </span><span class="kw">map2</span>(fits_speed, <span class="kw">names</span>(fits_speed), <span class="op">~</span><span class="st"> </span><span class="kw">violin_plot</span>(df_sim_speed_train, .x)  <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(.y) )</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a><span class="kw">walk</span>(violins, <span class="op">~</span><span class="st"> </span><span class="kw">plot</span>(.x))</span></code></pre></div>
+<p><img src="cv-bf_files/figure-html/violin-acc-1.png" width="672" /><img src="cv-bf_files/figure-html/violin-acc-2.png" width="672" /><img src="cv-bf_files/figure-html/violin-acc-3.png" width="672" /></p>
+<!-- Quantile probability plot showing   0.1, 0.3, 0.5, 0.7, and 0.9 response times quantiles plotted against  proportion of incorrect responses (left) and proportion of correct responses (right). Word frequency are grouped according to the two difficulty condtions. -->
+<!-- ```{r} -->
+<!-- qpf_speed <- map2(fits_speed, names(fits_speed) ~ -->
+<!--                                do_qpf(.x, -->
+<!--                                       df_sim_speed_train, -->
+<!--                                       cond = difficulty)) -->
+<!-- walk(qpf_speed, ~ plot(.x + ggtitle(names(fits_speed)))) -->
+<!-- ``` -->
+</div>
+<div id="model-comparison" class="section level4" number="1.3.1.3">
+<h4><span class="header-section-number">1.3.1.3</span> Model comparison</h4>
+<p>I implement model comparison with Bayes Factor (BF) using bridge sampling as well as with PSIS-LOO CV approximation using the log-score rule (<span class="math inline">\(\widehat{elpd}\)</span>). When the model comparison is reported, the first model is the best model and it’s used as reference for the next models.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a>lm_speed &lt;-<span class="st"> </span><span class="kw">map</span>(fits_speed, <span class="op">~</span><span class="st"> </span><span class="kw">bridge_sampler</span>(.x))</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a>loo_speed &lt;-<span class="st"> </span><span class="kw">map</span>(fits_speed, <span class="op">~</span><span class="st"> </span><span class="kw">loo</span>(.x))</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_speed) </span></code></pre></div>
+<pre><code>                 BF logBF
+agnosticLog 1.0e+00     0
+LNRace      1.5e+14    33
+agnostic    1.0e+82   189</code></pre>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo_speed)</span></code></pre></div>
+<pre><code>            elpd_diff se_diff
+agnosticLog    0.0       0.0 
+LNRace       -28.2       5.3 
+agnostic    -175.7      28.3 </code></pre>
+<p>Both BF and <span class="math inline">\(\widehat{elpdf}\)</span>-CV agree that the best model is the theory-agnostic with a log-normal likelihood. <strong>This shows that the model that is closer to the truth is not necessarily the one with the best predictions. A flexible theory-agnostic model might yield the best predictions even if it doesn’t resemble the generative process. Crucially, this is true for both BF and CV.</strong></p>
+<p>We add another cognitive model under consideration.</p>
+</div>
+</div>
+<div id="case-1.b-another-competitor-fast-guess-model" class="section level3" number="1.3.2">
+<h3><span class="header-section-number">1.3.2</span> Case 1.b Another competitor: Fast guess model</h3>
+<p>Ollman’s <span class="citation">(1966)</span> fast-guess model assumes that the behavior in this task (and in any other choice task) is governed by two distinct cognitive processes: (i) a guessing mode, and (ii) a task-engaged mode. In the guessing mode, responses are fast and accuracy is at chance level. In the task-engaged mode, responses are slower and accuracy approaches 100%. This means that intermediate values of response times and accuracy can only be achieved by mixing responses from the two modes. Further assumptions of this model are that response times depend on the difficulty of the choice, and that the probability of being on one of the two states depend on the speed incentives during the instructions.</p>
+<p>To simplify matters, I follow the implementation of <span class="citation">Nicenboim, Schad, and Vasishth (2024)</span>, I ignore the possibility that the accuracy of the choice is also affected by the difficulty of the choice. Also, I ignore the possibility that subjects might be biased to one specific response in the guessing mode.</p>
+<p>The fast-guess model makes the assumption that during a task, a single subject would behave in these two ways: They would be engaged in the task a proportion of the trials and would guess on the rest of the trials. This means that for a single subject, there is an underlying probability of being engaged in the task, <span class="math inline">\(p_{task}\)</span>, that determines whether they are actually choosing (<span class="math inline">\(z=1\)</span>) or guessing (<span class="math inline">\(z=0\)</span>):</p>
+<p><span class="math display">\[\begin{equation}
+z_n \sim \mathit{Bernoulli}(p_{task})
+\end{equation}\]</span></p>
+<p>The value of the parameter <span class="math inline">\(z\)</span> in every trial determines the behavior of the subject. This means that the distribution that we observe is a mixture of the two distributions presented before:</p>
+<p><span class="math display">\[\begin{equation}
+rt_n \sim 
+\begin{cases}
+\mathit{LogNormal}(\alpha + \beta \cdot diff_n, \sigma), &amp; \text{ if } z_n =1 \\
+\mathit{LogNormal}(\gamma, \sigma_2), &amp; \text{ if } z_n=0
+\end{cases}
+
+\end{equation}\]</span>
+<span class="math display" id="eq:dismix3">\[\begin{equation}
+acc_n \sim 
+\begin{cases}
+\mathit{Bernoulli}(p_{correct}), &amp; \text{ if } z_n =1 \\
+\mathit{Bernoulli}(0.5), &amp; \text{ if } z_n=0
+\end{cases}
+\tag{1.1}
+\end{equation}\]</span></p>
+<p>I use the following priors</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \mathit{Normal}(6, 1)\\
+\beta &amp;\sim \mathit{Normal}(0, .1)\\
+\sigma &amp;\sim \mathit{Normal}_+(.5, .2)\\
+\gamma &amp;\sim \mathit{Normal}(6, 1), \text{for } \gamma &lt; \alpha \\
+\sigma_2 &amp;\sim \mathit{Normal}_+(.5, .2)\\
+p_{task} &amp;\sim \mathit{Beta}(8, 2)
+\end{aligned}\]</span>
+<p><strong>Crucially, this model should capture the pattern of fast errors, but because of the wrong reasons!</strong></p>
+<p>This is implemented in Stan <span class="citation">(Stan Development Team 2023b)</span>.</p>
+<pre class="stan"><code>data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+transformed data {
+  array[N] int acc;
+  for(n in 1:N)
+    if(response[n] == 1)
+      acc[n] = 1;
+    else
+      acc[n] = 0;
+}
+parameters {
+  real alpha;
+  vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+  real&lt;upper = alpha&gt; gamma;
+  real&lt;lower = 0&gt; sigma2;
+  real&lt;lower = 0, upper = 1&gt; p_correct;
+  real&lt;lower = 0, upper = 1&gt; p_task;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N)
+      log_lik[n] = log_sum_exp(log(p_task) +
+                            lognormal_lpdf(rt[n] | alpha +  X[n] * beta, sigma) +
+                            bernoulli_lpmf(acc[n] | p_correct),
+                            log1m(p_task) +
+                            lognormal_lpdf(rt[n] | gamma, sigma2) +
+                            bernoulli_lpmf(acc[n] | .5));
+
+}
+model {
+  target += normal_lpdf(alpha | 6, 1);
+  target += normal_lpdf(beta | 0, .3);
+  target += normal_lpdf(sigma | .5, .2)
+    - normal_lccdf(0 | .5, .2);
+  target += normal_lpdf(gamma | 6, 1) -
+    normal_lcdf(alpha | 6, 1);
+  target += normal_lpdf(sigma2 | .5, .2)
+    - normal_lccdf(0 | .5, .2);
+  target += beta_lpdf(p_correct | 995, 5);
+  target += beta_lpdf(p_task | 8, 2);
+  if(only_prior != 1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    int ontask = bernoulli_rng(p_task);
+    if(ontask == 1){
+      pred_response[n] = bernoulli_rng(p_correct) == 1 ? 1 : 2;
+      pred_rt[n] = lognormal_rng(alpha + X[n] * beta, sigma);
+    } else {
+      pred_response[n] = bernoulli_rng(.5) == 1 ? 1 : 2;
+      pred_rt[n] = lognormal_rng(gamma, sigma2);
+
+    }
+  }
+}</code></pre>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true"></a>fits_speed<span class="op">$</span>FG &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./FastGuess.stan&quot;</span>,  </span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true"></a>                      <span class="dt">data =</span> dsim_speed_list,</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true"></a>                      <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true"></a>                      <span class="dt">iter =</span> <span class="dv">10000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true"></a><span class="kw">print_model</span>(fits_speed<span class="op">$</span>FG)</span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["variable"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mean"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["2.5%"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["97.5%"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["rhat"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["ess_bulk"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ess_tail"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"alpha","2":"5.205","3":"5.168","4":"5.243","5":"1","6":"20978","7":"21197"},{"1":"beta[1]","2":"0.016","3":"-0.017","4":"0.051","5":"1","6":"37056","7":"26210"},{"1":"sigma","2":"0.309","3":"0.287","4":"0.333","5":"1","6":"36725","7":"27020"},{"1":"gamma","2":"5.067","3":"5.032","4":"5.103","5":"1","6":"29542","7":"25495"},{"1":"sigma2","2":"0.244","3":"0.221","4":"0.269","5":"1","6":"35032","7":"25463"},{"1":"p_correct","2":"0.995","3":"0.989","4":"0.998","5":"1","6":"34607","7":"21714"},{"1":"p_task","2":"0.566","3":"0.503","4":"0.627","5":"1","6":"32801","7":"27361"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<div id="model-comparison-1" class="section level4" number="1.3.2.1">
+<h4><span class="header-section-number">1.3.2.1</span> Model comparison</h4>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true"></a>lm_speed<span class="op">$</span>FG &lt;-<span class="st"> </span><span class="kw">bridge_sampler</span>(fits_speed<span class="op">$</span>FG)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true"></a>loo_speed<span class="op">$</span>FG &lt;-<span class="st"> </span><span class="kw">loo</span>(fits_speed<span class="op">$</span>FG)</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_speed) </span></code></pre></div>
+<pre><code>                 BF logBF
+agnosticLog 1.0e+00     0
+FG          5.5e+09    22
+LNRace      1.5e+14    33
+agnostic    1.0e+82   189</code></pre>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo_speed)</span></code></pre></div>
+<pre><code>            elpd_diff se_diff
+agnosticLog    0.0       0.0 
+LNRace       -28.2       5.3 
+FG           -31.9       8.3 
+agnostic    -175.7      28.3 </code></pre>
+<p>Both BF and <span class="math inline">\(\hat{elpdf}\)</span> agree that the best model is the theory-agnostic with a log-normal likelihood. What if we only considering the cognitive models?</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_speed[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(lm_speed),<span class="st">&quot;agnostic&quot;</span>)])</span></code></pre></div>
+<pre><code>          BF logBF
+FG         1     0
+LNRace 27078    10</code></pre>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo_speed[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(lm_speed),<span class="st">&quot;agnostic&quot;</span>)])</span></code></pre></div>
+<pre><code>       elpd_diff se_diff
+LNRace  0.0       0.0   
+FG     -3.6      11.3   </code></pre>
+<p>BF shows a clear advantage for the Fast Guess model. This is a bit unsettling because the Fast Guess model is clearly different from the true generating process. <span class="math inline">\(\hat{elpdf}\)</span>-CV cannot distinguish between the models.</p>
+<p>But the LogNormal race model had terrible priors, what if they are more realistic?</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \text{Normal}(5.2, 1) \\
+\beta &amp;\sim \text{Normal}(0, .2) \\
+\sigma &amp;\sim \text{Normal}_+(0.5, 0.25) \\
+ T_{0} &amp;\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)} 
+\end{aligned}\]</span>
+<p>This is implemented in Stan <span class="citation">(Stan Development Team 2023b)</span> and the model comparison is repeated.</p>
+<pre class="stan"><code>functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma) +
+        lognormal_lccdf(T | mu[2], sigma);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma) +
+        lognormal_lccdf(T | mu[1], sigma);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma);
+    real rt2 = lognormal_rng(mu[2], sigma);
+    array[2] real out;
+    if(rt1 &lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[2] real alpha;
+  array[2] vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+  real&lt;lower = 0, upper = min(rt)&gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                       {alpha[1] + X[n] * beta[1],
+                                        alpha[2] + X[n] * beta[2]},
+                                       sigma);
+    }
+}
+model {
+  target += normal_lpdf(alpha | 5.2, 1);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 0.2);
+  target += normal_lpdf(sigma | 0.5, 0.25)
+    - normal_lccdf(0 | 0.5, .25);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             sigma);
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}</code></pre>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_speed) </span></code></pre></div>
+<pre><code>                       BF logBF
+agnosticLog       1.0e+00     0
+LNRace_reg_priors 4.6e+06    15
+FG                5.5e+09    22
+LNRace            1.5e+14    33
+agnostic          1.0e+82   189</code></pre>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo_speed) </span></code></pre></div>
+<pre><code>                  elpd_diff se_diff
+agnosticLog          0.0       0.0 
+LNRace_reg_priors  -28.1       5.3 
+LNRace             -28.2       5.3 
+FG                 -31.9       8.3 
+agnostic          -175.7      28.3 </code></pre>
+<p>The best model is still the theory-agnostic flexible model with a log-normal likelihood.</p>
+<p>Considering only the cognitive models, we see the differences between BF and <span class="math inline">\(\hat{elpd}\)</span>:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_speed[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(lm_speed),<span class="st">&quot;agnostic&quot;</span>)])</span></code></pre></div>
+<pre><code>                        BF logBF
+LNRace_reg_priors        1   0.0
+FG                    1201   7.1
+LNRace            32514513  17.3</code></pre>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo_speed[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(lm_speed),<span class="st">&quot;agnostic&quot;</span>)])</span></code></pre></div>
+<pre><code>                  elpd_diff se_diff
+LNRace_reg_priors  0.0       0.0   
+LNRace            -0.1       0.3   
+FG                -3.7      11.1   </code></pre>
+<p>With better priors, the LNR model is prefered according to the BF. This shows that the comparison of (cognitive) models that entail very different generative but can mimic the data well (for different reasons) can be very strongly prior dependent. In contrast, <span class="math inline">\(\hat{elpd}\)</span>-CV is less enthusiastic in selecting a model.</p>
+</div>
+</div>
+<div id="case-1.c-yet-another-competitor-a-more-flexible-implementation-of-the-lnr-model" class="section level3" number="1.3.3">
+<h3><span class="header-section-number">1.3.3</span> Case 1.c Yet another competitor: A more flexible implementation of the LNR model</h3>
+<p>A more flexible implementation of the Log Normal race model relaxes the assumption that the noise parameter is the same for all the accumulators. This supposed to allow it to capture more flexible patterns in the data.</p>
+<p>I implement it with the following likelihood:</p>
+<span class="math display">\[\begin{aligned}
+\mu_1 &amp;= \alpha_1 \cdot diff_n \cdot \beta_1\\
+\mu_2 &amp;= \alpha_2 \cdot diff_n \cdot \beta_2\\
+\mu_3 &amp;= \alpha_3 \cdot diff_n \cdot \beta_3\\
+\mu_4 &amp;= \alpha_4 \cdot diff_n \cdot \beta_4\\
+(rt_n; response_n ) &amp;\sim \text{LNR}(\{\mu_1;\mu_2\}, \{\exp(mu_3); \exp(mu_4)\}, T_0)
+\end{aligned}\]</span>
+<p>We try two flavors,</p>
+<ul>
+<li>with very uninformative priors</li>
+</ul>
+<span class="math display">\[\begin{aligned}
+\alpha_{1;2} &amp;\sim \text{Normal}(0, 100) \\
+\alpha_{3;4} &amp;\sim \text{Normal}(0, 2) \\
+\beta &amp;\sim \text{Normal}(0, 10) \\
+ T_{0} &amp;\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)} 
+\end{aligned}\]</span>
+<pre class="stan"><code>functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           array[] real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma[1]) +
+        lognormal_lccdf(T | mu[2], sigma[2]);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma[1]) +
+        lognormal_lccdf(T | mu[1], sigma[2]);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          array[] real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma[1]);
+    real rt2 = lognormal_rng(mu[2], sigma[2]);
+    array[2] real out;
+    if(rt1 &lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[4] real alpha;
+  array[4] vector[K] beta;
+  real&lt;lower = 0, upper = min(rt)&gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                        {alpha[1] + X[n] * beta[1],
+                                         alpha[2] + X[n] * beta[2]},
+                                       {exp(alpha[3] + X[n] * beta[3]),
+                                        exp(alpha[4] + X[n] * beta[4])});
+    }
+}
+model {
+  target += normal_lpdf(alpha[1:2] | 0, 100);
+  target += normal_lpdf(alpha[3:4] | 0, 2);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 10);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             {exp(alpha[3] + X[n] * beta[3]),
+                              exp(alpha[4] + X[n] * beta[4])});
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}</code></pre>
+<ul>
+<li>and with regularizing priors.</li>
+</ul>
+<span class="math display">\[\begin{aligned}
+\alpha_{1;2} &amp;\sim \text{Normal}(5.2, 1) \\
+\alpha_{3;4} &amp;\sim \text{Normal}(\log(0.5), 1) \\
+\beta &amp;\sim \text{Normal}(0, .2) \\
+ T_{0} &amp;\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)} 
+\end{aligned}\]</span>
+<pre class="stan"><code>functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           array[] real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma[1]) +
+        lognormal_lccdf(T | mu[2], sigma[2]);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma[1]) +
+        lognormal_lccdf(T | mu[1], sigma[2]);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          array[] real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma[1]);
+    real rt2 = lognormal_rng(mu[2], sigma[2]);
+    array[2] real out;
+    if(rt1 &lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[4] real alpha;
+  array[4] vector[K] beta;
+  real&lt;lower = 0, upper = min(rt)&gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                        {alpha[1] + X[n] * beta[1],
+                                         alpha[2] + X[n] * beta[2]},
+                                       {exp(alpha[3] + X[n] * beta[3]),
+                                        exp(alpha[4] + X[n] * beta[4])});
+    }
+}
+model {
+  target += normal_lpdf(alpha[1:2] | 5.2, 1);
+  target += normal_lpdf(alpha[3:4] | log(0.5), 1);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, .2);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             {exp(alpha[3] + X[n] * beta[3]),
+                              exp(alpha[4] + X[n] * beta[4])});
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}</code></pre>
+<div id="posterior-predictive-checks-1" class="section level4" number="1.3.3.1">
+<h4><span class="header-section-number">1.3.3.1</span> Posterior predictive checks</h4>
+<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true"></a>fit_plot &lt;-<span class="st"> </span>fits_speed[<span class="op">!</span><span class="kw">endsWith</span>(<span class="kw">names</span>(fits_speed),<span class="st">&quot;reg_priors&quot;</span>)]</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true"></a>violins &lt;-<span class="st"> </span><span class="kw">map2</span>(fit_plot, <span class="kw">names</span>(fit_plot), <span class="op">~</span><span class="st"> </span><span class="kw">violin_plot</span>(df_sim_speed_train, .x)  <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(.y) )</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true"></a></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true"></a><span class="kw">walk</span>(violins, <span class="op">~</span><span class="st"> </span><span class="kw">plot</span>(.x))</span></code></pre></div>
+<p><img src="cv-bf_files/figure-html/unnamed-chunk-36-1.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-36-2.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-36-3.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-36-4.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-36-5.png" width="672" /></p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true"></a>dens_speed &lt;-<span class="st"> </span><span class="kw">map2</span>(</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true"></a>  fit_plot, </span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true"></a>  <span class="kw">names</span>(fit_plot), <span class="op">~</span><span class="st"> </span><span class="kw">ppc_dens_overlay_grouped</span>(df_sim_speed_train<span class="op">$</span>rt,</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true"></a>                                           <span class="dt">yrep =</span> <span class="kw">extract</span>(.x,<span class="dt">pars =</span> <span class="st">&quot;pred_rt&quot;</span>)[[<span class="dv">1</span>]][<span class="dv">1</span><span class="op">:</span><span class="dv">200</span>,, <span class="dt">drop =</span> <span class="ot">FALSE</span>],</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true"></a>                                           <span class="dt">group =</span> df_sim_speed_train<span class="op">$</span>difficulty) <span class="op">+</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true"></a></span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true"></a><span class="st">  </span><span class="kw">coord_cartesian</span>(<span class="dt">xlim=</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1500</span>)) <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(.y))</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true"></a><span class="kw">walk</span>(dens_speed, <span class="op">~</span><span class="st"> </span><span class="kw">plot</span>(.x ))</span></code></pre></div>
+<p><img src="cv-bf_files/figure-html/unnamed-chunk-37-1.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-37-2.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-37-3.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-37-4.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-37-5.png" width="672" /></p>
+<!-- ```{r, message = FALSE} -->
+<!-- qpf_speed <- map(fit_plot, ~ do_qpf(.x, df_sim_speed_train, cond = difficulty) + -->
+<!--                  coord_cartesian(ylim= c(100, 500))) -->
+<!-- walk(qpf_speed, ~ plot(.x + ggtitle(names(fit_plot)))) -->
+<!-- ``` -->
+</div>
+<div id="model-comparison-2" class="section level4" number="1.3.3.2">
+<h4><span class="header-section-number">1.3.3.2</span> Model comparison</h4>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_speed)</span></code></pre></div>
+<pre><code>                          BF logBF
+LNRace_fl_reg_priors 1.0e+00   0.0
+agnosticLog          3.6e+02   5.9
+LNRace_fl            1.1e+06  14.0
+LNRace_reg_priors    1.6e+09  21.2
+FG                   2.0e+12  28.3
+LNRace               5.3e+16  38.5
+agnostic             3.6e+84 194.7</code></pre>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_speed[<span class="kw">c</span>(<span class="st">&quot;LNRace_fl_reg_priors&quot;</span>,<span class="st">&quot;agnosticLog&quot;</span>)])</span></code></pre></div>
+<pre><code>                      BF logBF
+LNRace_fl_reg_priors   1   0.0
+agnosticLog          357   5.9</code></pre>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_speed[<span class="kw">c</span>(<span class="st">&quot;LNRace_fl&quot;</span>,<span class="st">&quot;agnosticLog&quot;</span>)])</span></code></pre></div>
+<pre><code>              BF logBF
+agnosticLog    1   0.0
+LNRace_fl   3220   8.1</code></pre>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo_speed)</span></code></pre></div>
+<pre><code>                     elpd_diff se_diff
+agnosticLog             0.0       0.0 
+LNRace_fl_reg_priors   -2.2       4.5 
+LNRace_fl              -2.3       4.5 
+LNRace_reg_priors     -28.1       5.3 
+LNRace                -28.2       5.3 
+FG                    -31.9       8.3 
+agnostic             -175.7      28.3 </code></pre>
+<p>Only with good priors, the flexible version of the LNR model is the best model according the Bayes Factor. CV cannot really distinguish betwen them.</p>
+<p>Considering only the cognitive models, there is slightly more agreement between the model comparison methods. The flexible version of the LNR model is the superior model for both methods.</p>
+<p>This shows that even the selection of a model that relatively closely resembles the data generative process can be strongly prior dependent for the BF.</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_speed[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(lm_speed),<span class="st">&quot;agnostic&quot;</span>)])</span></code></pre></div>
+<pre><code>                          BF logBF
+LNRace_fl_reg_priors 1.0e+00     0
+LNRace_fl            1.1e+06    14
+LNRace_reg_priors    1.6e+09    21
+FG                   2.0e+12    28
+LNRace               5.3e+16    39</code></pre>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo_speed[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(lm_speed),<span class="st">&quot;agnostic&quot;</span>)])</span></code></pre></div>
+<pre><code>                     elpd_diff se_diff
+LNRace_fl_reg_priors   0.0       0.0  
+LNRace_fl             -0.1       0.1  
+LNRace_reg_priors    -25.9       5.8  
+LNRace               -26.0       5.7  
+FG                   -29.6       8.2  </code></pre>
+</div>
+<div id="visualization-of-elpd-fast-guess-vs-flexible-lnr" class="section level4" number="1.3.3.3">
+<h4><span class="header-section-number">1.3.3.3</span> Visualization of elpd: Fast Guess vs Flexible LNR</h4>
+<p>The plots show the difference in pointwise predictive accuracy of the Flexible LNR vs Fast Guess models. A more positive value indicates an advantage for the Flexible LNR.</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true"></a>df_sim_speed_train &lt;-<span class="st"> </span><span class="kw">ungroup</span>(df_sim_speed_train) <span class="op">%&gt;%</span></span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">diff_elpd_LNRF_FG =</span>  loo_speed<span class="op">$</span>LNRace_fl<span class="op">$</span>pointwise[,<span class="st">&quot;elpd_loo&quot;</span>] <span class="op">-</span><span class="st">  </span>loo_speed<span class="op">$</span>FG <span class="op">$</span>pointwise[,<span class="st">&quot;elpd_loo&quot;</span>],</span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true"></a>         <span class="dt">diff_elpd_LNRF_AL =</span>  loo_speed<span class="op">$</span>LNRace_fl<span class="op">$</span>pointwise[,<span class="st">&quot;elpd_loo&quot;</span>] <span class="op">-</span><span class="st">  </span>loo_speed<span class="op">$</span>FG<span class="op">$</span>pointwise[,<span class="st">&quot;elpd_loo&quot;</span>])</span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true"></a></span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true"></a></span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true"></a><span class="kw">ggplot</span>(df_sim_speed_train,</span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true"></a>       <span class="kw">aes</span>(<span class="dt">x =</span> rt, <span class="dt">y =</span> diff_elpd_LNRF_FG)) <span class="op">+</span></span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_jitter</span>(<span class="dt">alpha =</span> <span class="fl">.5</span>, <span class="dt">width =</span> <span class="dv">0</span>, <span class="dt">height =</span> <span class="fl">.1</span> ) <span class="op">+</span></span>
+<span id="cb61-9"><a href="#cb61-9" aria-hidden="true"></a><span class="st">  </span><span class="kw">facet_grid</span>(difficulty <span class="op">~</span><span class="st"> </span>resp) <span class="op">+</span></span>
+<span id="cb61-10"><a href="#cb61-10" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_hline</span>(<span class="dt">yintercept =</span> <span class="dv">0</span>, <span class="dt">linetype =</span> <span class="st">&quot;dashed&quot;</span>)</span></code></pre></div>
+<p><img src="cv-bf_files/figure-html/unnamed-chunk-44-1.png" width="672" /></p>
+</div>
+</div>
+</div>
+<div id="case-2.-accuracy-emphasis" class="section level2" number="1.4">
+<h2><span class="header-section-number">1.4</span> Case 2. Accuracy emphasis</h2>
+<p>I fit again all the models for a subset of the data where accuracy is emphasized.</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true"></a>df_sim_acc &lt;-<span class="st"> </span>df_sim <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(emphasis <span class="op">==</span><span class="st">&quot;accuracy&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true"></a><span class="st">  </span><span class="kw">group_by</span>(difficulty) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">train =</span> <span class="kw">rbinom</span>(<span class="kw">n</span>(),<span class="dv">1</span>,.<span class="dv">9</span>))</span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true"></a>df_sim_acc_train &lt;-<span class="st">  </span>df_sim_acc <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(train<span class="op">==</span><span class="dv">1</span>)</span>
+<span id="cb62-8"><a href="#cb62-8" aria-hidden="true"></a>dsim_acc_list &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">N =</span> <span class="kw">nrow</span>(df_sim_acc_train),</span>
+<span id="cb62-9"><a href="#cb62-9" aria-hidden="true"></a>                      <span class="dt">rt =</span>df_sim_acc_train<span class="op">$</span>rt,</span>
+<span id="cb62-10"><a href="#cb62-10" aria-hidden="true"></a>                      <span class="dt">response =</span> df_sim_acc_train<span class="op">$</span>response,</span>
+<span id="cb62-11"><a href="#cb62-11" aria-hidden="true"></a>                      <span class="dt">K =</span> <span class="dv">1</span>,</span>
+<span id="cb62-12"><a href="#cb62-12" aria-hidden="true"></a>                      <span class="dt">X =</span> <span class="kw">model.matrix</span>(<span class="op">~</span><span class="st"> </span><span class="dv">0</span> <span class="op">+</span><span class="st"> </span>diff, df_sim_acc_train),</span>
+<span id="cb62-13"><a href="#cb62-13" aria-hidden="true"></a>                      <span class="dt">only_prior =</span> <span class="dv">0</span>)</span>
+<span id="cb62-14"><a href="#cb62-14" aria-hidden="true"></a></span>
+<span id="cb62-15"><a href="#cb62-15" aria-hidden="true"></a>fits_acc &lt;-<span class="st"> </span><span class="kw">list</span>()</span>
+<span id="cb62-16"><a href="#cb62-16" aria-hidden="true"></a>fits_acc<span class="op">$</span>LNRace &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./LogNormalRace_badpriors.stan&quot;</span>,</span>
+<span id="cb62-17"><a href="#cb62-17" aria-hidden="true"></a>                        <span class="dt">data =</span> dsim_acc_list,</span>
+<span id="cb62-18"><a href="#cb62-18" aria-hidden="true"></a>                        <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb62-19"><a href="#cb62-19" aria-hidden="true"></a>                        <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb62-20"><a href="#cb62-20" aria-hidden="true"></a></span>
+<span id="cb62-21"><a href="#cb62-21" aria-hidden="true"></a>fits_acc<span class="op">$</span>LNRace_reg_priors &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./LogNormalRace.stan&quot;</span>,</span>
+<span id="cb62-22"><a href="#cb62-22" aria-hidden="true"></a>                                   <span class="dt">data =</span> dsim_acc_list,</span>
+<span id="cb62-23"><a href="#cb62-23" aria-hidden="true"></a>                                   <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb62-24"><a href="#cb62-24" aria-hidden="true"></a>                                   <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb62-25"><a href="#cb62-25" aria-hidden="true"></a></span>
+<span id="cb62-26"><a href="#cb62-26" aria-hidden="true"></a>fits_acc<span class="op">$</span>agnostic &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./Agnostic.stan&quot;</span>,</span>
+<span id="cb62-27"><a href="#cb62-27" aria-hidden="true"></a>                          <span class="dt">data =</span> dsim_acc_list,</span>
+<span id="cb62-28"><a href="#cb62-28" aria-hidden="true"></a>                          <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb62-29"><a href="#cb62-29" aria-hidden="true"></a>                          <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb62-30"><a href="#cb62-30" aria-hidden="true"></a></span>
+<span id="cb62-31"><a href="#cb62-31" aria-hidden="true"></a>fits_acc<span class="op">$</span>agnosticLog &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./AgnosticLog.stan&quot;</span>,</span>
+<span id="cb62-32"><a href="#cb62-32" aria-hidden="true"></a>                             <span class="dt">data =</span> dsim_acc_list,</span>
+<span id="cb62-33"><a href="#cb62-33" aria-hidden="true"></a>                             <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb62-34"><a href="#cb62-34" aria-hidden="true"></a>                             <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb62-35"><a href="#cb62-35" aria-hidden="true"></a></span>
+<span id="cb62-36"><a href="#cb62-36" aria-hidden="true"></a>fits_acc<span class="op">$</span>FG &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./FastGuess.stan&quot;</span>,</span>
+<span id="cb62-37"><a href="#cb62-37" aria-hidden="true"></a>                    <span class="dt">data =</span> dsim_acc_list,</span>
+<span id="cb62-38"><a href="#cb62-38" aria-hidden="true"></a>                    <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb62-39"><a href="#cb62-39" aria-hidden="true"></a>                    <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb62-40"><a href="#cb62-40" aria-hidden="true"></a></span>
+<span id="cb62-41"><a href="#cb62-41" aria-hidden="true"></a>fits_acc<span class="op">$</span>LNRace_fl &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./LogNormalRace_fl_badpriors.stan&quot;</span>,</span>
+<span id="cb62-42"><a href="#cb62-42" aria-hidden="true"></a>                           <span class="dt">data =</span> dsim_acc_list,</span>
+<span id="cb62-43"><a href="#cb62-43" aria-hidden="true"></a>                           <span class="dt">control =</span> <span class="kw">list</span>(<span class="dt">adapt_delta =</span> <span class="fl">.9</span>,</span>
+<span id="cb62-44"><a href="#cb62-44" aria-hidden="true"></a>                                          <span class="dt">max_treedepth =</span> <span class="dv">12</span>),</span>
+<span id="cb62-45"><a href="#cb62-45" aria-hidden="true"></a>                           <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb62-46"><a href="#cb62-46" aria-hidden="true"></a>                           <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb62-47"><a href="#cb62-47" aria-hidden="true"></a></span>
+<span id="cb62-48"><a href="#cb62-48" aria-hidden="true"></a>fits_acc<span class="op">$</span>LNRace_fl_reg_priors &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./LogNormalRace_fl.stan&quot;</span>,</span>
+<span id="cb62-49"><a href="#cb62-49" aria-hidden="true"></a>                                      <span class="dt">data =</span> dsim_acc_list,</span>
+<span id="cb62-50"><a href="#cb62-50" aria-hidden="true"></a>                                      <span class="dt">control =</span> <span class="kw">list</span>(<span class="dt">adapt_delta =</span> <span class="fl">.9</span>,</span>
+<span id="cb62-51"><a href="#cb62-51" aria-hidden="true"></a>                                                     <span class="dt">max_treedepth =</span> <span class="dv">12</span>),</span>
+<span id="cb62-52"><a href="#cb62-52" aria-hidden="true"></a>                                      <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb62-53"><a href="#cb62-53" aria-hidden="true"></a>                                      <span class="dt">iter =</span> <span class="dv">10000</span>)</span></code></pre></div>
+<div id="posterior-predictive-check" class="section level3" number="1.4.1">
+<h3><span class="header-section-number">1.4.1</span> Posterior predictive check</h3>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true"></a>fit_plot &lt;-<span class="st"> </span>fits_acc[<span class="op">!</span><span class="kw">endsWith</span>(<span class="kw">names</span>(fits_acc),<span class="st">&quot;reg_priors&quot;</span>)]</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true"></a></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true"></a>violins &lt;-<span class="st"> </span><span class="kw">map2</span>(fit_plot, <span class="kw">names</span>(fit_plot), <span class="op">~</span><span class="st"> </span><span class="kw">violin_plot</span>(df_sim_acc_train, .x)  <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(.y) )</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true"></a></span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true"></a><span class="kw">walk</span>(violins, <span class="op">~</span><span class="st"> </span><span class="kw">plot</span>(.x))</span></code></pre></div>
+<p><img src="cv-bf_files/figure-html/unnamed-chunk-46-1.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-46-2.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-46-3.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-46-4.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-46-5.png" width="672" /></p>
+</div>
+<div id="model-comparison-3" class="section level3" number="1.4.2">
+<h3><span class="header-section-number">1.4.2</span> Model comparison</h3>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true"></a>lm_acc &lt;-<span class="st"> </span><span class="kw">map</span>(fits_acc, <span class="op">~</span><span class="st"> </span><span class="kw">bridge_sampler</span>(.x))</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true"></a>loo_acc&lt;-<span class="st"> </span><span class="kw">map</span>(fits_acc, <span class="op">~</span><span class="st"> </span><span class="kw">loo</span>(.x))</span></code></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_acc) </span></code></pre></div>
+<pre><code>                          BF logBF
+agnosticLog          1.0e+00     0
+FG                   8.2e+05    14
+LNRace_reg_priors    2.2e+06    15
+LNRace_fl_reg_priors 5.0e+06    15
+LNRace_fl            6.9e+12    30
+LNRace               1.4e+14    33
+agnostic             2.5e+73   169</code></pre>
+<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo_acc)</span></code></pre></div>
+<pre><code>                     elpd_diff se_diff
+agnosticLog             0.0       0.0 
+FG                    -23.2       7.7 
+LNRace_fl_reg_priors  -24.9       7.2 
+LNRace_fl             -25.0       7.2 
+LNRace_reg_priors     -28.0       8.1 
+LNRace                -28.1       8.2 
+agnostic             -181.9      42.2 </code></pre>
+<p>As before, the most flexible theory-agnostic model is selected by both methods. What if we only considering the cognitive models?</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm_acc[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(lm_acc),<span class="st">&quot;agnostic&quot;</span>)])</span></code></pre></div>
+<pre><code>                          BF logBF
+FG                   1.0e+00  0.00
+LNRace_reg_priors    2.7e+00  0.98
+LNRace_fl_reg_priors 6.1e+00  1.81
+LNRace_fl            8.4e+06 15.95
+LNRace               1.7e+08 18.96</code></pre>
+<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo_acc[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(lm_acc),<span class="st">&quot;agnostic&quot;</span>)])</span></code></pre></div>
+<pre><code>                     elpd_diff se_diff
+FG                    0.0       0.0   
+LNRace_fl_reg_priors -1.8      11.0   
+LNRace_fl            -1.8      11.0   
+LNRace_reg_priors    -4.8      11.5   
+LNRace               -4.9      11.5   </code></pre>
+<p>Here, the Fast Guess model, which shouldn’t even be able to capture the long errors, is the one selected as the best model. The summary of the posterior of the model below shows that this is achieved because the location of the errors is just a bit faster than non-error, and has a much larger scale parameter:</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true"></a><span class="kw">print_model</span>(fits_acc<span class="op">$</span>FG)   </span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["variable"],"name":[1],"type":["chr"],"align":["left"]},{"label":["mean"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["2.5%"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["97.5%"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["rhat"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["ess_bulk"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ess_tail"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"alpha","2":"5.656","3":"5.636","4":"5.676","5":"1","6":"43372","7":"27805"},{"1":"beta[1]","2":"0.051","3":"0.029","4":"0.074","5":"1","6":"48819","7":"26992"},{"1":"sigma","2":"0.229","3":"0.210","4":"0.250","5":"1","6":"37367","7":"27206"},{"1":"gamma","2":"5.646","3":"5.620","4":"5.669","5":"1","6":"51528","7":"30282"},{"1":"sigma2","2":"0.368","3":"0.323","4":"0.417","5":"1","6":"37869","7":"26176"},{"1":"p_correct","2":"0.995","3":"0.989","4":"0.998","5":"1","6":"42786","7":"22630"},{"1":"p_task","2":"0.746","3":"0.696","4":"0.793","5":"1","6":"41770","7":"27665"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<div id="case-3.-considering-both-speed-and-accuracy-emphasis" class="section level2" number="1.5">
+<h2><span class="header-section-number">1.5</span> Case 3. Considering both speed and accuracy emphasis</h2>
+<p>Now we consider the data with both speed and accuracy emphasis and all the models are fit again.</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true"></a></span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true"></a>df_sim &lt;-<span class="st"> </span>df_sim <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true"></a><span class="st">  </span><span class="kw">group_by</span>(difficulty) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">train =</span> <span class="kw">rbinom</span>(<span class="kw">n</span>(),<span class="dv">1</span>,.<span class="dv">9</span>))</span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true"></a>df_sim_train &lt;-<span class="st">  </span>df_sim <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb74-7"><a href="#cb74-7" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(train<span class="op">==</span><span class="dv">1</span>)</span>
+<span id="cb74-8"><a href="#cb74-8" aria-hidden="true"></a></span>
+<span id="cb74-9"><a href="#cb74-9" aria-hidden="true"></a>dsim_list &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">N =</span> <span class="kw">nrow</span>(df_sim_train),</span>
+<span id="cb74-10"><a href="#cb74-10" aria-hidden="true"></a>                  <span class="dt">rt =</span>df_sim_train<span class="op">$</span>rt,</span>
+<span id="cb74-11"><a href="#cb74-11" aria-hidden="true"></a>                  <span class="dt">response =</span> df_sim_train<span class="op">$</span>response,</span>
+<span id="cb74-12"><a href="#cb74-12" aria-hidden="true"></a>                  <span class="dt">K =</span> <span class="dv">2</span>,</span>
+<span id="cb74-13"><a href="#cb74-13" aria-hidden="true"></a>                  <span class="dt">X =</span> <span class="kw">model.matrix</span>(<span class="op">~</span><span class="st"> </span><span class="dv">0</span> <span class="op">+</span><span class="st"> </span>diff <span class="op">+</span><span class="st"> </span>emph , df_sim_train),</span>
+<span id="cb74-14"><a href="#cb74-14" aria-hidden="true"></a>                  <span class="dt">only_prior =</span> <span class="dv">0</span>)</span>
+<span id="cb74-15"><a href="#cb74-15" aria-hidden="true"></a></span>
+<span id="cb74-16"><a href="#cb74-16" aria-hidden="true"></a>fits &lt;-<span class="st"> </span><span class="kw">list</span>()</span>
+<span id="cb74-17"><a href="#cb74-17" aria-hidden="true"></a>fits<span class="op">$</span>LNRace &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./LogNormalRace_badpriors.stan&quot;</span>,</span>
+<span id="cb74-18"><a href="#cb74-18" aria-hidden="true"></a>                    <span class="dt">data =</span> dsim_list,</span>
+<span id="cb74-19"><a href="#cb74-19" aria-hidden="true"></a>                    <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb74-20"><a href="#cb74-20" aria-hidden="true"></a>                    <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb74-21"><a href="#cb74-21" aria-hidden="true"></a></span>
+<span id="cb74-22"><a href="#cb74-22" aria-hidden="true"></a>fits<span class="op">$</span>LNRace_reg_priors &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./LogNormalRace.stan&quot;</span>,</span>
+<span id="cb74-23"><a href="#cb74-23" aria-hidden="true"></a>                               <span class="dt">data =</span> dsim_list,</span>
+<span id="cb74-24"><a href="#cb74-24" aria-hidden="true"></a>                               <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb74-25"><a href="#cb74-25" aria-hidden="true"></a>                               <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb74-26"><a href="#cb74-26" aria-hidden="true"></a> </span>
+<span id="cb74-27"><a href="#cb74-27" aria-hidden="true"></a>fits<span class="op">$</span>agnostic &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./Agnostic.stan&quot;</span>,</span>
+<span id="cb74-28"><a href="#cb74-28" aria-hidden="true"></a>                      <span class="dt">data =</span> dsim_list,</span>
+<span id="cb74-29"><a href="#cb74-29" aria-hidden="true"></a>                      <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb74-30"><a href="#cb74-30" aria-hidden="true"></a>                      <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb74-31"><a href="#cb74-31" aria-hidden="true"></a></span>
+<span id="cb74-32"><a href="#cb74-32" aria-hidden="true"></a>fits<span class="op">$</span>agnosticLog &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./AgnosticLog.stan&quot;</span>,</span>
+<span id="cb74-33"><a href="#cb74-33" aria-hidden="true"></a>                         <span class="dt">data =</span> dsim_list,</span>
+<span id="cb74-34"><a href="#cb74-34" aria-hidden="true"></a>                         <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb74-35"><a href="#cb74-35" aria-hidden="true"></a>                         <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb74-36"><a href="#cb74-36" aria-hidden="true"></a></span>
+<span id="cb74-37"><a href="#cb74-37" aria-hidden="true"></a>fits<span class="op">$</span>FG &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./FastGuess.stan&quot;</span>,</span>
+<span id="cb74-38"><a href="#cb74-38" aria-hidden="true"></a>                <span class="dt">data =</span> dsim_list,</span>
+<span id="cb74-39"><a href="#cb74-39" aria-hidden="true"></a>                <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb74-40"><a href="#cb74-40" aria-hidden="true"></a>                <span class="dt">iter =</span> <span class="dv">10000</span>)</span>
+<span id="cb74-41"><a href="#cb74-41" aria-hidden="true"></a></span>
+<span id="cb74-42"><a href="#cb74-42" aria-hidden="true"></a>fits<span class="op">$</span>LNRace_fl &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./LogNormalRace_fl_badpriors.stan&quot;</span>,</span>
+<span id="cb74-43"><a href="#cb74-43" aria-hidden="true"></a>                       <span class="dt">data =</span> dsim_list,</span>
+<span id="cb74-44"><a href="#cb74-44" aria-hidden="true"></a>                       <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb74-45"><a href="#cb74-45" aria-hidden="true"></a>                       <span class="dt">iter =</span> <span class="dv">10000</span>,</span>
+<span id="cb74-46"><a href="#cb74-46" aria-hidden="true"></a>                       <span class="dt">control =</span> <span class="kw">list</span>(<span class="dt">adapt_delta =</span> <span class="fl">.9</span>,</span>
+<span id="cb74-47"><a href="#cb74-47" aria-hidden="true"></a>                                      <span class="dt">max_treedepth =</span> <span class="dv">12</span>))</span>
+<span id="cb74-48"><a href="#cb74-48" aria-hidden="true"></a>fits<span class="op">$</span>LNRace_fl_reg_priors &lt;-<span class="st"> </span><span class="kw">stan</span>(<span class="st">&quot;./LogNormalRace_fl.stan&quot;</span>,</span>
+<span id="cb74-49"><a href="#cb74-49" aria-hidden="true"></a>                                  <span class="dt">data =</span> dsim_list,</span>
+<span id="cb74-50"><a href="#cb74-50" aria-hidden="true"></a>                                  <span class="dt">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb74-51"><a href="#cb74-51" aria-hidden="true"></a>                                  <span class="dt">iter =</span> <span class="dv">10000</span>,</span>
+<span id="cb74-52"><a href="#cb74-52" aria-hidden="true"></a>                                  <span class="dt">control =</span> <span class="kw">list</span>(<span class="dt">adapt_delta =</span> <span class="fl">.9</span>,</span>
+<span id="cb74-53"><a href="#cb74-53" aria-hidden="true"></a>                                                 <span class="dt">max_treedepth =</span> <span class="dv">12</span>))</span></code></pre></div>
+<div id="posterior-predictive-check-1" class="section level3" number="1.5.1">
+<h3><span class="header-section-number">1.5.1</span> Posterior predictive check</h3>
+<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true"></a>fit_plot &lt;-<span class="st"> </span>fits[<span class="op">!</span><span class="kw">endsWith</span>(<span class="kw">names</span>(fits),<span class="st">&quot;reg_priors&quot;</span>)]</span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true"></a>violins &lt;-<span class="st"> </span><span class="kw">map2</span>(fit_plot, <span class="kw">names</span>(fit_plot), <span class="op">~</span><span class="st"> </span><span class="kw">violin_plot</span>(df_sim_train, .x)  <span class="op">+</span><span class="st"> </span><span class="kw">ggtitle</span>(.y) )</span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true"></a></span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true"></a><span class="kw">walk</span>(violins, <span class="op">~</span><span class="st"> </span><span class="kw">plot</span>(.x))</span></code></pre></div>
+<p><img src="cv-bf_files/figure-html/unnamed-chunk-54-1.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-54-2.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-54-3.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-54-4.png" width="672" /><img src="cv-bf_files/figure-html/unnamed-chunk-54-5.png" width="672" /></p>
+</div>
+<div id="model-comparison-4" class="section level3" number="1.5.2">
+<h3><span class="header-section-number">1.5.2</span> Model comparison</h3>
+<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true"></a>lm &lt;-<span class="st"> </span><span class="kw">map</span>(fits, <span class="op">~</span><span class="st"> </span><span class="kw">bridge_sampler</span>(.x))</span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true"></a>loo&lt;-<span class="st"> </span><span class="kw">map</span>(fits, <span class="op">~</span><span class="st"> </span><span class="kw">loo</span>(.x))</span></code></pre></div>
+<p>The result of the comparison of the original models (no flexible LogNormal Race model) is similar to the speed emphasis comparison. A theory-agnostic model makes the better predictions.</p>
+<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(lm),<span class="st">&quot;LNRace_fl&quot;</span>)])</span></code></pre></div>
+<pre><code>                        BF logBF
+agnosticLog        1.0e+00     0
+LNRace_reg_priors  1.1e+23    53
+LNRace             2.6e+34    79
+FG                 2.0e+39    91
+agnostic          1.3e+166   382</code></pre>
+<div class="sourceCode" id="cb79"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo[<span class="op">!</span><span class="kw">startsWith</span>(<span class="kw">names</span>(loo),<span class="st">&quot;LNRace_fl&quot;</span>)])</span></code></pre></div>
+<pre><code>                  elpd_diff se_diff
+agnosticLog          0.0       0.0 
+LNRace_reg_priors  -73.2       8.4 
+LNRace             -73.3       8.4 
+FG                 -94.0      14.4 
+agnostic          -393.4      67.1 </code></pre>
+<p>The model closer to the true generative process makes the better predictions according to the BF.</p>
+<div class="sourceCode" id="cb81"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm) </span></code></pre></div>
+<pre><code>                           BF logBF
+LNRace_fl_reg_priors  1.0e+00     0
+LNRace_fl             8.0e+09    23
+agnosticLog           1.8e+14    33
+LNRace_reg_priors     1.9e+37    86
+LNRace                4.7e+48   112
+FG                    3.7e+53   123
+agnostic             2.3e+180   415</code></pre>
+<div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(loo)</span></code></pre></div>
+<pre><code>                     elpd_diff se_diff
+LNRace_fl               0.0       0.0 
+LNRace_fl_reg_priors   -0.1       0.3 
+agnosticLog           -19.7      13.5 
+LNRace_reg_priors     -92.9      14.9 
+LNRace                -93.0      14.9 
+FG                   -113.7      18.8 
+agnostic             -413.1      63.6 </code></pre>
+<p>Interestingly, now the prior dependency is less strong, even without regularing priors the model with a generative process closer to the truth is the best model:</p>
+<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true"></a><span class="kw">bf_compare</span>(lm[<span class="op">!</span><span class="kw">endsWith</span>(<span class="kw">names</span>(lm),<span class="st">&quot;reg_priors&quot;</span>)])</span></code></pre></div>
+<pre><code>                  BF logBF
+LNRace_fl    1.0e+00     0
+agnosticLog  2.3e+04    10
+LNRace       5.9e+38    89
+FG           4.6e+43   101
+agnostic    2.9e+170   392</code></pre>
+<div id="visualization-of-elpd" class="section level4" number="1.5.2.1">
+<h4><span class="header-section-number">1.5.2.1</span> Visualization of elpd</h4>
+<ul>
+<li>Flexible LNRace vs FG</li>
+</ul>
+<div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true"></a>df_sim_train &lt;-<span class="st"> </span><span class="kw">ungroup</span>(df_sim_train) <span class="op">%&gt;%</span></span>
+<span id="cb87-2"><a href="#cb87-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">diff_elpd_LNRF_FG =</span>  loo<span class="op">$</span>LNRace_fl<span class="op">$</span>pointwise[,<span class="st">&quot;elpd_loo&quot;</span>] <span class="op">-</span><span class="st">  </span>loo<span class="op">$</span>FG <span class="op">$</span>pointwise[,<span class="st">&quot;elpd_loo&quot;</span>])</span>
+<span id="cb87-3"><a href="#cb87-3" aria-hidden="true"></a></span>
+<span id="cb87-4"><a href="#cb87-4" aria-hidden="true"></a></span>
+<span id="cb87-5"><a href="#cb87-5" aria-hidden="true"></a><span class="kw">ggplot</span>(df_sim_train,</span>
+<span id="cb87-6"><a href="#cb87-6" aria-hidden="true"></a>       <span class="kw">aes</span>(<span class="dt">x =</span> rt, <span class="dt">y =</span> diff_elpd_LNRF_FG)) <span class="op">+</span></span>
+<span id="cb87-7"><a href="#cb87-7" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_jitter</span>(<span class="dt">alpha =</span> <span class="fl">.5</span>, <span class="dt">width =</span> <span class="dv">0</span>, <span class="dt">height =</span> <span class="fl">.1</span> ) <span class="op">+</span></span>
+<span id="cb87-8"><a href="#cb87-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">facet_grid</span>(difficulty <span class="op">~</span><span class="st"> </span>resp <span class="op">+</span><span class="st"> </span>emphasis) <span class="op">+</span></span>
+<span id="cb87-9"><a href="#cb87-9" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_hline</span>(<span class="dt">yintercept =</span> <span class="dv">0</span>, <span class="dt">linetype =</span> <span class="st">&quot;dashed&quot;</span>)</span></code></pre></div>
+<p><img src="cv-bf_files/figure-html/unnamed-chunk-61-1.png" width="672" /></p>
+<ul>
+<li>Flexible LNRace vs Theory-agnostic Log</li>
+</ul>
+<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true"></a>df_sim_train &lt;-<span class="st"> </span><span class="kw">ungroup</span>(df_sim_train) <span class="op">%&gt;%</span></span>
+<span id="cb88-2"><a href="#cb88-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">diff_elpd_LNRF_AL =</span>  loo<span class="op">$</span>LNRace_fl<span class="op">$</span>pointwise[,<span class="st">&quot;elpd_loo&quot;</span>] <span class="op">-</span><span class="st">  </span>loo<span class="op">$</span>agnosticLog <span class="op">$</span>pointwise[,<span class="st">&quot;elpd_loo&quot;</span>])</span>
+<span id="cb88-3"><a href="#cb88-3" aria-hidden="true"></a></span>
+<span id="cb88-4"><a href="#cb88-4" aria-hidden="true"></a></span>
+<span id="cb88-5"><a href="#cb88-5" aria-hidden="true"></a><span class="kw">ggplot</span>(df_sim_train,</span>
+<span id="cb88-6"><a href="#cb88-6" aria-hidden="true"></a>       <span class="kw">aes</span>(<span class="dt">x =</span> rt, <span class="dt">y =</span> diff_elpd_LNRF_AL)) <span class="op">+</span></span>
+<span id="cb88-7"><a href="#cb88-7" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_jitter</span>(<span class="dt">alpha =</span> <span class="fl">.5</span>, <span class="dt">width =</span> <span class="dv">0</span>, <span class="dt">height =</span> <span class="fl">.1</span> ) <span class="op">+</span></span>
+<span id="cb88-8"><a href="#cb88-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">facet_grid</span>(difficulty <span class="op">~</span><span class="st"> </span>resp <span class="op">+</span><span class="st"> </span>emphasis) <span class="op">+</span></span>
+<span id="cb88-9"><a href="#cb88-9" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_hline</span>(<span class="dt">yintercept =</span> <span class="dv">0</span>, <span class="dt">linetype =</span> <span class="st">&quot;dashed&quot;</span>)</span></code></pre></div>
+<p><img src="cv-bf_files/figure-html/unnamed-chunk-62-1.png" width="672" /></p>
+</div>
+</div>
+</div>
+<div id="conclusion" class="section level2" number="1.6">
+<h2><span class="header-section-number">1.6</span> Conclusion</h2>
+<p>In the context of both Bayes Factor analysis and Cross-Validation using the log-score rule, we notice the following:</p>
+<ul>
+<li>It is not always the case that a model which aligns more closely with the underlying truth will exhibit superior predictive capabilities. This shows how the best model in terms of predictions is not necessarily the one that is most faithful to the actual generative process.</li>
+<li>Models that are designed to be flexible and not bound to any specific theoretical framework may deliver the most accurate predictions, despite potentially lacking resemblance to the actual process that generates the data.</li>
+</ul>
+<p>Specific to Bayes Factor:</p>
+<ul>
+<li>When comparing cognitive models that have significantly different underlying generative processes but are capable of closely mimicking the observed data (albeit for varied reasons), the outcome of such comparisons can be highly dependent on the priors. This suggests a strong influence of the initial assumptions on the comparative analysis of models.</li>
+<li>The process of selecting a model that appears to closely match the process generating the observed data can also be heavily influenced by the choice of priors, although this is not always the case.</li>
+</ul>
+<p>Specific to Cross-Validation:</p>
+<p>Cross-Validation remains inconclusive unless there is a demonstrable improvement in prediction quality. This stance is maintained irrespective of the proximity of a model to the true generative process, showing how CV prioritizes predictive performance over theoretical fidelity to the generative mechanism.</p>
+<hr />
+<p>I used R <span class="citation">(Version 4.3.3; R Core Team 2024)</span> and the R-packages <em>bayesplot</em> <span class="citation">(Version 1.10.0; Gabry et al. 2019)</span>, <em>bridgesampling</em> <span class="citation">(Version 1.1.5; Gronau, Singmann, and Wagenmakers 2020)</span>, <em>ggplot2</em> <span class="citation">(Version 3.5.0.9000; Wickham 2016)</span>, <em>latex2exp</em> <span class="citation">(Version 0.9.6; Meschiari 2022)</span>, <em>loo</em> <span class="citation">(Version 2.7.0; Vehtari, Gelman, and Gabry 2017; Yao et al. 2017)</span>, <em>posterior</em> <span class="citation">(Version 1.5.0; Vehtari et al. 2021)</span>, <em>rstan</em> <span class="citation">(Version 2.32.3; Stan Development Team 2023a)</span>, <em>rtdists</em> <span class="citation">(Version 0.11.5; Singmann et al. 2022)</span>, <em>StanHeaders</em> <span class="citation">(Version 2.32.2; Stan Development Team 2020)</span>, and <em>tidytable</em> <span class="citation">(Version 0.11.1; Fairbanks 2023)</span> for all our analyses.</p>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered" number="">
+<h1>References</h1>
+<div id="refs" class="references hanging-indent">
+<div id="ref-brownSimplestCompleteModel2008">
+<p>Brown, Scott D., and Andrew Heathcote. 2008. “The Simplest Complete Model of Choice Response Time: Linear Ballistic Accumulation.” <em>Cognitive Psychology</em> 57 (3): 153–78. <a href="https://doi.org/10.1016/j.cogpsych.2007.12.002">https://doi.org/10.1016/j.cogpsych.2007.12.002</a>.</p>
+</div>
+<div id="ref-R-tidytable">
+<p>Fairbanks, Mark. 2023. <em>Tidytable: Tidy Interface to ’Data.table’</em>. <a href="https://CRAN.R-project.org/package=tidytable">https://CRAN.R-project.org/package=tidytable</a>.</p>
+</div>
+<div id="ref-R-bayesplot">
+<p>Gabry, Jonah, Daniel Simpson, Aki Vehtari, Michael Betancourt, and Andrew Gelman. 2019. “Visualization in Bayesian Workflow.” <em>J. R. Stat. Soc. A</em> 182 (2): 389–402. <a href="https://doi.org/10.1111/rssa.12378">https://doi.org/10.1111/rssa.12378</a>.</p>
+</div>
+<div id="ref-R-bridgesampling">
+<p>Gronau, Quentin F., Henrik Singmann, and Eric-Jan Wagenmakers. 2020. “bridgesampling: An R Package for Estimating Normalizing Constants.” <em>Journal of Statistical Software</em> 92 (10): 1–29. <a href="https://doi.org/10.18637/jss.v092.i10">https://doi.org/10.18637/jss.v092.i10</a>.</p>
+</div>
+<div id="ref-HeathcoteLove2012">
+<p>Heathcote, Andrew, and Jonathon Love. 2012. “Linear Deterministic Accumulator Models of Simple Choice.” <em>Frontiers in Psychology</em> 3: 292. <a href="https://doi.org/10.3389/fpsyg.2012.00292">https://doi.org/10.3389/fpsyg.2012.00292</a>.</p>
+</div>
+<div id="ref-R-latex2exp">
+<p>Meschiari, Stefano. 2022. <em>Latex2exp: Use Latex Expressions in Plots</em>. <a href="https://CRAN.R-project.org/package=latex2exp">https://CRAN.R-project.org/package=latex2exp</a>.</p>
+</div>
+<div id="ref-Nicenboim2024Bayesian">
+<p>Nicenboim, Bruno, D. Schad, and S. Vasishth. 2024. “An Introduction to Bayesian Data Analysis for Cognitive Science.”</p>
+</div>
+<div id="ref-Ollman1966">
+<p>Ollman, Robert. 1966. “Fast Guesses in Choice Reaction Time.” <em>Psychonomic Science</em> 6 (4): 155–56. <a href="https://doi.org/https://doi.org/10.3758/BF03328004">https://doi.org/https://doi.org/10.3758/BF03328004</a>.</p>
+</div>
+<div id="ref-R-base">
+<p>R Core Team. 2024. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.</p>
+</div>
+<div id="ref-RouderEtAl2015">
+<p>Rouder, Jeffrey N., Jordan M. Province, Richard D. Morey, Pablo Gomez, and Andrew Heathcote. 2015. “The Lognormal Race: A Cognitive-Process Model of Choice and Latency with Desirable Psychometric Properties.” <em>Psychometrika</em> 80 (2): 491–513. <a href="https://doi.org/10.1007/s11336-013-9396-3">https://doi.org/10.1007/s11336-013-9396-3</a>.</p>
+</div>
+<div id="ref-R-rtdists">
+<p>Singmann, Henrik, Scott Brown, Matthew Gretton, and Andrew Heathcote. 2022. <em>Rtdists: Response Time Distributions</em>. <a href="https://CRAN.R-project.org/package=rtdists">https://CRAN.R-project.org/package=rtdists</a>.</p>
+</div>
+<div id="ref-R-StanHeaders">
+<p>Stan Development Team. 2020. “StanHeaders: Headers for the R Interface to Stan.” <a href="https://mc-stan.org/">https://mc-stan.org/</a>.</p>
+</div>
+<div id="ref-R-rstan">
+<p>———. 2023a. “RStan: The R Interface to Stan.” <a href="https://mc-stan.org/">https://mc-stan.org/</a>.</p>
+</div>
+<div id="ref-Stan2023">
+<p>———. 2023b. “Stan Modeling Language Users Guide and Reference Manual, Version 2.32.” <a href="https://mc-stan.org/docs/2_32/reference-manual/index.html;%20https://mc-stan.org/docs/2_32/stan-users-guide/index.html">https://mc-stan.org/docs/2_32/reference-manual/index.html; https://mc-stan.org/docs/2_32/stan-users-guide/index.html</a>.</p>
+</div>
+<div id="ref-Terry2015">
+<p>Terry, Andrew, A. A. J. Marley, Avinash Barnwal, E.-J. Wagenmakers, Andrew Heathcote, and Scott D. Brown. 2015. “Generalising the Drift Rate Distribution for Linear Ballistic Accumulators.” <em>Journal of Mathematical Psychology</em> 68-69 (October): 49–58. <a href="https://doi.org/10.1016/j.jmp.2015.09.002">https://doi.org/10.1016/j.jmp.2015.09.002</a>.</p>
+</div>
+<div id="ref-R-loo_a">
+<p>Vehtari, Aki, Andrew Gelman, and Jonah Gabry. 2017. “Practical Bayesian Model Evaluation Using Leave-One-Out Cross-Validation and Waic.” <em>Statistics and Computing</em> 27 (5): 1413–32. <a href="https://doi.org/10.1007/s11222-016-9696-4">https://doi.org/10.1007/s11222-016-9696-4</a>.</p>
+</div>
+<div id="ref-R-posterior">
+<p>Vehtari, Aki, Andrew Gelman, Daniel Simpson, Bob Carpenter, and Paul-Christian Bürkner. 2021. “Rank-Normalization, Folding, and Localization: An Improved Rhat for Assessing Convergence of Mcmc (with Discussion).” <em>Bayesian Analysis</em>.</p>
+</div>
+<div id="ref-R-ggplot2">
+<p>Wickham, Hadley. 2016. <em>Ggplot2: Elegant Graphics for Data Analysis</em>. Springer-Verlag New York. <a href="https://ggplot2.tidyverse.org">https://ggplot2.tidyverse.org</a>.</p>
+</div>
+<div id="ref-R-loo_b">
+<p>Yao, Yuling, Aki Vehtari, Daniel Simpson, and Andrew Gelman. 2017. “Using Stacking to Average Bayesian Predictive Distributions.” <em>Bayesian Analysis</em>. <a href="https://doi.org/10.1214/17-BA1091">https://doi.org/10.1214/17-BA1091</a>.</p>
+</div>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

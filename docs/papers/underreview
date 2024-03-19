@@ -1,1 +1,9 @@
-list()
+@unpublished{dubova_chandramouli_gigerenzer_grünwald_holmes_lombrozo_marelli_musslick_nicenboim_ross_et al._2024,
+  title = {Is {Occam}'s razor losing its edge? {New} perspectives on the principle of model parsimony},
+  eprint = {osf.io/preprints/metaarxiv/bs5xe},
+  doi = {10.31222/osf.io/bs5xe},
+  publisher = {MetaArXiv},
+  author = {Marina Dubova and Suyog Chandramouli and Gerd Gigerenzer and Peter Gr{\"u}nwald and William Holmes and Tania Lombrozo and Marco Marelli and Sebastian Musslick and Bruno Nicenboim and Lauren Ross and {et al.}},
+  year = {2024},
+  month = {Mar},
+}
