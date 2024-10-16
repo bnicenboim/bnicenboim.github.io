@@ -31,7 +31,7 @@ unpublished <- bib[list(bibtype="unpublished")]
 underreview <- unpublished[list(notes="under review")]
 unpublished <- unpublished[list(notes="unpublished")]
 
-dir.create("papers", showWarnings = FALSE)
+dir.create("papers", showWarnings = FALSE) 
 
 capture.output(print(underreview, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/underreview")
  

@@ -1,1 +1,29 @@
-list()
+@unpublished{Boelders2024a,
+  author = {Sander Martijn Boelders and Bruno Nicenboim and Elke Butterbrod and Wouter {de Baene} and Eric Postma and Geert-Jan Rutten and Lee-Ling Ong and Karin Gehring},
+  title = {Predicting cognitive function three months after surgery in patients with a glioma},
+  year = {2024},
+  doi = {10.1101/2024.10.08.24315076},
+  publisher = {Cold Spring Harbor Laboratory Press},
+  eprint = {https://www.medrxiv.org/content/early/2024/10/08/2024.10.08.24315076.full.pdf},
+  journal = {medRxiv},
+}
+
+@unpublished{Boelders2024b,
+  author = {S.M. Boelders and B. Nicenboim and E. Postma and G.J.M Rutten and K Gehring and L.L. Ong},
+  title = {Modeling uncertainty in individual predictions of cognitive functioning for untreated glioma patients using {Bayesian} regression},
+  year = {2024},
+  doi = {10.1101/2024.10.08.24315003},
+  publisher = {Cold Spring Harbor Laboratory Press},
+  eprint = {https://www.medrxiv.org/content/early/2024/10/08/2024.10.08.24315003.full.pdf},
+  journal = {medRxiv},
+}
+
+@unpublished{dubova_chandramouli_gigerenzer_grünwald_holmes_lombrozo_marelli_musslick_nicenboim_ross_et al._2024,
+  title = {Is {Occam}'s razor losing its edge? {New} perspectives on the principle of model parsimony},
+  eprint = {https://osf.io/preprints/metaarxiv/bs5xe},
+  doi = {10.31222/osf.io/bs5xe},
+  publisher = {MetaArXiv},
+  author = {Marina Dubova and Suyog Chandramouli and Gerd Gigerenzer and Peter Gr{\"u}nwald and William Holmes and Tania Lombrozo and Marco Marelli and Sebastian Musslick and Bruno Nicenboim and Lauren Ross and {et al.}},
+  year = {2024},
+  month = {Mar},
+}

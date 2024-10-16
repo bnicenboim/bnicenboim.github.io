@@ -1,7 +1,10 @@
 ---
 title: "Team"
 ---
-  
+
+Together with Giovanni Cassani, I am the PI of the [Computational Psycholinguistics Lab
+](https://www.tilburguniversity.edu/about/schools/tshd/departments/dca/lab/computational-psycholinguistics). My current team is the following:
+
 # Phd Student
 
 :::: {style="display: grid; grid-template-columns: 20% 75%; grid-column-gap: 1px; "}
@@ -13,13 +16,18 @@ title: "Team"
 :::
 ::::
 
+# Internships
 
 
+:::: {style="display: grid; grid-template-columns: 0% 75%; grid-column-gap: 1px; "}
+::: {}
+:::
+::: {}
+ [Hil Steketee](https://nl.linkedin.com/in/hil-steketee-75725923b)
+:::
+::::
 
-
-
-
-# Research assistants
+## Research assistants
 
 :::: {style="display: grid; grid-template-columns: 0% 75%; grid-column-gap: 1px; "}
 ::: {}

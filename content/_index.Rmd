@@ -27,7 +27,7 @@ Address:           Department of Cognitive Science and Artificial Intelligence
 ::::
 # About me
 
-I'm an assistant professor at the department of [Cognitive Science and AI of Tilburg University](https://research.tilburguniversity.edu/en/persons/bruno-nicenboim) and a guest researcher at the department of Linguistics the University of Potsdam, Germany. Before that I did my PhD and Postdoc in [Shravan Vasishth's lab](http://www.ling.uni-potsdam.de/~vasishth/), at the Department of Linguistics of University of Potsdam, Germany. 
+I'm an assistant professor at the department of [Cognitive Science and AI of Tilburg University](https://research.tilburguniversity.edu/en/persons/bruno-nicenboim), PI of the [Computational Psycholinguistics Lab](https://www.tilburguniversity.edu/about/schools/tshd/departments/dca/lab/computational-psycholinguistics). Before that I did my PhD and Postdoc in [Shravan Vasishth's lab](http://www.ling.uni-potsdam.de/~vasishth/), at the Department of Linguistics of University of Potsdam, Germany. 
 
 
 <a rel="me" href="https://fediscience.org/@bruno_nicenboim">[Mastodon]</a>
@@ -103,14 +103,14 @@ Data and code for my published papers  is mostly in the [OSF website](https://os
 
 ## News
 
-The 57th Annual Meeting of the Society for Mathematical Psychology (MathPsych) and the 22nd International Conference on Cognitive Modeling (ICCM) will happen at Tilburg University, the Netherlands. The dates of the conference are July 19 to 22, 2024. [The deadline for submissions is Feb 28th, 2024.](https://mathpsych.org/conference/15/).
+<!-- The 57th Annual Meeting of the Society for Mathematical Psychology (MathPsych) and the 22nd International Conference on Cognitive Modeling (ICCM) will happen at Tilburg University, the Netherlands. The dates of the conference are July 19 to 22, 2024. (https://mathpsych.org/conference/15/). -->
 
 
 I obtained a [NWO Open Competition SGW XS grant](https://www.nwo.nl/en/researchprogrammes/open-competition-ssh/granted-projects)  The project's aim is to gather self-paced EEG data for benchmarks and computational modeling.
 
 
-Together with [Riccardo Fusaroli](https://fusaroli.weebly.com) and [Marieke van Vugt](https://mkvanvugt.wordpress.com/), we organized a Lorentz Centre "Cognitive Modeling of Complex behaviour" hands-on workshop in January 2024.  The core of the workshop was self-organized group work, where participants together tackle the modeling of a phenomenon of interest. See 
-[here](https://www.lorentzcenter.nl/cognitive-modeling-of-complex-behavior.html).
+<!-- Together with [Riccardo Fusaroli](https://fusaroli.weebly.com) and [Marieke van Vugt](https://mkvanvugt.wordpress.com/), we organized a Lorentz Centre "Cognitive Modeling of Complex behaviour" hands-on workshop in January 2024.  The core of the workshop was self-organized group work, where participants together tackle the modeling of a phenomenon of interest. See  -->
+<!-- [here](https://www.lorentzcenter.nl/cognitive-modeling-of-complex-behavior.html). -->
 
 
 ---

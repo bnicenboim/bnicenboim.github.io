@@ -193,7 +193,7 @@ output(books,withbrackets=F)
 <br/>
 <br/>
 
-# Conferences
+# Abstracts in conferences
 
 ```{r,echo=F,results="asis",cache=F}
 presentationsall <- bib2[list(bibtype="inproceedings")]
@@ -266,9 +266,9 @@ for(y in seq(this_year,first_year,-1)){
 ## Workshops and summer schools
 
 ------------------------  -----------------------------------------------------------------------
-2017-2022                 "Bayesian methods",
+2017-2024                 "Advanced Bayesian methods",
 
-                          Yearly Summer School on Statistical Methods for Linguistics and Psychology,
+                          Yearly Summer School on Statistical Methods for Linguistics and Psychology (SMLP),
 
                           University of Potsdam, Germany\vspace{.1cm}
                           
@@ -313,7 +313,9 @@ for(y in seq(this_year,first_year,-1)){
 ## Courses
 
 ------------------------  -----------------------------------------------------------------------
-2021-2022                      **Lecturer** in "Bayesian Models of Cognitive Processes", Master in Cogntive Science & AI. Tilburg University
+2022-2024                      **Lecturer** in "Bayesian Multilevel Models", Master in Data Science & Society. Tilburg University
+
+2021-2024                      **Lecturer** in "Bayesian Models of Cognitive Processes", Master in Cognitive Science & AI. Tilburg University
 
 2020-2021                 **Lecturer** in "Research skill: Programing with R", Data Science & Society. Tilburg University
 
