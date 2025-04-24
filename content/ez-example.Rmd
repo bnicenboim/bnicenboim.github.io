@@ -1,0 +1,181 @@
+---
+title: "Simulation EZ reader"
+output: html_document
+date: "2025-04-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Introduction
+
+In this document, we perform a reading simulation using the EZ Reader model. EZ Reader is a computational model designed to explain how various cognitive processes (such as lexical access and post-lexical integration) influence eye movements during reading.
+
+We'll simulate the reading of a given sentence, preparing the necessary input data in R and running the actual EZ Reader simulation in Python. We'll leverage the [EZ Reader Python implementation from Jakub Dotlacil](https://github.com/jakdot/ezreader-python) and use the reticulate package to bridge between R and Python.
+
+The example sentence used for the demonstration is defined below:
+
+
+
+```{r}
+my_sent <- "You can have here any sentence you want."
+```
+
+
+## Environment setup
+
+Before we start the simulation, we set up the computational environment. This process involves installing required R packages (such as `pangoling`, `reticulate`, and `tidytable`) and Python dependencies (`simpy`, `ezreader`, and the GPT-2 model through `pangoling`).
+
+Make sure to execute this block only once (from Rstudio), as it installs packages and downloads frequency data essential for the simulation.
+
+
+```{r, eval = FALSE}
+# run only once from Rstudio to prepare everything:
+
+install.packages(c("pangoling", "reticulate", "tidytable"))
+
+# python dependencies for pangoling
+pangoling::install_py_pangoling()
+library(pangoling)
+pangoling::causal_preload("gpt2")
+
+# python dependencies for EZ reader
+
+reticulate::py_install(c("simpy", "ezreader"))
+
+# Download frequency data
+dir.create("freqs", showWarnings = FALSE)
+url <- "https://www.ugent.be/pp/experimentele-psychologie/en/research/documents/subtlexus/subtlexus2.zip"
+zip_path <- file.path("freqs", "subtlexus2.zip")
+download.file(url, destfile = zip_path, mode = "wb")
+files_in_zip <- unzip(zip_path, list = TRUE)
+csv_file_name <- files_in_zip$Name[grepl("\\.txt$", files_in_zip$Name)]
+unzip(zip_path, files = csv_file_name, exdir = "freqs", overwrite = TRUE)
+csv_path <- file.path("freqs", csv_file_name)
+csv_data <- read.csv(csv_path, stringsAsFactors = FALSE, sep = "\t")
+  
+saveRDS(csv_data,"freq_SUB-US.RDS")
+
+
+```
+
+## Load packages
+
+
+With the setup completed, we now load the necessary R packages into our current R session. The package `tidytable` is used for efficient data manipulation, and [`pangoling`](https://docs.ropensci.org/pangoling/) provides easy access to word probability estimates from the GPT-2 language model.
+
+
+```{r, message = FALSE}
+library(tidytable) # like dplyr but better
+library(pangoling) 
+```
+
+
+
+## Add probability values
+
+To run EZ Reader simulations, we need probabilistic predictions of words within sentences, reflecting how predictable each word is given previous words. 
+
+We use the GPT-2 model from the `pangoling` package to calculate the probability of each word. Since the first word in a sentence doesn't have any prior context, we manually set its probability to a very low value (0.0001).
+
+
+```{r}
+my_words <-  strsplit(x = my_sent, split = " ")[[1]]
+df_sent <- data.frame(word = my_words) |>
+  mutate(prob = causal_words_pred(word, model = "gpt2", log.p = FALSE))
+
+df_sent
+
+# First word of a sentence has an NA probability
+df_sent$prob[1] <- 0.0001
+```
+
+## Match frequencies
+
+The EZ Reader model requires lexical frequency information for each word. We use frequency data from the SUBTLEX-US dataset, a large corpus of English words. To match correctly, we remove common punctuation characters (`, . : ;`) from our sentence's words and convert them to lowercase.
+
+Words missing from the frequency table are assigned the lowest frequency observed in the dataset.
+
+```{r}
+freq_table <- readRDS("freq_SUB-US.RDS")
+head(freq_table)
+
+# Remove punctuation characters and make words lowercase in df_sent
+df_sent <- df_sent %>%
+  mutate(word_clean = tolower(gsub("[,\\.:;]", "", word)))
+
+# Get the minimum frequency from freq_table
+min_freq <- min(freq_table$FREQcount, na.rm = TRUE)
+
+# Join and fill missing frequencies with min_freq
+df_sent <- df_sent %>%
+  left_join(freq_table %>% select(Word, FREQcount), by = c("word_clean" = "Word")) %>%
+  mutate(FREQcount = replace_na(FREQcount, min_freq))
+
+df_sent
+```
+
+## Add integration information
+
+The EZ Reader model incorporates post-lexical language processing via two parameters:
+
+- `t(I)`: Average time taken to integrate a word's meaning into the ongoing context.
+- `pf`: Probability of integration failure.
+
+We add these two integration parameters to our dataset, assigning constant values for simplicity (`t(I) = 25 ms`, `pf = 0.1`). These values are typical for normal reading conditions without specific semantic or syntactic difficulties.
+
+```{r}
+df_sent <- df_sent |> mutate(`t(I)` = 25, pf = 0.1)
+df_sent
+```
+
+## EZ Reader simulation
+
+Finally, the data we prepared in R is passed into Python using the `reticulate` package. We define each word in the sentence as an EZ Reader `"Word"` object, containing the following attributes:
+
+- **Word token**  
+- **Lexical frequency** (`FREQcount`)  
+- **Predictability** (probability from GPT-2)  
+- **Integration time** (`t(I)`)  
+- **Integration failure probability** (`pf`)
+
+Once the sentence is defined, we instantiate an EZ Reader simulation and run it step-by-step. Each simulation step corresponds to an individual cognitive event, such as completing lexical access or programming an eye movement. We print out each simulation step along with the current fixation point, observing how EZ Reader processes the sentence sequentially.
+
+
+```{python}
+import simpy
+import ezreader as ez
+
+# Words for E-Z reader simulations are 5-tuples with the following information:
+# token frequency predictability integration_time integration_failure
+
+read_sentence = []
+for i in range(len(r.df_sent['word'])):
+    word = ez.Word(
+        r.df_sent['word'][i],
+        r.df_sent['FREQcount'][i],
+        r.df_sent['prob'][i],
+        r.df_sent['t(I)'][i],
+        r.df_sent['pf'][i]
+    )
+    read_sentence.append(word)
+    
+
+# Instantiate the simulation
+sim = ez.Simulation(sentence=read_sentence, realtime=False)
+
+while True:
+    try:
+        # we run a step in simulation and print what action it was, what is the time stamp (in ms).
+        sim.step()
+        print("Current fixation point: ", sim.fixation_point)
+    except simpy.core.EmptySchedule:
+        # if there are no remaining steps in the simulation we break.
+        print("Simulation completed.")
+        break
+     
+
+
+```
