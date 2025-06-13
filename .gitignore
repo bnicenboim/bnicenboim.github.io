@@ -44,3 +44,16 @@ po/*~
 
 public/
 *.el
+
+## other files:
+qlearning
+qlearning_h
+fit_ql_h.RDS
+mix/
+mix_s/
+mix_s2/
+nonmix/
+lm_speed_1.RDS
+lm_speed_2.RDS
+loo_speed_1.RDS
+loo_speed_2.RDS

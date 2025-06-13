@@ -3,27 +3,36 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>/</loc>
-    <lastmod>2025-01-29T00:00:00+00:00</lastmod>
+    <lastmod>2025-06-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/case-study/mixture/mixture-nasal/</loc>
+    <lastmod>2025-06-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/case-study/</loc>
+    <lastmod>2025-06-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/categories/</loc>
-    <lastmod>2025-01-29T00:00:00+00:00</lastmod>
+    <lastmod>2025-06-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/events/</loc>
-    <lastmod>2025-01-29T00:00:00+00:00</lastmod>
+    <lastmod>2025-06-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/categories/events/</loc>
-    <lastmod>2025-01-29T00:00:00+00:00</lastmod>
+    <lastmod>2025-06-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>/post/</loc>
-    <lastmod>2025-01-29T00:00:00+00:00</lastmod>
+    <loc>/posts/</loc>
+    <lastmod>2025-06-13T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>/2025/01/29/save-the-date-computational-psycholinguistics-meeting-2025/</loc>
-    <lastmod>2025-01-29T00:00:00+00:00</lastmod>
+    <loc>/posts/submit-your-abstract-computational-psycholinguistics-meeting-2025/</loc>
+    <lastmod>2025-06-13T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/</loc>
+    <lastmod>2025-06-13T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/posts/save-the-date-computational-psycholinguistics-meeting-2025/</loc>
     <lastmod>2025-01-29T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>/2024/02/01/participants/</loc>
+    <loc>/posts/participants/</loc>
     <lastmod>2024-02-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/experiments/</loc>
@@ -35,7 +44,7 @@
     <loc>/tags/bayesian/</loc>
     <lastmod>2021-11-29T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>/2021/11/29/bayesian-h-reinforcement-learning/</loc>
+    <loc>/posts/bayesian-h-reinforcement-learning/</loc>
     <lastmod>2021-11-29T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/r/</loc>
@@ -47,7 +56,7 @@
     <loc>/categories/stats/</loc>
     <lastmod>2021-11-29T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>/2021/03/21/a-simple-way-to-model-rankings-with-stan/</loc>
+    <loc>/posts/2021-03-17-exploded/</loc>
     <lastmod>2021-03-21T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/cv_to_pdf/</loc>

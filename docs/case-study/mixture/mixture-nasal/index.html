@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.81.0" />
+
+
+<title>Case study: Mixture modeling of nasalization in Basque - Bruno Nicenboim</title>
+<meta property="og:title" content="Case study: Mixture modeling of nasalization in Basque - Bruno Nicenboim">
+
+
+  <link href='/asd.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+        <script>if(!sessionStorage.getItem("_swa")&&document.referrer.indexOf(location.protocol+"//"+location.host)!== 0){fetch("https://counter.dev/track?"+new URLSearchParams({referrer:document.referrer,screen:screen.width+"x"+screen.height,user:"bnicenboim",utcoffset:"1"}))};sessionStorage.setItem("_swa","1");</script>
+        <script data-goatcounter="https://bnicenboim.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+
+  <ul class="nav-links">
+    
+    <li><a href="/">About me</a></li>
+    
+    <li><a href="/publications/">Publications and presentations</a></li>
+    
+    <li><a href="/team/">Team</a></li>
+    
+    <li><a href="/software/">Software</a></li>
+    
+    <li><a href="/cv/">CV</a></li>
+    
+    <li><a href="/post/">Posts</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<style>
+
+  .content {
+  max-width: 850px;
+  }
+</style>
+<main class="content" role="main">
+
+  <article class="article">
+
+    <h1 class="article-title">Case study: Mixture modeling of nasalization in Basque</h1>
+    
+    <div class="article-content">
+    
+    
+
+
+    
+      
+
+
+<pre class="r fold-hide"><code>## Global options
+options(max.print = &quot;75&quot;,
+        width = 80,
+        tibble.width = 80)
+options(scipen = 1, digits = 2)
+knitr::opts_chunk$set(echo = TRUE,
+                    cache = TRUE,
+                    prompt = FALSE,
+                    cache.lazy = FALSE,
+                    tidy = FALSE,
+                    comment = NA,
+                    message = FALSE,
+                    warning = TRUE)
+knitr::opts_knit$set(width = 80)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)</code></pre>
+<style>
+.exercise {
+  border: 2px solid #007ACC;
+  background-color: #f0f8ff;
+  padding: 1em;
+  margin: 1em 0;
+  border-radius: 6px;
+}
+
+.exercise h3 {
+  margin-top: 0;
+  color: #005a9c;
+}
+
+.note {
+  border-left: 5px solid #1e90ff;
+  background-color: #eef6fc;
+  padding: 1em;
+  margin: 1em 0;
+}
+
+.warning {
+  border-left: 5px solid #d9534f;
+  background-color: #fdf2f2;
+  padding: 1em;
+  margin: 1em 0;
+}
+</style>
+<div id="introduction" class="section level1 unnumbered">
+<h1>Introduction</h1>
+<p>This case study examines how <em>nasalance</em> varies across three etymological categories of Basque aspirates: <strong>oral</strong>, <strong>contact-nasalized</strong> (i.e., following a nasal consonant), and historically <strong>nasalized</strong> aspirates that are reported to be in flux.</p>
+</div>
+<div id="set-up" class="section level1">
+<h1>Set-up</h1>
+<div id="packages" class="section level2">
+<h2>Packages</h2>
+<p>The analysis relies on <strong>tidytable</strong> for fast data manipulation, <strong>cmdstanr</strong> for Stan interfacing, and a handful of tidy-Bayes helpers for visualisation and model comparison.</p>
+<pre class="r"><code>library(tidytable) # nice alternative to dplyr
+library(cmdstanr)
+library(posterior)
+library(bayesplot)
+library(brms)
+library(ggplot2)
+library(loo)
+options(mc.cores = 4)
+knitr::write_bib(.packages(), &quot;r-references.bib&quot;)</code></pre>
+</div>
+<div id="files" class="section level2">
+<h2>Files</h2>
+<p>We’ll use the following files</p>
+<ul>
+<li><a href="./nas_data.RDS"><code>nas_data.RDS</code></a></li>
+<li><a href="./beta2.stan"><code>beta2.stan</code></a></li>
+<li><a href="./mix.stan"><code>mix.stan</code></a></li>
+<li><a href="./nonmix.stan"><code>nonmix.stan</code></a></li>
+<li><a href="./mix_s.stan"><code>mix_s.stan</code></a></li>
+<li><a href="./mix_s2.stan"><code>mix_s2.stan</code></a></li>
+<li><a href="./mixture-nasal.Rmd"><code>mixture-nasal.Rmd</code></a></li>
+</ul>
+</div>
+<div id="data-from-iñigo-urrestarazu-porta" class="section level2">
+<h2>Data from Iñigo Urrestarazu-Porta</h2>
+<p>Basque speakers of the Zuberoan variety were recorded with a nasometer. The etymology has three relevant levels:</p>
+<ol style="list-style-type: decimal">
+<li><strong>contact</strong></li>
+<li><strong>nasalized</strong></li>
+<li><strong>oral</strong></li>
+</ol>
+<pre class="r fold-hide"><code>nas_data &lt;- readRDS(&quot;nas_data.RDS&quot;) |&gt;
+  rename(
+    etymology = E,
+    root = R,
+    speaker = S,
+    nasalance = N
+  ) |&gt;
+  filter(!is.na(nasalance)) |&gt;
+  filter(etymology != &quot;assimilated&quot;) |&gt;
+  mutate(
+    E = as.factor(etymology) |&gt; as.numeric(),
+    R = as.factor(root) |&gt; as.numeric(),
+    speaker = as.factor(speaker) |&gt; as.numeric()
+  )</code></pre>
+<pre class="r"><code>nas_data</code></pre>
+<pre><code># A tidytable: 699 × 6
+   speaker root     etymology nasalance     E     R
+     &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+ 1       1 diharu   nasalized     0.102     2    26
+ 2       1 ihakin   oral          0.136     3    37
+ 3       1 ihaute   nasalized     0.170     2    41
+ 4       1 ihintz   nasalized     0.219     2    44
+ 5       1 ahate    nasalized     0.232     2     8
+ 6       1 zehe     nasalized     0.144     2    64
+ 7       1 kahixka  nasalized     0.300     2    46
+ 8       1 ehe-no   nasalized     0.128     2    28
+ 9       1 ehe-no   nasalized     0.128     2    28
+10       1 halahola oral          0.215     3    36
+# ℹ 689 more rows</code></pre>
+<p>The quick summary below confirms the expected ranking: <em>contact</em> tokens are the most nasal, <em>oral</em> tokens the least, and the <em>nasalized</em> class falls somewhere in between.</p>
+<pre class="r"><code>(summary &lt;- nas_data |&gt;
+  summarize(
+    mean = mean(nasalance),
+    sd = sd(nasalance),
+    SE = sd(nasalance) / sqrt(n()),
+    lq = quantile(nasalance, 0.025),
+    hq = quantile(nasalance, 0.975),
+    .by = c(&quot;etymology&quot;, &quot;E&quot;)))</code></pre>
+<pre><code># A tidytable: 3 × 7
+  etymology     E  mean     sd      SE     lq    hq
+  &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
+1 contact       1 0.543 0.115  0.0145  0.310  0.749
+2 nasalized     2 0.233 0.176  0.00863 0.0536 0.719
+3 oral          3 0.166 0.0993 0.00668 0.0536 0.460</code></pre>
+<pre class="r fold-hide"><code>ggplot(nas_data, aes(x = nasalance, fill = etymology, color = etymology)) +
+  geom_density(alpha = 0.5, linewidth = 1.2) +
+  labs(
+    title = &quot;Distribution of nasalance by etymology&quot;,
+    x = &quot;Nasalance (N)&quot;,
+    y = &quot;Density&quot;
+  )</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>We are modelling proportions of nasalance, with a categorical predictor (etymological category or group), to try to understand if <em>some</em> aspirates /h/ are nasalized in Basque.</p>
+<p><strong>Assumptions:</strong></p>
+<ul>
+<li><p><strong>Orals</strong> should have low proportion values (~20%).</p></li>
+<li><p><strong>Contact</strong> refers to aspirates after a nasal consonant, so they should have high values (~50–60%).</p></li>
+<li><p><strong>Nasalized</strong> aspirates are being lost in the language:</p>
+<ul>
+<li>Some speakers never produce them as such (N ~20%).</li>
+<li>Even among those who maintain the distinction, some lexical items have lost nasality.</li>
+</ul></li>
+</ul>
+<p>The core research question is therefore whether the <em>nasalized</em> category is best described by a <strong>mixture</strong> of two latent sub-processes.</p>
+<hr />
+</div>
+</div>
+<div id="modeling-the-mixture-of-two-components" class="section level1">
+<h1>Modeling the mixture of two components</h1>
+<p>We focus here on a two-component mixture model <span class="citation">(<a href="#ref-NicenboimEtAl2025">Nicenboim, Schad, and Vasishth 2025</a>)</span>, where each component represents a distinct cognitive process. The latent vector <span class="math inline">\(\mathbf{z}\)</span> indicates which component an observation belongs to:</p>
+<p><span class="math display" id="eq:mixz">\[\begin{equation}
+\begin{aligned}
+z_n \sim \mathit{Bernoulli}(\theta)\\
+y_n \sim
+\begin{cases}
+p_1(\Theta_1), &amp; \text{ if } z_n =1 \\
+p_2(\Theta_2), &amp; \text{ if } z_n=0
+\end{cases}
+\end{aligned}
+\tag{1}
+\end{equation}\]</span></p>
+<p>In this specific case, <span class="math inline">\(y_n\)</span> is the observed nasalance of a historically nasalized root, and the latent binary indicator <span class="math inline">\(z_n\)</span> determines whether the token was produced via the <em>contact-like</em> process <span class="math inline">\((p_1)\)</span> or the <em>oral-like</em> process <span class="math inline">\((p_2)\)</span>.</p>
+<div id="data-simulation" class="section level2">
+<h2>Data simulation</h2>
+<p>In the next few chunks we generate two artificial data sets so that we can stress-test our models: one <strong>true mixture</strong> and one <strong>true non-mixture</strong>. We ignore subject‑level variability for now.</p>
+<div id="a-custom-beta-parameterisation" class="section level3">
+<h3>A custom Beta parameterisation</h3>
+<p>Before simulating, we re-express the Beta distribution in terms of a more intuitive mean/<span class="math inline">\(\sigma\)</span> parameterisation. The helper functions <code>beta_pars()</code> and <code>rbeta2()</code> <em>only</em> wrap the algebra–they do not affect inference later on, but they make simulation vastly more readable.</p>
+<p><span class="math display">\[
+\text{var} &lt; \mu (1 - \mu), \quad
+\nu = \frac{\mu(1 - \mu)}{\text{var}} - 1, \quad
+\alpha = \mu \nu, \quad \beta = (1 - \mu) \nu
+\]</span></p>
+<pre class="r"><code>beta_pars &lt;- function(mean, sd) {
+  var &lt;- sd^2
+  alpha &lt;- ((1 - mean) / var - 1 / mean) * mean^2
+  beta &lt;- alpha * (1 / mean - 1)
+  list(alpha = alpha, beta = beta)
+}
+
+rbeta2 &lt;- function(n, mean, sd) {
+  pars &lt;- beta_pars(mean, sd)
+  rbeta(n = n, shape1 = pars$alpha, shape2 = pars$beta)
+}</code></pre>
+</div>
+<div id="simulate-data-from-a-mixture-process" class="section level3">
+<h3>Simulate data from a <em>mixture</em> process</h3>
+<p><code>prob_nas</code> below is the root-level probability that a historically nasalised aspirate is realised via a “high-nasalance mechanism” (as in contact condition). By varying this single probability you can dial-in anything from a pure-contact to a pure-oral realisation.</p>
+<pre class="r"><code>set.seed(99)
+N &lt;- 100
+
+true &lt;- list(
+  mu_oral = 0.166,
+  sigma_oral = 0.0993,
+  mu_contact = 0.543,
+  sigma_contact = 0.115,
+  prob_nas = 0.15 # made-up probability of nasalization
+)
+
+nas_oral &lt;- rbeta2(N, mean = true$mu_oral, sd = true$sigma_oral)
+nas_contact &lt;- rbeta2(N, mean = true$mu_contact, sd = true$sigma_contact)
+
+is_nas &lt;- rbinom(N, size = 1, prob = true$prob_nas)
+nas_nasalized &lt;- ifelse(
+  is_nas == 1,
+  rbeta2(N, mean = true$mu_contact, sd = true$sigma_contact), # contact
+  rbeta2(N, mean = true$mu_oral, sd = true$sigma_oral)         # oral
+)
+
+mix_data &lt;- tidytable(
+  etymology = rep(c(&quot;oral&quot;, &quot;contact&quot;, &quot;nasalized&quot;), each = N),
+  nasalance = c(nas_oral, nas_contact, nas_nasalized)
+) |&gt;
+  mutate(E = as.factor(etymology) |&gt; as.numeric())</code></pre>
+<p>Check distribution and visualize:</p>
+<pre class="r fold-hide"><code>mix_data |&gt;
+  summarize(
+    mean = mean(nasalance),
+    sd = sd(nasalance),
+    SE = sd(nasalance) / sqrt(n()),
+    lq = quantile(nasalance, 0.025),
+    hq = quantile(nasalance, 0.975),
+    .by = c(&quot;etymology&quot;, &quot;E&quot;)
+  )</code></pre>
+<pre><code># A tidytable: 3 × 7
+  etymology     E  mean     sd      SE     lq    hq
+  &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
+1 contact       1 0.551 0.119  0.0119  0.323  0.744
+2 nasalized     2 0.215 0.169  0.0169  0.0203 0.687
+3 oral          3 0.157 0.0895 0.00895 0.0330 0.374</code></pre>
+<pre class="r fold-hide"><code>ggplot(mix_data, aes(x = nasalance, fill = etymology, color = etymology)) +
+  geom_density(alpha = 0.5, linewidth = 1.2) +
+  labs(
+    title = &quot;SIMULATED distribution of nasalance by etymology (mixture)&quot;,
+    x = &quot;Nasalance (N)&quot;,
+    y = &quot;Density&quot;
+  ) +
+  theme_minimal()</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<div class="note">
+<p>Experiment with different values of <code>prob_nas</code> and observe the effect on the distribution.</p>
+</div>
+</div>
+<div id="simulate-data-from-a-non-mixture-process" class="section level3">
+<h3>Simulate data from a <em>non-mixture</em> process</h3>
+<p>Here every category gets its <em>own</em> Beta distribution. The parameters for <em>oral</em> and <em>contact</em> are the same as above; the <em>nasalized</em> mean/sd are set to match the empirical data.</p>
+<pre class="r"><code>set.seed(99)
+
+true2 &lt;- list(
+  mu_oral = true$mu_oral,
+  sigma_oral = true$sigma_oral,
+  mu_contact = true$mu_contact,
+  sigma_contact = true$sigma_contact,
+  mu_nasalized = 0.233,
+  sigma_nasalized = 0.176
+)
+nas_oral &lt;- rbeta2(N, mean = true2$mu_oral, sd = true2$sigma_oral)
+nas_contact &lt;- rbeta2(N, mean = true2$mu_contact, sd = true2$sigma_contact)
+nas_nasalized2 &lt;- rbeta2(N, mean = true2$mu_nasalized, sd = true2$sigma_nasalized)
+
+nonmix_data &lt;- tidytable(
+  etymology = rep(c(&quot;oral&quot;, &quot;contact&quot;, &quot;nasalized&quot;), each = N),
+  nasalance = c(nas_oral, nas_contact, nas_nasalized2)
+) |&gt;
+  mutate(E = as.factor(etymology) |&gt; as.numeric())</code></pre>
+<p>Check distribution and visualize:</p>
+<pre class="r fold-hide"><code>nonmix_data |&gt; summarize(mean = mean(nasalance),
+            sd = sd(nasalance),
+            SE = mean(nasalance)/sqrt(n()),
+            lq = quantile(nasalance, 0.025),
+            hq = quantile(nasalance, 0.975),
+            .by = c(&quot;etymology&quot;,&quot;E&quot;))</code></pre>
+<pre><code># A tidytable: 3 × 7
+  etymology     E  mean     sd     SE     lq    hq
+  &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
+1 contact       1 0.551 0.119  0.0551 0.323  0.744
+2 nasalized     2 0.231 0.183  0.0231 0.0110 0.641
+3 oral          3 0.157 0.0895 0.0157 0.0330 0.374</code></pre>
+<pre class="r fold-hide"><code>ggplot(nonmix_data, aes(x = nasalance, fill = etymology, color = etymology))  +
+  geom_density(alpha = 0.5, linewidth = 1.2) +
+  labs(title = &quot;SIMULATED distribution of nasalance by etymology&quot;,
+       x = &quot;N&quot;,
+       y = &quot;Density&quot;) +
+  theme_minimal()</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p><strong>Both distributions are visually similar, underscoring the difficulty of distinguishing the underlying generative processes by eye alone.</strong></p>
+<hr />
+</div>
+</div>
+<div id="fitting-the-simulated-data" class="section level2">
+<h2>Fitting the simulated data</h2>
+<p>We next fit the simulated data sets with <em>both</em> a mixture and a non-mixture model. We expect the following:</p>
+<ol style="list-style-type: decimal">
+<li><p>the mixture model should outperform when the data are a true mixture; and</p></li>
+<li><p>the non-mixture model should win when the data really come from three separate Beta distributions.</p></li>
+</ol>
+<hr />
+<div id="stan-implementation-two-component-mixture" class="section level3">
+<h3>Stan implementation: two-component mixture</h3>
+<p>The Stan program below encodes the likelihood</p>
+<p><span class="math display">\[
+  p(y_n\mid\Theta) = \theta\,p_1(y_n\mid\Theta_1) + (1-\theta)\,p_2(y_n\mid\Theta_2),
+\]</span></p>
+<p>where <span class="math inline">\(p_1\)</span> and <span class="math inline">\(p_2\)</span> are Beta distributions parameterised by their means and standard deviations. Because Stan does not allow discrete parameters in the <code>parameters</code> block, we marginalise over the latent indicator $z_n$ via <code>log_sum_exp</code>.</p>
+<p>Stan model:</p>
+<pre class="stan"><code>#include beta2.stan
+data {
+  int&lt;lower = 1&gt; N;
+  vector[N] nasalance;
+  array[N] int&lt;lower = 1&gt; E;
+}
+parameters {
+  real&lt;lower = 0, upper = 1&gt; mu_contact;
+  real&lt;lower = 0, upper = sqrt(mu_contact*(1-mu_contact))&gt; sigma_contact;
+  real&lt;lower = 0, upper = 1 &gt; mu_oral;
+  real&lt;lower= 0, upper = sqrt(mu_oral*(1-mu_oral))&gt; sigma_oral;
+  real&lt;lower = 0, upper = 1&gt; prob_nas;
+}
+model {
+  // priors for the task component
+  target += normal_lpdf(mu_contact | 0.6, 0.2);
+  target += normal_lpdf(mu_oral | 0.2, 0.3);
+  target += normal_lpdf(sigma_oral | 0, 0.3);
+  target += normal_lpdf(sigma_contact | 0, 0.3);
+
+  target += beta_lpdf(prob_nas | 3, 10);
+
+  for(n in 1:N){
+    if(E[n] == 1)  // contact
+      target +=  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+     else if(E[n] == 3)  // oral
+       target += beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+    else if(E[n] == 2) //nas
+       target += log_sum_exp(log(prob_nas) +
+                  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),
+                  log1m(prob_nas) +
+                  beta2_lpdf(nasalance[n] | mu_oral, sigma_oral));
+  }
+}
+generated quantities {
+  vector[N] log_lik;
+ for(n in 1:N){
+    if(E[n] == 1)  // contact
+      log_lik[n] =  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+     else if(E[n] == 3)  // oral
+       log_lik[n] = beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+     else if(E[n] == 2) //nas
+       log_lik[n] = log_sum_exp(log(prob_nas) +
+                                beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),
+                                log1m(prob_nas) +
+                                beta2_lpdf(nasalance[n] | mu_oral, sigma_oral));
+  }
+
+  // Posterior predictions:
+  vector[N] nasalance_rep;
+  for (n in 1:N) {
+    if (E[n] == 1)
+      nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+    else if (E[n] == 3)
+      nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    else if (E[n] == 2) {
+      if (bernoulli_rng(prob_nas) == 1)
+        nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+      else
+        nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    }
+  }
+}</code></pre>
+<pre class="r"><code>mix_m &lt;- cmdstan_model(&quot;./mix.stan&quot;)</code></pre>
+<hr />
+</div>
+<div id="model-fits" class="section level3">
+<h3>Model fits</h3>
+<p>Posterior recovery plots (<code>mcmc_recover_hist</code>) show that all five parameters are recovered when the data truly come from a mixture. Notably, the same Stan model also <em>fits</em> the non-mixture data well.</p>
+<div id="fiting-data-generated-by-a-non-mixture-process-with-a-mixture-model" class="section level4">
+<h4>Fiting data generated by a non-mixture process with a mixture model</h4>
+<pre class="r"><code>mix_ls &lt;- list(
+  N = nrow(mix_data),
+  nasalance = mix_data$nasalance,
+  E = as.integer(mix_data$E)
+)
+
+mixm_mixd &lt;- mix_m$sample(data = mix_ls, parallel_chains = 4)</code></pre>
+<p>Parameter recovery:</p>
+<pre class="r"><code>bayesplot::mcmc_recover_hist(
+  x = mixm_mixd$draws(c(&quot;mu_oral&quot;, &quot;sigma_oral&quot;, &quot;mu_contact&quot;, &quot;sigma_contact&quot;, &quot;prob_nas&quot;)),
+  true = unlist(true)
+)</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code>yrep &lt;- mixm_mixd$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(y = mix_data$nasalance, yrep = yrep[1:100, ], group = mix_data$etymology)+ ggtitle(&quot;Mixture model on mixture data&quot;)</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+</div>
+<div id="fitting-non-mixture-data-with-a-mixture-model" class="section level4">
+<h4>Fitting non-mixture data with a mixture model</h4>
+<p>Data not generated by a mixture model can be perfectly fit by a mixture model!</p>
+<pre class="r"><code>nonmix_ls &lt;- list(
+  N = nrow(nonmix_data),
+  nasalance = nonmix_data$nasalance,
+  E = as.integer(nonmix_data$E)
+)
+
+mixm_nonmixd &lt;- mix_m$sample(data = nonmix_ls, parallel_chains = 4)</code></pre>
+<pre class="r"><code>yrep &lt;- mixm_nonmixd$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(y = nonmix_data$nasalance, yrep = yrep[1:100, ],group = nonmix_data$etymology)+ ggtitle(&quot;Mixture model on non-mixture data&quot;)</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+</div>
+</div>
+</div>
+<div id="alternative-model-non-mixture-model" class="section level2">
+<h2>Alternative model: non-mixture model</h2>
+<p>This alternative Stan program replaces the Bernoulli mixture with a dedicated Beta for the nasalised class. Everything else remains the same. This model therefore embodies the (maybe unrealistic) hypothesis that historically nasalised aspirates form a coherent third distribution rather than a mixture of two.</p>
+<p>Stan model:</p>
+<pre class="stan"><code>#include beta2.stan
+data {
+  int&lt;lower = 1&gt; N;
+  vector[N] nasalance;
+  array[N] int&lt;lower = 1&gt; E;
+}
+parameters {
+  real&lt;lower = 0, upper = 1&gt; mu_contact;
+  real&lt;lower = 0, upper = sqrt(mu_contact*(1-mu_contact))&gt; sigma_contact;
+  real&lt;lower = 0, upper = 1 &gt; mu_oral;
+  real&lt;lower= 0, upper = sqrt(mu_oral*(1-mu_oral))&gt; sigma_oral;
+ real&lt;lower = 0, upper = 1&gt; mu_nasalized;
+  real&lt;lower = 0, upper = sqrt(mu_nasalized*(1-mu_nasalized))&gt; sigma_nasalized;
+}
+model {
+  // priors for the task component
+  target += normal_lpdf(mu_contact | 0.6, 0.2);
+  target += normal_lpdf(mu_oral | 0.2, 0.3);
+  target += normal_lpdf(mu_nasalized | 0.2, 0.3);
+  target += normal_lpdf(sigma_oral | 0, 0.3);
+  target += normal_lpdf(sigma_contact | 0, 0.3);
+  target += normal_lpdf(sigma_nasalized | 0, 0.3);
+
+  for(n in 1:N){
+    if(E[n] == 1)  // contact
+      target +=  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+     else if(E[n] == 3)  // oral
+       target += beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+    else if(E[n] == 2) //nas
+       target += beta2_lpdf(nasalance[n] | mu_nasalized, sigma_nasalized);
+  }
+}
+generated quantities {
+  vector[N] log_lik;
+  vector[N] nasalance_rep;
+
+  for (n in 1:N) {
+    if (E[n] == 1) {  // contact
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+      nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+    } else if (E[n] == 3) {  // oral
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+      nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    } else if (E[n] == 2) {  // nasalized
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_nasalized, sigma_nasalized);
+      nasalance_rep[n] = beta2_rng(mu_nasalized, sigma_nasalized);
+    }
+  }
+}</code></pre>
+<div id="fitting-mixture-and-non-mixture-data-with-a-non-mixture-model" class="section level3">
+<h3>Fitting mixture and non-mixture data with a non-mixture model</h3>
+<pre class="r"><code>nonmix_m &lt;- cmdstan_model(&quot;./nonmix.stan&quot;)
+
+nonmixm_mixd &lt;- nonmix_m$sample(data = mix_ls, parallel_chains = 4)
+nonmixm_nonmixd &lt;- nonmix_m$sample(data = nonmix_ls, parallel_chains = 4)</code></pre>
+<pre class="r"><code>nonmixm_mixd</code></pre>
+<pre><code>        variable   mean median   sd  mad     q5    q95 rhat ess_bulk ess_tail
+ lp__            223.15 223.47 1.75 1.56 219.71 225.34 1.00     1813     2718
+ mu_contact        0.55   0.55 0.01 0.01   0.53   0.57 1.00     4616     2815
+ sigma_contact     0.12   0.12 0.01 0.01   0.11   0.13 1.00     4713     2760
+ mu_oral           0.16   0.16 0.01 0.01   0.14   0.17 1.00     4842     3373
+ sigma_oral        0.10   0.10 0.01 0.01   0.08   0.11 1.00     4589     3023
+ mu_nasalized      0.22   0.22 0.02 0.02   0.20   0.25 1.00     4331     2777
+ sigma_nasalized   0.16   0.16 0.01 0.01   0.14   0.18 1.00     4025     2499
+ log_lik[1]        1.12   1.12 0.07 0.07   1.00   1.24 1.00     5690     3494
+ log_lik[2]        1.24   1.24 0.07 0.07   1.11   1.35 1.00     5416     3472
+ log_lik[3]        0.84   0.84 0.08 0.08   0.70   0.97 1.00     5775     2994
+
+ # showing 10 of 607 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
+<pre class="r"><code>nonmixm_nonmixd</code></pre>
+<pre><code>        variable   mean median   sd  mad     q5    q95 rhat ess_bulk ess_tail
+ lp__            214.49 214.84 1.75 1.53 211.07 216.67 1.00     2090     2769
+ mu_contact        0.55   0.55 0.01 0.01   0.53   0.57 1.00     4788     3191
+ sigma_contact     0.12   0.12 0.01 0.01   0.11   0.13 1.00     4389     2846
+ mu_oral           0.16   0.16 0.01 0.01   0.14   0.17 1.00     4649     3389
+ sigma_oral        0.10   0.10 0.01 0.01   0.08   0.11 1.00     4673     2821
+ mu_nasalized      0.23   0.23 0.02 0.02   0.21   0.26 1.00     4673     3239
+ sigma_nasalized   0.18   0.18 0.01 0.01   0.16   0.20 1.00     3891     2795
+ log_lik[1]        1.12   1.13 0.07 0.07   1.00   1.24 1.00     4995     3031
+ log_lik[2]        1.24   1.24 0.07 0.07   1.12   1.35 1.00     4894     3185
+ log_lik[3]        0.84   0.85 0.08 0.08   0.70   0.97 1.00     5106     3449
+
+ # showing 10 of 607 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
+<p>Recovery of the parameters of the non-mixture with the non-mixture model:</p>
+<pre class="r"><code>bayesplot::mcmc_recover_hist(
+  x = nonmixm_nonmixd$draws(c(&quot;mu_oral&quot;, &quot;sigma_oral&quot;, &quot;mu_contact&quot;, &quot;sigma_contact&quot;, &quot;mu_nasalized&quot;, &quot;sigma_nasalized&quot;)),
+  true = unlist(true2)
+)</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<pre class="r"><code>yrep_mixfit &lt;- nonmixm_mixd$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(
+  y = mix_data$nasalance,
+  yrep = yrep_mixfit[1:100, ],  
+  group = mix_data$etymology
+) + ggtitle(&quot;Non-mixture model on mixture data&quot;)</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<pre class="r"><code>yrep_nonmixfit &lt;- nonmixm_nonmixd$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(
+  y = nonmix_data$nasalance,
+  yrep = yrep_nonmixfit[1:100, ],
+  group = nonmix_data$etymology
+) + ggtitle(&quot;Non-mixture model on non-mixture data&quot;)</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+</div>
+</div>
+<div id="model-comparison" class="section level2">
+<h2>Model comparison</h2>
+<p>Model comparison via approximate leave-one-out cross-validation (LOO-CV) is rather inconclusive (in this small-data setting):</p>
+<pre class="r"><code>loo_mixm_mixd &lt;- loo(mixm_mixd$draws(&quot;log_lik&quot;))
+loo_mixm_nonmixd &lt;- loo(mixm_nonmixd$draws(&quot;log_lik&quot;))
+loo_nonmixm_mixd &lt;- loo(nonmixm_mixd$draws(&quot;log_lik&quot;))
+loo_nonmixm_nonmixd &lt;- loo(nonmixm_nonmixd$draws(&quot;log_lik&quot;))</code></pre>
+<div id="data-generated-by-a-mixture-process" class="section level3">
+<h3>Data generated by a mixture process</h3>
+<pre class="r"><code>loo_compare(list(mixture_model = loo_mixm_mixd,
+                 non_mixture   = loo_nonmixm_mixd))</code></pre>
+<pre><code>              elpd_diff se_diff
+mixture_model  0.0       0.0   
+non_mixture   -8.1       4.1   </code></pre>
+</div>
+<div id="data-generated-by-a-nonmixture-process" class="section level3">
+<h3>Data generated by a non‑mixture process</h3>
+<pre class="r"><code>loo_compare(list(mixture_model = loo_mixm_nonmixd,
+                 non_mixture   = loo_nonmixm_nonmixd))</code></pre>
+<pre><code>              elpd_diff se_diff
+non_mixture    0.0       0.0   
+mixture_model -2.1       3.8   </code></pre>
+<div class="note">
+<p>Re-run everything changing both seeds to 123. What changes?</p>
+</div>
+</div>
+</div>
+<div id="hierarchical-extensions" class="section level2">
+<h2>Hierarchical extensions</h2>
+<p>Real speakers differ in how faithfully they produce nasalised aspirates. The next two Stan programs introduce <strong>speaker-level group effects</strong> on the mixture weight and, in the final version, also on the contact/oral means via a Cholesky-factor LKJ prior. The high-level structure is unchanged.</p>
+<div id="subject-level-adjustments-for-the-mixture-weight" class="section level3">
+<h3>Subject level adjustments for the mixture weight</h3>
+<pre class="stan"><code>#include beta2.stan
+data {
+  int&lt;lower = 1&gt; N;
+  vector[N] nasalance;
+  array[N] int&lt;lower = 1&gt; E;
+  array[N] int&lt;lower = 1&gt; speaker;
+  int&lt;lower = 1&gt; N_speaker;
+}
+parameters {
+  real&lt;lower = 0, upper = 1&gt; mu_contact;
+  real&lt;lower = 0, upper = sqrt(mu_contact*(1-mu_contact))&gt; sigma_contact;
+  real&lt;lower = 0, upper = 1 &gt; mu_oral;
+  real&lt;lower= 0, upper = sqrt(mu_oral*(1-mu_oral))&gt; sigma_oral;
+
+  // now it&#39;s log odds
+  real&lt;lower = 0, upper = 1&gt; av_prob_nas;
+
+  real&lt;lower = 0&gt;  tau_u;
+  vector[N_speaker] z_u;
+}
+transformed parameters {
+  vector[N_speaker] u;
+  u = tau_u * z_u;
+}
+model {
+  // priors for the task component
+  target += normal_lpdf(mu_contact | 0.6, 0.2);
+  target += normal_lpdf(mu_oral | 0.2, 0.3);
+  target += normal_lpdf(sigma_oral | 0, 0.3);
+  target += normal_lpdf(sigma_contact | 0, 0.3);
+
+  target += std_normal_lpdf(z_u);
+  target += normal_lpdf(tau_u | 0, 2);
+  
+  target += beta_lpdf(av_prob_nas | 3, 10);
+
+  for(n in 1:N){
+    if(E[n] == 1)  // contact
+      target +=  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+     else if(E[n] == 3)  // oral
+       target += beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+    else if(E[n] == 2) { //nas
+       real logodds_nas = logit(av_prob_nas) + u[speaker[n]];
+       target += log_sum_exp(log_inv_logit(logodds_nas) +
+                  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),
+                  log1m_inv_logit(logodds_nas)+
+                  beta2_lpdf(nasalance[n] | mu_oral, sigma_oral));
+       }
+  }
+}
+generated quantities {
+  vector[N] log_lik;
+  vector[N] nasalance_rep;
+  vector[N_speaker] prob_nas_speaker = inv_logit(logit(av_prob_nas) + u);
+  
+  for (n in 1:N) {
+    if (E[n] == 1) {  // contact
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+      nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+    } else if (E[n] == 3) {  // oral
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+      nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    } else if (E[n] == 2) { // nas
+      real logodds_nas = logit(av_prob_nas) + u[speaker[n]];
+      real theta = inv_logit(logodds_nas);
+      log_lik[n] = log_sum_exp(
+        log(theta) + beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),
+        log1m(theta) + beta2_lpdf(nasalance[n] | mu_oral, sigma_oral)
+      );
+      if (bernoulli_rng(theta) == 1)
+        nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+      else
+        nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    }
+  }
+}</code></pre>
+<pre class="r"><code>mix_s_m &lt;- cmdstan_model(&quot;./mix_s.stan&quot;)</code></pre>
+<p>We first verify that we can recover the generating parameters. <span class="citation">(A complete pipeline would also include SBC, which we omit for brevity: <a href="#ref-talts2018validating">Talts et al. 2018</a>; <a href="#ref-ModrakEtAl2023">Modrák et al. 2023</a>)</span>. We skip this step here.</p>
+<pre class="r"><code>nas_ls &lt;- list(N = nrow(nas_data),
+               nasalance = nas_data$nasalance,
+               E = nas_data$E,
+               speaker = nas_data$speaker,
+               N_speaker = max(nas_data$speaker))
+               
+nas_mix &lt;- mix_s_m$sample(data = nas_ls, parallel_chains = 4)</code></pre>
+<pre class="r"><code>yrep &lt;- nas_mix$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(
+  y = nas_data$nasalance,
+  yrep = yrep[1:100, ],
+  group = nas_data$etymology
+) + ggtitle(&quot;Real data&quot;)</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
+<pre class="r fold-hide"><code>yrep_mat &lt;- yrep[1:100, ]  # assuming yrep is already created
+n_draws &lt;- nrow(yrep_mat)
+
+# Build long dataframe from yrep and attach metadata
+yrep_df &lt;- as.data.frame(t(yrep_mat)) |&gt;
+  setNames(paste0(&quot;draw&quot;, 1:n_draws)) |&gt;
+  mutate(
+    obs = nas_data$nasalance,
+    speaker = nas_data$speaker,
+    etymology = nas_data$etymology
+  ) |&gt;
+  pivot_longer(
+    cols = starts_with(&quot;draw&quot;),
+    names_to = &quot;draw&quot;,
+    values_to = &quot;yrep&quot;
+  )
+
+# Plot
+ggplot(yrep_df, aes(x = etymology, y = yrep, fill = etymology)) +
+  geom_violin(alpha = 0.5, scale = &quot;width&quot;) +
+  geom_point(aes(y = obs), shape = 21, size = 1.5, position = position_jitter(width = 0.1)) +
+  facet_wrap(~ speaker, scales = &quot;free_y&quot;) +
+  labs(title = &quot;Posterior predictive violins per speaker and etymology&quot;,
+       x = &quot;Etymology&quot;, y = &quot;Nasalance&quot;) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<p>Are there subjects who nasalize more?</p>
+<pre class="r"><code>mcmc_intervals(nas_mix$draws(&quot;prob_nas_speaker&quot;))</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
+<div class="note">
+<p>Add an analogous parameter <code>w</code> which modulates the probability of nasalization by <code>root</code>. Which roots are most likely to be nasalized?</p>
+</div>
+</div>
+<div id="subject-level-adjustments-for-the-mixture-weight-and-mean-nasalization." class="section level3">
+<h3>Subject level adjustments for the mixture weight and mean nasalization.</h3>
+<p>A more comprehensive hierarchical model allows <code>mu_contact</code> and <code>mu_oral</code><a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> to vary by speaker and/or by root.</p>
+<p>Stan code:</p>
+<pre class="stan"><code>#include beta2.stan
+data {
+  int&lt;lower = 1&gt; N;
+  vector[N] nasalance;
+  array[N] int&lt;lower = 1&gt; E;
+  array[N] int&lt;lower = 1&gt; speaker;
+  int&lt;lower = 1&gt; N_speaker;
+}
+parameters {
+  real&lt;lower = 0, upper = 1&gt; mu_contact;
+  real&lt;lower = 0, upper = sqrt(mu_contact*(1-mu_contact))&gt; sigma_contact;
+  real&lt;lower = 0, upper = 1 &gt; mu_oral;
+  real&lt;lower= 0, upper = sqrt(mu_oral*(1-mu_oral))&gt; sigma_oral;
+
+  // now it&#39;s log odds
+  real&lt;lower = 0, upper = 1&gt; av_prob_nas;
+
+ vector&lt;lower = 0&gt;[3]  tau_u;
+  matrix[3, N_speaker] z_u;
+  cholesky_factor_corr[3] L_u;
+}
+transformed parameters {
+  matrix[N_speaker, 3] u;
+  u = (diag_pre_multiply(tau_u, L_u) * z_u)&#39;;
+}
+model {
+  // priors for the task component
+  target += normal_lpdf(mu_contact | 0.6, 0.2);
+  target += normal_lpdf(mu_oral | 0.2, 0.3);
+  target += normal_lpdf(sigma_oral | 0, 0.3);
+  target += normal_lpdf(sigma_contact | 0, 0.3);
+
+  target += lkj_corr_cholesky_lpdf(L_u | 2);
+  target += std_normal_lpdf(to_vector(z_u));
+  target += normal_lpdf(tau_u | 0, 2);
+  
+  target += beta_lpdf(av_prob_nas | 3, 10);
+
+  for(n in 1:N){
+      real mu_c_adj = inv_logit(logit(mu_contact) + u[speaker[n], 1]);
+      real mu_o_adj = inv_logit(logit(mu_oral) + u[speaker[n], 3]);
+      if(E[n] == 1)  // contact
+      target +=  beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact);
+     else if(E[n] == 3)  // oral
+       target += beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral);
+    else if(E[n] == 2) { //nas
+       real logodds_nas = logit(av_prob_nas) + u[speaker[n], 2];
+       target += log_sum_exp(log_inv_logit(logodds_nas) +
+                  beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact),
+                  log1m_inv_logit(logodds_nas)+
+                  beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral));
+       }
+  }
+}
+generated quantities {
+  vector[N] log_lik;
+  vector[N] nasalance_rep;
+  vector[N_speaker] prob_nas_speaker = inv_logit(logit(av_prob_nas) + u[,3]);
+  
+  for (n in 1:N) {
+    real mu_c_adj = inv_logit(logit(mu_contact) + u[speaker[n], 1]);
+     real mu_o_adj = inv_logit(logit(mu_oral) + u[speaker[n], 3]);
+        if (E[n] == 1) {  // contact
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact);
+      nasalance_rep[n] = beta2_rng(mu_c_adj, sigma_contact);
+    } else if (E[n] == 3) {  // oral
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral);
+      nasalance_rep[n] = beta2_rng(mu_o_adj, sigma_oral);
+    } else if (E[n] == 2) { // nas
+      real logodds_nas = logit(av_prob_nas) + u[speaker[n], 3];
+      real theta = inv_logit(logodds_nas);
+      log_lik[n] = log_sum_exp(
+        log(theta) + beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact),
+        log1m(theta) + beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral)
+      );
+      if (bernoulli_rng(theta) == 1)
+        nasalance_rep[n] = beta2_rng(mu_c_adj, sigma_contact);
+      else
+        nasalance_rep[n] = beta2_rng(mu_o_adj, sigma_oral);
+    }
+  }
+}</code></pre>
+<pre class="r"><code>mix_s2_m &lt;- cmdstan_model(&quot;./mix_s2.stan&quot;)</code></pre>
+<pre class="r"><code>nas2_mix &lt;- mix_s2_m$sample(data = nas_ls, parallel_chains = 4)</code></pre>
+<pre class="r"><code>nas2_mix</code></pre>
+<pre><code>      variable   mean median   sd  mad     q5    q95 rhat ess_bulk ess_tail
+ lp__          546.59 546.95 6.15 6.29 536.10 556.04 1.00      955     1777
+ mu_contact      0.54   0.54 0.02 0.02   0.51   0.57 1.00     2771     2464
+ sigma_contact   0.13   0.13 0.01 0.01   0.11   0.14 1.00     3288     2848
+ mu_oral         0.16   0.16 0.01 0.01   0.15   0.18 1.00     1856     1983
+ sigma_oral      0.08   0.08 0.00 0.00   0.08   0.09 1.00     5449     2789
+ av_prob_nas     0.15   0.14 0.06 0.05   0.07   0.26 1.00     2133     2315
+ tau_u[1]        0.17   0.16 0.09 0.08   0.04   0.32 1.00     1266     1301
+ tau_u[2]        1.68   1.57 0.63 0.54   0.89   2.87 1.00     1718     2197
+ tau_u[3]        0.19   0.18 0.06 0.05   0.12   0.30 1.00     1879     2438
+ z_u[1,1]       -0.52  -0.54 0.87 0.83  -1.93   0.91 1.00     2513     3060
+
+ # showing 10 of 1493 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
+<pre class="r"><code>yrep &lt;- nas2_mix$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(
+  y = nas_data$nasalance,
+  yrep = yrep[1:100, ],
+  group = nas_data$etymology
+) + ggtitle(&quot;Real data with the more complex model&quot;)</code></pre>
+<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
+<div class="note">
+<p>Consider additional posterior predictive checks.</p>
+</div>
+<div class="notes">
+<p>Consider simulating data.</p>
+</div>
+<div class="note">
+<p>Is the hierarchical mixture model preferable to a hierarchical non-mixture alternative?</p>
+</div>
+</div>
+</div>
+</div>
+<div id="conclusions" class="section level1">
+<h1>Conclusions</h1>
+<ul>
+<li><strong>Visual similarity is deceptive.</strong> Simulated mixture and non-mixture data look almost identical.</li>
+<li><strong>Model comparison alone can be inconclusive</strong> at the current sample size: both mixture and non-mixture models achieve very similar LOO‑CV scores on either data-generating process.</li>
+<li><strong>Speaker-level effects matter.</strong> Allowing the mixture weight to vary by speaker reveals substantial individual differences.</li>
+<li><strong>Domain knowledge remains crucial.</strong> The structure of the model should be informed by theory.</li>
+</ul>
+<hr />
+</div>
+<div id="session-info" class="section level1 unnumbered">
+<h1>Session info</h1>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.5.0 (2025-04-11)
+Platform: x86_64-pc-linux-gnu
+Running under: Ubuntu 22.04.5 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0 
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0  LAPACK version 3.10.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=nl_NL.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=nl_NL.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
+
+time zone: Europe/Amsterdam
+tzcode source: system (glibc)
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] loo_2.8.0        ggplot2_3.5.2    brms_2.22.0      Rcpp_1.0.14     
+[5] bayesplot_1.12.0 posterior_1.6.1  cmdstanr_0.9.0   tidytable_0.11.2
+
+loaded via a namespace (and not attached):
+ [1] bridgesampling_1.1-5 tensorA_0.36.2.1     utf8_1.2.6          
+ [4] sass_0.4.10          generics_0.1.4       stringi_1.8.7       
+ [7] lattice_0.22-5       blogdown_1.21        digest_0.6.37       
+[10] magrittr_2.0.3       evaluate_1.0.3       grid_4.5.0          
+[13] RColorBrewer_1.1-3   bookdown_0.43        mvtnorm_1.3-3       
+[16] fastmap_1.2.0        plyr_1.8.9           Matrix_1.7-3        
+[19] jsonlite_2.0.0       processx_3.8.6       backports_1.5.0     
+[22] ps_1.9.1             Brobdingnag_1.2-9    scales_1.4.0        
+[25] codetools_0.2-19     jquerylib_0.1.4      abind_1.4-8         
+[28] cli_3.6.5            rlang_1.1.6          withr_3.0.2         
+[31] cachem_1.1.0         yaml_2.3.10          tools_4.5.0         
+[34] parallel_4.5.0       reshape2_1.4.4       rstantools_2.4.0    
+[37] coda_0.19-4.1        checkmate_2.3.2      dplyr_1.1.4         
+[40] vctrs_0.6.5          R6_2.6.1             matrixStats_1.5.0   
+[43] lifecycle_1.0.4      stringr_1.5.1        pkgconfig_2.0.3     
+[46] RcppParallel_5.1.10  pillar_1.10.2        bslib_0.9.0         
+[49] gtable_0.3.6         data.table_1.17.0    glue_1.8.0          
+[52] xfun_0.52            tibble_3.3.0         tidyselect_1.2.1    
+[55] rstudioapi_0.17.1    knitr_1.50           farver_2.1.2        
+[58] nlme_3.1-168         htmltools_0.5.8.1    labeling_0.4.3      
+[61] rmarkdown_2.29       compiler_4.5.0       distributional_0.5.0</code></pre>
+<p>I used R <span class="citation">(Version 4.5.0; <a href="#ref-R-base">R Core Team 2025</a>)</span> and the R-packages <em>bayesplot</em> <span class="citation">(Version 1.12.0; <a href="#ref-R-bayesplot">Gabry and Mahr 2025</a>)</span>, <em>brms</em> <span class="citation">(Version 2.22.0; <a href="#ref-R-brms">Bürkner 2024</a>)</span>, <em>cmdstanr</em> <span class="citation">(Version 0.9.0; <a href="#ref-R-cmdstanr">Gabry et al. 2025</a>)</span>, <em>ggplot2</em> <span class="citation">(Version 3.5.2; <a href="#ref-R-ggplot2">Wickham et al. 2025</a>)</span>, <em>loo</em> <span class="citation">(Version 2.8.0; <a href="#ref-R-loo">Vehtari et al. 2024</a>)</span>, <em>posterior</em> <span class="citation">(Version 1.6.1; <a href="#ref-R-posterior">Bürkner et al. 2025</a>)</span>, <em>Rcpp</em> <span class="citation">(Version 1.0.14; <a href="#ref-R-Rcpp">Eddelbuettel et al. 2025</a>)</span> and <em>tidytable</em> <span class="citation">(Version 0.11.2; <a href="#ref-R-tidytable">Fairbanks 2024</a>)</span> for all our analyses.</p>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="ref-R-brms" class="csl-entry">
+Bürkner, Paul-Christian. 2024. <em>Brms: Bayesian Regression Models Using Stan</em>. <a href="https://github.com/paul-buerkner/brms">https://github.com/paul-buerkner/brms</a>.
+</div>
+<div id="ref-R-posterior" class="csl-entry">
+Bürkner, Paul-Christian, Jonah Gabry, Matthew Kay, and Aki Vehtari. 2025. <em>Posterior: Tools for Working with Posterior Distributions</em>. <a href="https://mc-stan.org/posterior/">https://mc-stan.org/posterior/</a>.
+</div>
+<div id="ref-R-Rcpp" class="csl-entry">
+Eddelbuettel, Dirk, Romain Francois, JJ Allaire, Kevin Ushey, Qiang Kou, Nathan Russell, Iñaki Ucar, Doug Bates, and John Chambers. 2025. <em>Rcpp: Seamless r and c++ Integration</em>. <a href="https://www.rcpp.org">https://www.rcpp.org</a>.
+</div>
+<div id="ref-R-tidytable" class="csl-entry">
+Fairbanks, Mark. 2024. <em>Tidytable: Tidy Interface to Data.table</em>. <a href="https://markfairbanks.github.io/tidytable/">https://markfairbanks.github.io/tidytable/</a>.
+</div>
+<div id="ref-R-cmdstanr" class="csl-entry">
+Gabry, Jonah, Rok Češnovar, Andrew Johnson, and Steve Bronder. 2025. <em>Cmdstanr: R Interface to CmdStan</em>. <a href="https://mc-stan.org/cmdstanr/">https://mc-stan.org/cmdstanr/</a>.
+</div>
+<div id="ref-R-bayesplot" class="csl-entry">
+Gabry, Jonah, and Tristan Mahr. 2025. <em>Bayesplot: Plotting for Bayesian Models</em>. <a href="https://mc-stan.org/bayesplot/">https://mc-stan.org/bayesplot/</a>.
+</div>
+<div id="ref-ModrakEtAl2023" class="csl-entry">
+Modrák, Martin, Angie H. Moon, Shinyoung Kim, Paul-Christian Bürkner, Niko Huurre, Kateřina Faltejsková, Andrew Gelman, and Aki Vehtari. 2023. <span>“Simulation-Based Calibration Checking for <span>Bayesian</span> Computation: <span>The</span> Choice of Test Quantities Shapes Sensitivity.”</span> <em>Bayesian Analysis</em>, 1–28. <a href="https://doi.org/10.1214/23-BA1404">https://doi.org/10.1214/23-BA1404</a>.
+</div>
+<div id="ref-NicenboimEtAl2025" class="csl-entry">
+Nicenboim, Bruno, Daniel J. Schad, and Shravan Vasishth. 2025. <em>Introduction to Bayesian Data Analysis for Cognitive Science</em>. 1st ed. Chapman; Hall/CRC. <a href="https://doi.org/10.1201/9780429342646">https://doi.org/10.1201/9780429342646</a>.
+</div>
+<div id="ref-R-base" class="csl-entry">
+R Core Team. 2025. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.
+</div>
+<div id="ref-talts2018validating" class="csl-entry">
+Talts, Sean, Michael J. Betancourt, Daniel P. Simpson, Aki Vehtari, and Andrew Gelman. 2018. <span>“Validating <span>B</span>ayesian Inference Algorithms with Simulation-Based Calibration.”</span> <em>arXiv Preprint arXiv:1804.06788</em>.
+</div>
+<div id="ref-R-loo" class="csl-entry">
+Vehtari, Aki, Jonah Gabry, Måns Magnusson, Yuling Yao, Paul-Christian Bürkner, Topi Paananen, and Andrew Gelman. 2024. <em>Loo: Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models</em>. <a href="https://mc-stan.org/loo/">https://mc-stan.org/loo/</a>.
+</div>
+<div id="ref-R-ggplot2" class="csl-entry">
+Wickham, Hadley, Winston Chang, Lionel Henry, Thomas Lin Pedersen, Kohske Takahashi, Claus Wilke, Kara Woo, Hiroaki Yutani, Dewey Dunnington, and Teun van den Brand. 2025. <em>Ggplot2: Create Elegant Data Visualisations Using the Grammar of Graphics</em>. <a href="https://ggplot2.tidyverse.org">https://ggplot2.tidyverse.org</a>.
+</div>
+</div>
+</div>
+<div class="footnotes footnotes-end-of-document">
+<hr />
+<ol>
+<li id="fn1"><p>with considerable extra work we could also deal with <code>sigma</code><a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+
+
+
+    </div>
+  </article>
+
+
+ 
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/stan.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/python.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+

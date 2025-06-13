@@ -50,7 +50,7 @@ capture.output(print(proceedingsall, .opts=list(style="Bibtex",no.print.fields=c
 <br/>
 <br/>
 
-# Book in preparation
+# Books
 
 ```{r,echo=F,results="asis",cache=F}
 output(booksall,withbrackets=TRUE) 

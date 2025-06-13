@@ -170,7 +170,7 @@ for(y in seq(last_year,first_year,-1)){
 <br/>
 <br/>
 
-# Book in preparation
+# Books
 
 ```{r,echo=F,results="asis",cache=F}
  

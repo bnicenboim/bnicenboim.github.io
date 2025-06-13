@@ -6,17 +6,43 @@
     <description>Recent content in events on Bruno Nicenboim</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 29 Jan 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 13 Jun 2025 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/events/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
+      <title>Submit Your Abstract: Computational Psycholinguistics Meeting 2025</title>
+      <link>/posts/submit-your-abstract-computational-psycholinguistics-meeting-2025/</link>
+      <pubDate>Fri, 13 Jun 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/submit-your-abstract-computational-psycholinguistics-meeting-2025/</guid><description>&lt;p&gt;We are excited to announce the first Computational Psycholinguistics Meeting 2025, which will take place in Utrecht, the Netherlands, on December 18–19, 2025.&lt;/p&gt;
+&lt;p&gt;This meeting provides a dedicated space for researchers working with (neuro-)symbolic, Bayesian, deep-learning, connectionist, and mechanistic models like ACT-R to discuss how these approaches explain and predict human language production, perception, and processing.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The abstract submission deadline has been extended to June 29, 2025 (anywhere on Earth).&lt;/strong&gt;&lt;br&gt;
+Submit your abstract via &lt;a href=&#34;https://openreview.net/group?id=UU.nl/Utrecht_University/2025/CPL&#34;&gt;OpenReview&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;keynote-speakers&#34;&gt;Keynote Speakers&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;http://stefanfrank.info/&#34;&gt;Stefan Frank (Radboud University)&lt;/a&gt;&lt;br&gt;
+&lt;a href=&#34;https://www.uni-saarland.de/lehrstuhl/demberg/members/verademberg.html&#34;&gt;Vera Demberg (Saarland University)&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;topics-not-exhaustive&#34;&gt;Topics (not exhaustive)&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;How (neuro-)symbolic, Bayesian, deep-learning, connectionist, and mechanistic models (e.g., ACT-R) explain and predict human language processing.&lt;/li&gt;
+&lt;li&gt;Strengths and limitations of different modeling approaches.&lt;/li&gt;
+&lt;li&gt;Integrating linguistic information across words, sentences, and discourse for comprehension and production.&lt;/li&gt;
+&lt;li&gt;Computational, algorithmic, and implementational analyses of psycholinguistic phenomena.&lt;/li&gt;
+&lt;li&gt;Advances in modeling semantics, syntax, sentence processing, speech perception, and production.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;More details, including submission guidelines and templates, are available at: &lt;a href=&#34;https://cpl2025.sites.uu.nl/&#34;&gt;https://cpl2025.sites.uu.nl/&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;organizers&#34;&gt;Organizers&lt;/h3&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.jakubdotlacil.com/&#34;&gt;Jakub Dotlačil&lt;/a&gt;, &lt;a href=&#34;https://www.cl.uzh.ch/en/research-groups/digital-linguistics/people/group-leader/jaeger.html&#34;&gt;Lena Jäger&lt;/a&gt;, and &lt;a href=&#34;https://www.bruno.nicenboim.me/&#34;&gt;Bruno Nicenboim&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Save the Date: Computational Psycholinguistics Meeting 2025</title>
-      <link>/2025/01/29/save-the-date-computational-psycholinguistics-meeting-2025/</link>
+      <link>/posts/save-the-date-computational-psycholinguistics-meeting-2025/</link>
       <pubDate>Wed, 29 Jan 2025 00:00:00 +0000</pubDate>
       
-      <guid>/2025/01/29/save-the-date-computational-psycholinguistics-meeting-2025/</guid><description>&lt;p&gt;We are excited to announce the launch of a new recurring meeting dedicated exclusively to computational psycholinguistics. The first Computational Psycholinguistics Meeting 2025 will take place in Utrecht, the Netherlands, on December 18–19, 2025.&lt;/p&gt;
+      <guid>/posts/save-the-date-computational-psycholinguistics-meeting-2025/</guid><description>&lt;p&gt;We are excited to announce the launch of a new recurring meeting dedicated exclusively to computational psycholinguistics. The first Computational Psycholinguistics Meeting 2025 will take place in Utrecht, the Netherlands, on December 18–19, 2025.&lt;/p&gt;
 &lt;p&gt;This meeting provides a dedicated space for researchers working with (neuro-)symbolic, Bayesian, deep-learning, connectionist, and mechanistic models like ACT-R to discuss how these approaches explain and predict human language production, perception, and processing.&lt;/p&gt;
 &lt;h3 id=&#34;keynote-speakers&#34;&gt;Keynote Speakers&lt;/h3&gt;
 &lt;p&gt;Stefan Frank (Radboud University) – &lt;a href=&#34;http://stefanfrank.info/&#34;&gt;Website&lt;/a&gt;&lt;/p&gt;

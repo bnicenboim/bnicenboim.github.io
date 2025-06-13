@@ -15,7 +15,8 @@
   <div class="archive">
     {{ $pages := .Pages }}
     {{ if .IsHome }}
-    {{ $pages = .Site.RegularPages }}
+    {{/* Limit home page to posts section only */}}
+    {{ $pages = where .Site.RegularPages "Section" "posts" }}
     {{ end }}
     {{ range (where $pages "Section" "!=" "").GroupByDate "2006" }}
     <h2 class="archive-title">{{ .Key }}</h2>

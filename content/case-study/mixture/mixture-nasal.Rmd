@@ -1,0 +1,649 @@
+---
+title: "Case study: Mixture modeling of nasalization in Basque"
+author: "Bruno Nicenboim"
+date: "`r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    code_folding: show
+    highlight: kate
+    toc: TRUE
+    toc_float: TRUE
+    toc_depth: 3
+    df_print: paged
+    self_contained: false
+    output_file: index.html
+bibliography      : ["r-references.bib", "BayesCogSci.bib"]
+---
+
+```{r setup, class.source = 'fold-hide'}
+
+## Global options
+options(max.print = "75",
+        width = 80,
+        tibble.width = 80)
+options(scipen = 1, digits = 2)
+knitr::opts_chunk$set(echo = TRUE,
+                    cache = TRUE,
+                    prompt = FALSE,
+                    cache.lazy = FALSE,
+                    tidy = FALSE,
+                    comment = NA,
+                    message = FALSE,
+                    warning = TRUE)
+knitr::opts_knit$set(width = 80)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+```
+
+```{=html}
+<style>
+.exercise {
+  border: 2px solid #007ACC;
+  background-color: #f0f8ff;
+  padding: 1em;
+  margin: 1em 0;
+  border-radius: 6px;
+}
+
+.exercise h3 {
+  margin-top: 0;
+  color: #005a9c;
+}
+
+.note {
+  border-left: 5px solid #1e90ff;
+  background-color: #eef6fc;
+  padding: 1em;
+  margin: 1em 0;
+}
+
+.warning {
+  border-left: 5px solid #d9534f;
+  background-color: #fdf2f2;
+  padding: 1em;
+  margin: 1em 0;
+}
+</style>
+```
+# Introduction {-}
+
+This case study examines how *nasalance* varies across three etymological categories of Basque aspirates: **oral**, **contact-nasalized** (i.e., following a nasal consonant), and historically **nasalized** aspirates that are reported to be in flux.
+
+
+# Set-up
+
+## Packages
+
+The analysis relies on **tidytable** for fast data manipulation, **cmdstanr** for Stan interfacing, and a handful of tidy-Bayes helpers for visualisation and model comparison.
+
+```{r}
+library(tidytable) # nice alternative to dplyr
+library(cmdstanr)
+library(posterior)
+library(bayesplot)
+library(brms)
+library(ggplot2)
+library(loo)
+options(mc.cores = 4)
+knitr::write_bib(.packages(), "r-references.bib")
+```
+## Files
+
+We'll use the following files
+
+- [`nas_data.RDS`](./nas_data.RDS)
+- [`beta2.stan`](./beta2.stan)
+- [`mix.stan`](./mix.stan)
+- [`nonmix.stan`](./nonmix.stan)
+- [`mix_s.stan`](./mix_s.stan)
+- [`mix_s2.stan`](./mix_s2.stan)
+- [`mixture-nasal.Rmd`](./mixture-nasal.Rmd)
+
+## Data from Iñigo Urrestarazu-Porta 
+
+
+Basque speakers of the Zuberoan variety were recorded with a nasometer. The etymology has three relevant levels:
+
+1. **contact**
+2. **nasalized**
+3. **oral**
+
+```{r, class.source = 'fold-hide'}
+nas_data <- readRDS("nas_data.RDS") |>
+  rename(
+    etymology = E,
+    root = R,
+    speaker = S,
+    nasalance = N
+  ) |>
+  filter(!is.na(nasalance)) |>
+  filter(etymology != "assimilated") |>
+  mutate(
+    E = as.factor(etymology) |> as.numeric(),
+    R = as.factor(root) |> as.numeric(),
+    speaker = as.factor(speaker) |> as.numeric()
+  )
+```
+
+```{r}
+nas_data
+```
+
+The quick summary below confirms the expected ranking: *contact* tokens are the most nasal, *oral* tokens the least, and the *nasalized* class falls somewhere in between.
+
+```{r}
+(summary <- nas_data |>
+  summarize(
+    mean = mean(nasalance),
+    sd = sd(nasalance),
+    SE = sd(nasalance) / sqrt(n()),
+    lq = quantile(nasalance, 0.025),
+    hq = quantile(nasalance, 0.975),
+    .by = c("etymology", "E")))
+```
+
+```{r, class.source = 'fold-hide'}
+ggplot(nas_data, aes(x = nasalance, fill = etymology, color = etymology)) +
+  geom_density(alpha = 0.5, linewidth = 1.2) +
+  labs(
+    title = "Distribution of nasalance by etymology",
+    x = "Nasalance (N)",
+    y = "Density"
+  )
+```
+
+We are modelling proportions of nasalance, with a categorical predictor (etymological category or group), to try to understand if *some* aspirates /h/ are nasalized in Basque.
+
+**Assumptions:**
+
+* **Orals** should have low proportion values (\~20%).
+* **Contact** refers to aspirates after a nasal consonant, so they should have high values (\~50–60%).
+* **Nasalized** aspirates are being lost in the language:
+
+  * Some speakers never produce them as such (N \~20%).
+  * Even among those who maintain the distinction, some lexical items have lost nasality.
+
+ The core research question is therefore whether the *nasalized* category is best described by a **mixture** of two latent sub-processes.
+
+---
+
+# Modeling the mixture of two components
+
+We focus here on a two-component mixture model [@NicenboimEtAl2025], where each component represents a distinct cognitive process. The latent vector $\mathbf{z}$ indicates which component an observation belongs to:
+
+\begin{equation}
+\begin{aligned}
+z_n \sim \mathit{Bernoulli}(\theta)\\
+y_n \sim
+\begin{cases}
+p_1(\Theta_1), & \text{ if } z_n =1 \\
+p_2(\Theta_2), & \text{ if } z_n=0
+\end{cases}
+\end{aligned}
+(\#eq:mixz)
+\end{equation}
+
+In this specific case,  $y_n$ is the observed nasalance of a historically nasalized root, and the latent binary indicator $z_n$ determines whether the token was produced via the *contact-like* process $(p_1)$ or the *oral-like* process $(p_2)$.
+
+## Data simulation
+
+In the next few chunks we generate two artificial data sets so that we can stress-test our models: one **true mixture** and one **true non-mixture**.  We ignore subject‑level variability for now.
+
+### A custom Beta parameterisation
+
+Before simulating, we re-express the Beta distribution in terms of a more intuitive mean/\(\sigma\) parameterisation.  The helper functions `beta_pars()` and `rbeta2()` *only* wrap the algebra--they do not affect inference later on, but they make simulation vastly more readable.
+
+
+$$
+\text{var} < \mu (1 - \mu), \quad
+\nu = \frac{\mu(1 - \mu)}{\text{var}} - 1, \quad
+\alpha = \mu \nu, \quad \beta = (1 - \mu) \nu
+$$
+
+```{r}
+beta_pars <- function(mean, sd) {
+  var <- sd^2
+  alpha <- ((1 - mean) / var - 1 / mean) * mean^2
+  beta <- alpha * (1 / mean - 1)
+  list(alpha = alpha, beta = beta)
+}
+
+rbeta2 <- function(n, mean, sd) {
+  pars <- beta_pars(mean, sd)
+  rbeta(n = n, shape1 = pars$alpha, shape2 = pars$beta)
+}
+```
+
+
+### Simulate data from a *mixture* process
+
+`prob_nas` below is the root-level probability that a historically nasalised aspirate is realised via a "high-nasalance mechanism" (as in contact condition).  By varying this single probability you can dial-in anything from a pure-contact to a pure-oral realisation.
+
+```{r}
+set.seed(99)
+N <- 100
+
+true <- list(
+  mu_oral = 0.166,
+  sigma_oral = 0.0993,
+  mu_contact = 0.543,
+  sigma_contact = 0.115,
+  prob_nas = 0.15 # made-up probability of nasalization
+)
+
+nas_oral <- rbeta2(N, mean = true$mu_oral, sd = true$sigma_oral)
+nas_contact <- rbeta2(N, mean = true$mu_contact, sd = true$sigma_contact)
+
+is_nas <- rbinom(N, size = 1, prob = true$prob_nas)
+nas_nasalized <- ifelse(
+  is_nas == 1,
+  rbeta2(N, mean = true$mu_contact, sd = true$sigma_contact), # contact
+  rbeta2(N, mean = true$mu_oral, sd = true$sigma_oral)         # oral
+)
+
+mix_data <- tidytable(
+  etymology = rep(c("oral", "contact", "nasalized"), each = N),
+  nasalance = c(nas_oral, nas_contact, nas_nasalized)
+) |>
+  mutate(E = as.factor(etymology) |> as.numeric())
+```
+
+Check distribution and visualize:
+
+```{r, class.source = 'fold-hide'}
+mix_data |>
+  summarize(
+    mean = mean(nasalance),
+    sd = sd(nasalance),
+    SE = sd(nasalance) / sqrt(n()),
+    lq = quantile(nasalance, 0.025),
+    hq = quantile(nasalance, 0.975),
+    .by = c("etymology", "E")
+  )
+```
+
+```{r, class.source = 'fold-hide'}
+ggplot(mix_data, aes(x = nasalance, fill = etymology, color = etymology)) +
+  geom_density(alpha = 0.5, linewidth = 1.2) +
+  labs(
+    title = "SIMULATED distribution of nasalance by etymology (mixture)",
+    x = "Nasalance (N)",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+::: {.note}
+Experiment with different values of `prob_nas` and observe the effect on the distribution. 
+:::
+
+
+
+### Simulate data from a *non-mixture* process
+
+Here every category gets its *own* Beta distribution.  The parameters for *oral* and *contact* are the same as above; the *nasalized* mean/sd are set to match the empirical data.
+
+```{r}
+set.seed(99)
+
+true2 <- list(
+  mu_oral = true$mu_oral,
+  sigma_oral = true$sigma_oral,
+  mu_contact = true$mu_contact,
+  sigma_contact = true$sigma_contact,
+  mu_nasalized = 0.233,
+  sigma_nasalized = 0.176
+)
+nas_oral <- rbeta2(N, mean = true2$mu_oral, sd = true2$sigma_oral)
+nas_contact <- rbeta2(N, mean = true2$mu_contact, sd = true2$sigma_contact)
+nas_nasalized2 <- rbeta2(N, mean = true2$mu_nasalized, sd = true2$sigma_nasalized)
+
+nonmix_data <- tidytable(
+  etymology = rep(c("oral", "contact", "nasalized"), each = N),
+  nasalance = c(nas_oral, nas_contact, nas_nasalized2)
+) |>
+  mutate(E = as.factor(etymology) |> as.numeric())
+
+```
+
+Check distribution and visualize:
+
+```{r, class.source = 'fold-hide'}
+nonmix_data |> summarize(mean = mean(nasalance),
+            sd = sd(nasalance),
+            SE = mean(nasalance)/sqrt(n()),
+            lq = quantile(nasalance, 0.025),
+            hq = quantile(nasalance, 0.975),
+            .by = c("etymology","E"))
+```
+
+```{r, class.source = 'fold-hide'}
+ggplot(nonmix_data, aes(x = nasalance, fill = etymology, color = etymology))  +
+  geom_density(alpha = 0.5, linewidth = 1.2) +
+  labs(title = "SIMULATED distribution of nasalance by etymology",
+       x = "N",
+       y = "Density") +
+  theme_minimal()
+```
+
+**Both distributions are visually similar, underscoring the difficulty of distinguishing the underlying generative processes by eye alone.**
+
+
+---
+
+## Fitting the simulated data
+
+We next fit the simulated data sets with *both* a mixture and a non-mixture model.  We expect the following:
+
+(1) the mixture model should outperform when the data are a true mixture; and
+
+(2) the non-mixture model should win when the data really come from three separate Beta distributions.
+
+---
+
+### Stan implementation: two-component mixture
+
+The Stan program below encodes the likelihood
+
+
+$$
+  p(y_n\mid\Theta) = \theta\,p_1(y_n\mid\Theta_1) + (1-\theta)\,p_2(y_n\mid\Theta_2),
+$$
+
+where $p_1$ and $p_2$ are Beta distributions parameterised by their means and standard deviations.  Because Stan does not allow discrete parameters in the `parameters` block, we marginalise over the latent indicator $z_n\$ via `log_sum_exp`.
+
+
+Stan model:
+
+```{stan output.var = "mix1_stan", code = readLines("mix.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+
+```{r}
+mix_m <- cmdstan_model("./mix.stan")
+```
+
+---
+
+### Model fits
+
+Posterior recovery plots (`mcmc_recover_hist`) show that all five parameters are recovered when the data truly come from a mixture.  Notably, the same Stan model also *fits* the non-mixture data well.
+
+#### Fiting data generated by a non-mixture process with a mixture model
+
+```{r mix_m1, message = FALSE, results = "hide"}
+mix_ls <- list(
+  N = nrow(mix_data),
+  nasalance = mix_data$nasalance,
+  E = as.integer(mix_data$E)
+)
+
+mixm_mixd <- mix_m$sample(data = mix_ls, parallel_chains = 4)
+```
+
+
+Parameter recovery:
+
+```{r}
+bayesplot::mcmc_recover_hist(
+  x = mixm_mixd$draws(c("mu_oral", "sigma_oral", "mu_contact", "sigma_contact", "prob_nas")),
+  true = unlist(true)
+)
+```
+
+
+```{r}
+yrep <- mixm_mixd$draws("nasalance_rep") |> posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(y = mix_data$nasalance, yrep = yrep[1:100, ], group = mix_data$etymology)+ ggtitle("Mixture model on mixture data")
+```
+
+
+#### Fitting non-mixture data with a mixture model
+
+Data not generated by a mixture model can be perfectly fit by a mixture model!
+
+```{r mix_m2, message = FALSE, results = "hide"}
+nonmix_ls <- list(
+  N = nrow(nonmix_data),
+  nasalance = nonmix_data$nasalance,
+  E = as.integer(nonmix_data$E)
+)
+
+mixm_nonmixd <- mix_m$sample(data = nonmix_ls, parallel_chains = 4)
+```
+
+```{r}
+yrep <- mixm_nonmixd$draws("nasalance_rep") |> posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(y = nonmix_data$nasalance, yrep = yrep[1:100, ],group = nonmix_data$etymology)+ ggtitle("Mixture model on non-mixture data")
+
+```
+
+
+## Alternative model: non-mixture model
+
+
+This alternative Stan program replaces the Bernoulli mixture with a dedicated Beta for the nasalised class.  Everything else remains the same.  This model therefore embodies the (maybe unrealistic) hypothesis that historically nasalised aspirates form a coherent third distribution rather than a mixture of two.
+
+Stan model:
+
+```{stan output.var = "mix1_stan", code = readLines("nonmix.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+### Fitting mixture and non-mixture data with a non-mixture model
+
+```{r nonmix_m, message = FALSE, results = "hide"}
+nonmix_m <- cmdstan_model("./nonmix.stan")
+
+nonmixm_mixd <- nonmix_m$sample(data = mix_ls, parallel_chains = 4)
+nonmixm_nonmixd <- nonmix_m$sample(data = nonmix_ls, parallel_chains = 4)
+```
+
+```{r}
+nonmixm_mixd
+nonmixm_nonmixd
+```
+
+Recovery of the parameters  of the non-mixture with the non-mixture model:
+
+```{r}
+bayesplot::mcmc_recover_hist(
+  x = nonmixm_nonmixd$draws(c("mu_oral", "sigma_oral", "mu_contact", "sigma_contact", "mu_nasalized", "sigma_nasalized")),
+  true = unlist(true2)
+)
+```
+
+
+```{r}
+yrep_mixfit <- nonmixm_mixd$draws("nasalance_rep") |> posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(
+  y = mix_data$nasalance,
+  yrep = yrep_mixfit[1:100, ],  
+  group = mix_data$etymology
+) + ggtitle("Non-mixture model on mixture data")
+```
+
+```{r}
+yrep_nonmixfit <- nonmixm_nonmixd$draws("nasalance_rep") |> posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(
+  y = nonmix_data$nasalance,
+  yrep = yrep_nonmixfit[1:100, ],
+  group = nonmix_data$etymology
+) + ggtitle("Non-mixture model on non-mixture data")
+```
+
+## Model comparison
+
+Model comparison via approximate leave-one-out cross-validation (LOO-CV) is rather inconclusive (in this small-data setting):
+
+```{r}
+loo_mixm_mixd <- loo(mixm_mixd$draws("log_lik"))
+loo_mixm_nonmixd <- loo(mixm_nonmixd$draws("log_lik"))
+loo_nonmixm_mixd <- loo(nonmixm_mixd$draws("log_lik"))
+loo_nonmixm_nonmixd <- loo(nonmixm_nonmixd$draws("log_lik"))
+```
+
+### Data generated by a mixture process
+
+```{r}
+loo_compare(list(mixture_model = loo_mixm_mixd,
+                 non_mixture   = loo_nonmixm_mixd))
+```
+
+### Data generated by a non‑mixture process
+
+```{r}
+loo_compare(list(mixture_model = loo_mixm_nonmixd,
+                 non_mixture   = loo_nonmixm_nonmixd))
+```
+
+
+::: {.note}
+Re-run everything changing both seeds to 123. What changes? 
+:::
+
+
+## Hierarchical extensions
+
+Real speakers differ in how faithfully they produce nasalised aspirates.  The next two Stan programs introduce **speaker-level group effects** on the mixture weight and, in the final version, also on the contact/oral means via a Cholesky-factor LKJ prior.  The high-level structure is unchanged.
+
+
+### Subject level adjustments for the mixture weight
+
+```{stan output.var = "mix1_stan", code = readLines("mix_s.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+
+```{r}
+mix_s_m <- cmdstan_model("./mix_s.stan")
+```
+
+We first verify that we can recover the generating parameters. [A complete pipeline would also include SBC, which we omit for brevity: @talts2018validating; @ModrakEtAl2023]. We skip this step here.
+
+```{r realdata_mix_s, message = FALSE, results = "hide"}
+nas_ls <- list(N = nrow(nas_data),
+               nasalance = nas_data$nasalance,
+               E = nas_data$E,
+               speaker = nas_data$speaker,
+               N_speaker = max(nas_data$speaker))
+               
+nas_mix <- mix_s_m$sample(data = nas_ls, parallel_chains = 4)
+```
+
+
+```{r}
+yrep <- nas_mix$draws("nasalance_rep") |> posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(
+  y = nas_data$nasalance,
+  yrep = yrep[1:100, ],
+  group = nas_data$etymology
+) + ggtitle("Real data")
+```
+
+
+
+```{r, class.source = 'fold-hide'}
+yrep_mat <- yrep[1:100, ]  # assuming yrep is already created
+n_draws <- nrow(yrep_mat)
+
+# Build long dataframe from yrep and attach metadata
+yrep_df <- as.data.frame(t(yrep_mat)) |>
+  setNames(paste0("draw", 1:n_draws)) |>
+  mutate(
+    obs = nas_data$nasalance,
+    speaker = nas_data$speaker,
+    etymology = nas_data$etymology
+  ) |>
+  pivot_longer(
+    cols = starts_with("draw"),
+    names_to = "draw",
+    values_to = "yrep"
+  )
+
+# Plot
+ggplot(yrep_df, aes(x = etymology, y = yrep, fill = etymology)) +
+  geom_violin(alpha = 0.5, scale = "width") +
+  geom_point(aes(y = obs), shape = 21, size = 1.5, position = position_jitter(width = 0.1)) +
+  facet_wrap(~ speaker, scales = "free_y") +
+  labs(title = "Posterior predictive violins per speaker and etymology",
+       x = "Etymology", y = "Nasalance") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Are there subjects who nasalize more?
+
+```{r}
+mcmc_intervals(nas_mix$draws("prob_nas_speaker"))
+```
+
+
+
+::: {.note}
+Add an analogous parameter `w` which modulates the probability of nasalization by `root`. Which roots are most likely to be nasalized?
+:::
+
+
+
+### Subject level adjustments for the mixture weight and mean nasalization.
+
+A more comprehensive hierarchical model allows `mu_contact` and `mu_oral`^[with considerable extra work we could also deal with `sigma`] to vary by speaker and/or by root. 
+
+Stan code:
+
+
+```{stan output.var = "mix1_stan", code = readLines("mix_s2.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+```{r}
+mix_s2_m <- cmdstan_model("./mix_s2.stan")
+```
+
+```{r realdata_mix_s2, message = FALSE, results = "hide"}
+nas2_mix <- mix_s2_m$sample(data = nas_ls, parallel_chains = 4)
+```
+
+```{r}
+nas2_mix
+```
+
+```{r}
+yrep <- nas2_mix$draws("nasalance_rep") |> posterior::as_draws_matrix()
+ppc_dens_overlay_grouped(
+  y = nas_data$nasalance,
+  yrep = yrep[1:100, ],
+  group = nas_data$etymology
+) + ggtitle("Real data with the more complex model")
+```
+
+::: {.note}
+Consider additional posterior predictive checks.
+:::
+
+::: {.notes}
+Consider simulating data.
+:::
+
+::: {.note}
+Is the hierarchical mixture model preferable to a hierarchical non-mixture alternative?
+:::
+
+
+# Conclusions
+
+- **Visual similarity is deceptive.** Simulated mixture and non-mixture data look almost identical.
+- **Model comparison alone can be inconclusive** at the current sample size: both mixture and non-mixture models achieve very similar LOO‑CV scores on either data-generating process.
+- **Speaker-level effects matter.** Allowing the mixture weight to vary by speaker reveals substantial individual differences.
+- **Domain knowledge remains crucial.** The structure of the model should be informed by theory.
+
+
+--------
+
+# Session info {-}
+
+```{r}
+sessionInfo()
+```
+
+I used `r papaja::cite_r("r-references.bib")` for all our analyses.
+
+# References

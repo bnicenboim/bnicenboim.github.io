@@ -1,0 +1,1017 @@
+---
+title: "Case study: Mispecified models of reaction times and choice"
+author: "Bruno Nicenboim"
+date: "`r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    code_folding: hide
+    highlight: kate
+    toc: TRUE
+    toc_float: TRUE
+    toc_depth: 3
+    df_print: paged
+    self_contained: false
+    output_file: index.html
+bibliography      : ["r-references.bib", "BayesCogSci.bib", "bib.bib"]
+---
+
+```{r setup, class.source = 'fold-hide'}
+papaja::r_refs("r-references.bib")
+
+## Global options
+options(max.print = "75",
+        width = 80,
+        tibble.width = 80)
+options(scipen = 1, digits = 2)
+knitr::opts_chunk$set(echo = TRUE,
+                    cache = TRUE,
+                    prompt = FALSE,
+                    cache.lazy = FALSE,
+                    tidy = FALSE,
+                    comment = NA,
+                    message = FALSE,
+                    warning = TRUE)
+knitr::opts_knit$set(width = 80)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+```
+
+```{r, cache = FALSE}
+# Packages in use
+library(rtdists)
+library(tidytable) # faster replacement of dplyr
+library(ggplot2)
+library(latex2exp) # for math symbols in ggplots
+library(rstan)
+library(bayesplot)
+library(posterior)
+library(bridgesampling)
+library(loo)
+options(mc.cores = parallel::detectCores())
+source("aux.R")
+# Plots
+bayesplot_theme_set(theme_light())
+theme_set(theme_light())
+theme_update(plot.title = element_text(hjust = 0.5))
+options(ggplot2.continuous.colour = scale_color_viridis_c)
+options(ggplot2.continuous.fill = scale_fill_viridis_c)
+options(ggplot2.discrete.colour = scale_color_viridis_d)
+options(ggplot2.discrete.fill = scale_fill_viridis_d)
+color_scheme_set("viridis")
+```
+
+
+
+To illustrate the effect of mispecified models in model comparison, I will use simulated response times and choice data. These data could be from an experiment representing either a motion detection task, where participants decide the direction of moving dots, or a lexical decision task, which involves determining whether letter strings are real words or nonsensical sequences. 
+
+
+**TL;DR;**
+
+For both BF and CV:
+
+- A model that is closer to the truth is not necessarily the one with the best predictions.
+- A flexible theory-agnostic model might yield the best predictions even if it doesn't resemble the generative process of the data.
+
+For BF:
+
+- The comparison of (cognitive) models that entail very different generative processes but can mimic the data well (for different reasons) is strongly prior dependent.
+- Even the selection of a model that relatively closely resembles the data generative process and has a better fit to the data can be (but not always) also strongly prior dependent.
+
+For CV:
+
+- Unless there is a clear gain in predictions, CV will be undecided. This is regardless of how close a model is to the true generative process and how good the fit is.
+
+
+
+
+
+# True data generating process with the Linear Ballistic Accumulator Model
+
+I'm going to assume that the true generative model for this simulated experiment is a Linear Ballistic Accumulator  model [LBA: @brownSimplestCompleteModel2008] with a Gamma distribution for the accumulation rates [@Terry2015]. The LBA model conceptualizes decision-making as a race among several accumulators, each gathering evidence for a different decision option. The first accumulator to reach a predetermined threshold dictates the decision. 
+
+```{r drawing, echo=FALSE,fig.cap= "The figure depicts the parameters for one linear ballistic accumulator."}
+b <- 1.3
+A <- 0.5
+p <- 0.2
+ggplot() + geom_hline(yintercept=b, linetype = 2) + 
+          annotate("text",x=.1, y= b+.05, label=TeX('Threshold',output='character'), parse=TRUE)+
+          annotate("rect",xmin=0,ymin=0, xmax=.025, ymax= A, fill="gray",color="black")+
+          annotate("text",x=.6, y=  .8, label=TeX('Drift rate $v \\sim `Gamma`(k,\\theta)$',output='character'), parse=TRUE)+
+          annotate("segment",x=0, y=p, xend=1, yend= .9, color="black",arrow= arrow(length = unit(0.03, "npc")) )+
+          annotate("text",x=.2, y= .18, label=TeX('Initial state $p \\sim Uniform(0, A)$',output='character'), parse=TRUE)+
+          scale_x_continuous(limits=c(0,1.1),expand = c(0, 0),breaks=0, name=TeX("Decision time $t$ (Response time = $t + T_0$)"))+
+          scale_y_continuous(limits=c(0,1.5),expand = c(0, 0),breaks=c(0,p, A, b),labels=c(0,"p","A","b")  , name="Evidence") +
+          theme(axis.text = element_text(size = rel(1))) 
+```
+
+The key parameters of the model are the following: 
+
+
+- \(v_i\): The rate of evidence accumulation (drift rate) for choice \(i\). This parameter represents how quickly evidence supporting choice \(i\) is gathered.
+- \(p_i\): The starting point of evidence accumulation for choice \(i\). This parameter accounts for any initial bias or prior evidence in favor of choice \(i\).
+- \(t\): Time since the start of the decision process.
+- $b_i$: The evidence threshold that must be reached for decision \(i\) to be made. Once the accumulated evidence \(d_i(t)\) for any choice \(i\) exceeds \(b_i\), a decision is made in favor of that choice.
+- \(D_i(t)\): The amount of evidence accumulated for choice \(i\) at time \(t\), defined as $D_i(t) = v_i \cdot t + p_i$
+
+The LBA model assumes that the rates of evidence accumulation (\(v_i\)) for different choices are independent and can vary between trials. The model also allows for variability in the starting points (\(p_i\)), reflecting differences in initial bias or predisposition towards certain choices.
+
+## True values for the Parameters
+
+Below, I define the true values for the model's parameters under four distinct conditions.
+
+
+```{r, class.source = 'fold-hide'}
+df_pars <- tribble(
+  ~difficulty,    ~emphasis,   ~A,   ~b, ~scale_v1, ~shape_v1, ~scale_v2, ~shape_v2, ~t0,
+   "easy",         "accuracy",  .5,   5.1,   5,       6,         12,       1,         .1,
+   "hard",         "accuracy",  .5,   5.1,  4.2,      6,         12,       1,         .1,
+   "easy",         "speed",    3.9,   4.1,   5,       6,         12,       1,         .1,
+   "hard",         "speed",    3.9,   4.1,  4.2,      6,         12,       1,         .1
+)
+df_pars
+```
+
+## Simulated data 
+
+
+I generate data from a LBA with Gamma likelihood using the `rtdists` package. The differences in emphasis  do not alter the parameters that relate to the speed or noise in the accumulation process. Instead, they affect the parameters that control the distance that needs to be accumulated. This is achieved by increasing the likelihood that the initial position ($p$) is near the threshold (by increasing $A$) and by decreasing the distance to the threshold ($b$). In datasets like this, the emphasis on accuracy could be the result of instructions from the experimenter or the intrinsic motivation of the participant.
+
+```{r, message = FALSE, class.source = 'fold-hide'}
+set.seed(123)
+N_cond <- 400
+df_sim <- df_pars |>
+  pmap_df(function(A,b,t0, scale_v1, scale_v2, shape_v1, shape_v2, difficulty, emphasis, ...) {
+    rLBA(N_cond, A = A, b = b, t0 = t0,
+         scale_v = c(scale_v1, scale_v2),
+         shape_v = c(shape_v1, shape_v2),
+         distribution = "gamma" ) |>
+      mutate(rt = rt * 1000, # to ms
+             difficulty = difficulty,
+             emphasis = emphasis)
+  }) |> mutate(diff = ifelse(difficulty == "hard",1,-1),
+               emph = ifelse(emphasis =="speed",1,-1),
+               resp = ifelse(response ==1, "correct","incorrect"),
+               acc= ifelse(response ==1, 1, 0))
+
+```
+
+The simulated data mimic several patterns observed in real-world data, including (i) a predominance of correct over incorrect responses, (ii) a positive skew in response times, (iii) the standard deviation of response times increasing alongside the mean, and (iv) an increase in difficulty resulting in both more incorrect responses and prolonged response times. Additionally, it reflects a speed-accuracy trade-off, where faster decisions tend to be less accurate and slower decisions are more accurate.  When speed is emphasized, response times for errors are shorter compared to when accuracy is emphasized, attributable to the shorter distance to the decision threshold.
+
+
+```{r}
+df_sim |> summarize(correct = mean(response==1),
+                    rt_correct = mean(rt[response==1]),
+                    sd_correct = sd(rt[response==1]),
+                    rt_incorrect = mean(rt[response==2]),
+                    sd_incorrect = sd(rt[response==2]),
+                    .by = c("emphasis","difficulty"))
+```
+```{r}
+ggplot(df_sim, aes(x = rt, y = resp)) + 
+  geom_violin(draw_quantiles = c(.025,.5,.975), scale = "count", alpha = .5) +
+  geom_jitter(alpha = .2, width = 0, height = .25) +
+  facet_grid(emphasis ~ difficulty) +
+  xlab("Response time [ms]") +
+  ylab("Accuracy")
+```
+
+
+
+## Case 1. Speed emphasis 
+
+Next, I investigate what would happen if all the data obtained is from a participant who  emphazises speed.
+
+```{r, message = FALSE, results = "hide", class.source = 'fold-hide'}
+set.seed(123)
+df_sim_speed <- df_sim |>
+  filter(emphasis == "speed") |>
+  group_by(difficulty) |>
+  mutate(train = rbinom(n(), 1, .9))
+df_sim_speed_train <-  df_sim_speed |>
+  filter(train == 1)
+dsim_speed_list <- list(N = nrow(df_sim_speed_train),
+                  rt =df_sim_speed_train$rt,
+                  response = df_sim_speed_train$response,
+                  K = 1,
+                  X = model.matrix(~ 0 + diff, df_sim_speed_train),
+                  only_prior = 0)
+
+fits_speed <- list()
+```
+
+
+### Case 1.a. Log-Normal race model vs. theory-agnostic models
+
+I start with three models under consideration:
+
+**1. Log-Normal Race (LNR) model**
+
+Similarly to the LBA, the LNR model describes the decision-making process as a race between several accumulators, each representing a different decision alternative [@HeathcoteLove2012; @RouderEtAl2015]. The time it takes for each accumulator to reach a decision threshold is assumed to follow a log-normal distribution. Unlike the LBA, there is no moving starting point, and all the accumulators start from the same initial point. Furthermore, the threshold and accumulation rate cannot be disentangled: a manipulation that affects the rate or the decision threshold will affect the location of the distribution in the same way [also see @RouderEtAl2015].  Another important observation is that the decision time ($T$) won't have a  log-normal distribution when the distance to the threshold is not log-normally distributed or constant.
+
+Following @RouderEtAl2015, we assume that the noise parameter is the same for each accumulator, since this means that contrasts between  finishing time distributions are captured completely by contrasts of the locations of the log-normal distributions. 
+
+<!-- In a race of accumulators model, the assumption is that the time $T$ taken for each accumulator $i$ of evidence to reach the threshold at distance $D$ is simply defined by -->
+
+<!-- \begin{equation} -->
+<!-- t_i = d_i/v_i -->
+<!-- \end{equation} -->
+
+<!-- where the denominator vV$ is the rate (velocity, sometimes also called  drift rate) of  evidence accumulation. -->
+
+<!-- The log-normal race model assumes that the  rate in each trial is sampled from a log-normal distribution: -->
+
+<!-- \begin{equation} -->
+<!-- V_i \sim \mathit{LogNormal}(\mu_vi, \sigma_vi) -->
+<!-- \end{equation} -->
+
+<!-- The observed reaction time corresponds to the sum of a non decision time $T_{0}$ -->
+<!-- and the decision time which is the shortest time taken for an accumulator. The choice made corresponds to the accumulator that reach the threshold faster. -->
+
+\begin{aligned}
+\mu_1 &= \alpha_1 \cdot \text{diff}_n \cdot \beta_1\\
+\mu_2 &= \alpha_2 \cdot \text{diff}_n \cdot \beta_2
+\end{aligned}
+\begin{equation}
+(rt_n; \text{response}_n ) \sim \text{LNR}(\{\mu_1;\mu_2\}, \sigma, T_0)
+\end{equation}
+
+with $\text{diff}$ sum coded to $-1$ for easy and $1$ for hard.
+
+For this model, I set the following (very weak and not that good) priors:
+
+
+\begin{aligned}
+\alpha &\sim \text{Normal}(0, 100) \\
+\beta &\sim \text{Normal}(0, 10) \\
+\sigma &\sim \text{Normal}_+(0, 100) \\
+ T_{0} &\sim \text{Normal}(150, 100) \quad \text{with } T_0 > \min(rt)
+ \end{aligned}
+
+This is implemented in Stan [@Stan2023].
+
+```{stan output.var = "lnrace_stan", code = readLines("LogNormalRace_badpriors.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+
+
+```{r, message = FALSE, results = "hide"}
+fits_speed$LNRace <- stan("./LogNormalRace_badpriors.stan",
+                          data = dsim_speed_list,
+                          warmup = 1000,
+                          iter = 10000)
+```
+
+```{r}
+print_model(fits_speed$LNRace)   
+```
+
+
+
+**2. Theory-agnostic model**
+
+This model simultaneously addresses response time and binary choice data without any commitment to any theory. It incorporates predictors  to explain variability in both outcomes, treating response times as normally distributed and choices as following a Bernoulli distribution.
+
+\begin{aligned}
+rt &\sim \text{Normal}(\alpha + \text{diff} \cdot \beta_1, \sigma)\\
+acc &\sim \text{Bernoulli}(logit(\text{prob}) + \text{diff} \cdot \beta_2)
+\end{aligned}
+
+I define the following regularizing priors. 
+
+\begin{aligned}
+\alpha &\sim \text{Normal}(500, 50) \\
+\text{prob} &\sim \text{Beta}(900, 100) \\
+\beta_1 &\sim \text{Normal}(0, 50) \\
+\beta_2 &\sim \text{Normal}(0, 0.5) \\
+\sigma &\sim \text{Normal}_+(100, 100)
+\end{aligned}
+
+This is implemented in Stan [@Stan2023].
+
+```{stan output.var = "agnostic_stan", code = readLines("Agnostic.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+```{r, message = FALSE, results = "hide"}
+fits_speed$agnostic <- stan("./Agnostic.stan", 
+                            data = dsim_speed_list,
+                            warmup = 1000,
+                            iter = 10000)
+```
+
+```{r}
+print_model(fits_speed$agnostic) 
+```
+
+
+**3. Theory-agnostic model with Log-likelihood**
+
+This model is similar to the previous one, but treats response times as shifted log-normally distributed.
+
+\begin{aligned}
+(rt - T_{\text{shift}}) &\sim \text{LogNormal}(\alpha + \text{diff} \cdot \beta_1, \sigma)\\
+acc &\sim \text{Bernoulli}(logit(\text{prob}) + \text{diff} \cdot \beta_2)
+\end{aligned}
+
+I define the following very weak priors. 
+
+\begin{aligned}
+\alpha &\sim \text{Normal}(0, 100) \\
+\text{prob} &\sim \text{Beta}(1, 1) \\
+\beta_1 &\sim \text{Normal}(0, 10) \\
+\beta_2 &\sim \text{Normal}(0, 10) \\
+\sigma &\sim \text{Normal}_+(0, 100) \\
+T_{\text{shift}} &\sim \text{Normal}_+(150, 100) \quad \text{with }  T_{\text{shift}} > min(rt)
+\end{aligned}
+
+
+This is implemented in Stan [@Stan2023].
+
+```{stan output.var = "agnosticlog_stan", code = readLines("AgnosticLog.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+```{r, message = FALSE, results = "hide"}
+fits_speed$agnosticLog <- stan("./AgnosticLog.stan",
+                               data = dsim_speed_list,
+                               warmup = 1000,
+                               iter = 10000)
+ 
+```
+
+```{r}
+print_model(fits_speed$agnosticLog)
+```
+
+
+####  Relationship between the models and true generating process
+
+The LNR model is the closest to the true generating process, but the priors are relatively ill-defined, much weaker than what we actually know. The theory-agnostic models are very flexible, with the second one allowing for a closer fit to the positively skewed response time.
+
+
+#### Posterior predictive checks
+
+Posterior predictive checks for the general shape of the distribution of RTs show that no fit is perfect. However, the fit to the proportion of predicted correct vs incorrect responses (area of the violin plots) seems to be approximately fine.
+
+
+<!-- ```{r} -->
+<!-- dens_speed <- map2(fits_speed, names(fits_speed), -->
+<!--                    ~ ppc_dens_overlay_grouped(df_sim_speed_train$rt, -->
+<!--                                               yrep = extract(.x,pars = "pred_rt")[[1]][1:200,, drop = FALSE], -->
+<!--                                               group = df_sim_speed_train$difficulty) + -->
+<!--                      ggtitle(.y)) -->
+<!-- walk(dens_speed, ~ plot(.x)) -->
+<!-- ``` -->
+
+
+```{r violin-acc}
+violins <- map2(fits_speed, names(fits_speed), ~ violin_plot(df_sim_speed_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))
+```
+
+
+
+<!-- Quantile probability plot showing   0.1, 0.3, 0.5, 0.7, and 0.9 response times quantiles plotted against  proportion of incorrect responses (left) and proportion of correct responses (right). Word frequency are grouped according to the two difficulty condtions. -->
+ 
+
+<!-- ```{r} -->
+<!-- qpf_speed <- map2(fits_speed, names(fits_speed) ~ -->
+<!--                                do_qpf(.x, -->
+<!--                                       df_sim_speed_train, -->
+<!--                                       cond = difficulty)) -->
+<!-- walk(qpf_speed, ~ plot(.x + ggtitle(names(fits_speed)))) -->
+<!-- ``` -->
+
+
+#### Model comparison
+
+I implement model comparison with Bayes Factor (BF) using bridge sampling as well as with PSIS-LOO CV approximation using the log-score rule ($\widehat{elpd}$). When the model comparison is reported, the first model is the best model and it's used as reference for the next models.
+
+
+```{r bf-speed, message = FALSE, results = "hide", eval = !file.exists("lm_speed_1.RDS")}
+lm_speed <- map(fits_speed, ~ bridge_sampler(.x))
+```
+```{r loo-speed, eval = !file.exists("loo_speed_1.RDS")}
+loo_speed <- map(fits_speed, ~ loo(.x))
+```
+
+```{r, echo = FALSE, results = "hide", message = FALSE}
+saveread("lm_speed", filename= "lm_speed_1.RDS")
+saveread("loo_speed", filename= "loo_speed_1.RDS")
+```
+
+```{r}
+bf_compare(lm_speed) 
+```
+
+
+```{r}
+loo_compare(loo_speed)
+```
+
+
+Both BF  and $\widehat{elpdf}$-CV  agree that the best model is the theory-agnostic with a log-normal likelihood. **This shows that the model that is closer to the truth is not necessarily the one with the best predictions. A flexible theory-agnostic model might yield the best predictions even if it doesn't resemble the generative process. Crucially, this is true for both BF and CV.**
+
+
+We add another cognitive model under consideration.
+
+### Case 1.b Another competitor: Fast guess model
+
+Ollman's [-@Ollman1966] fast-guess model assumes that the behavior in this task (and in any other choice task) is governed by two distinct cognitive processes: (i) a  guessing mode, and (ii) a  task-engaged mode. In the guessing mode, responses are fast and accuracy is at chance level. In the task-engaged mode, responses are slower and accuracy approaches 100%. This means that intermediate values of response times and accuracy can only be achieved by  mixing responses from the two modes. Further assumptions of this model are that response times depend on the difficulty of the choice, and that the probability of being on one of the two states depend on the speed incentives during the instructions.
+
+To simplify matters, I follow the implementation of  @Nicenboim2024Bayesian, I ignore the possibility that the accuracy of the choice is also affected by the difficulty of the choice. Also, I ignore the possibility that subjects might be biased to one specific response in the guessing mode.
+
+The fast-guess model makes the assumption that during a task, a single subject would behave in these two ways: They would be engaged in the task a proportion of the trials and would guess on the rest of the trials. This means that for a single subject, there is an underlying probability of being engaged in the task, $p_{task}$, that determines whether they are actually choosing ($z=1$) or guessing ($z=0$):
+
+\begin{equation}
+z_n \sim \mathit{Bernoulli}(p_{task})
+\end{equation}
+
+The value of the parameter $z$ in every trial determines the behavior of the subject. This means that the distribution that we observe is a mixture of the two distributions presented before:
+
+\begin{equation}
+rt_n \sim 
+\begin{cases}
+\mathit{LogNormal}(\alpha + \beta \cdot diff_n, \sigma), & \text{ if } z_n =1 \\
+\mathit{LogNormal}(\gamma, \sigma_2), & \text{ if } z_n=0
+\end{cases}
+
+\end{equation}
+\begin{equation}
+acc_n \sim 
+\begin{cases}
+\mathit{Bernoulli}(p_{correct}), & \text{ if } z_n =1 \\
+\mathit{Bernoulli}(0.5), & \text{ if } z_n=0
+\end{cases}
+(\#eq:dismix3)
+\end{equation}
+
+I use the following priors
+
+\begin{aligned}
+\alpha &\sim \mathit{Normal}(6, 1)\\
+\beta &\sim \mathit{Normal}(0, .1)\\
+\sigma &\sim \mathit{Normal}_+(.5, .2)\\
+\gamma &\sim \mathit{Normal}(6, 1), \text{for } \gamma < \alpha \\
+\sigma_2 &\sim \mathit{Normal}_+(.5, .2)\\
+p_{task} &\sim \mathit{Beta}(8, 2)
+\end{aligned}
+
+**Crucially, this model should capture the pattern of fast errors, but because of the wrong reasons!**
+
+This is implemented in Stan [@Stan2023].
+
+```{stan output.var = "fastguessstan", code = readLines("FastGuess.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+
+```{r FG-speed, message = FALSE, results = "hide"}
+fits_speed$FG <- stan("./FastGuess.stan",  
+                      data = dsim_speed_list,
+                      warmup = 1000,
+                      iter = 10000)
+```
+
+```{r}
+print_model(fits_speed$FG)
+```
+
+
+
+#### Model comparison
+```{r, message = FALSE, results = "hide", eval = !file.exists("loo_speed_2.RDS")}
+lm_speed$FG <- bridge_sampler(fits_speed$FG)
+loo_speed$FG <- loo(fits_speed$FG)
+```
+
+```{r, echo = FALSE, results = "hide", message = FALSE}
+saveread("lm_speed", filename= "lm_speed_2.RDS")
+saveread("loo_speed", filename= "loo_speed_2.RDS")
+```
+
+
+
+```{r}
+bf_compare(lm_speed) 
+```
+
+
+```{r}
+loo_compare(loo_speed)
+```
+
+Both BF  and $\hat{elpdf}$  agree that the best model is the theory-agnostic with a log-normal likelihood. What if we only considering  the cognitive models?
+
+
+```{r}
+bf_compare(lm_speed[!startsWith(names(lm_speed),"agnostic")])
+```
+
+```{r}
+loo_compare(loo_speed[!startsWith(names(lm_speed),"agnostic")])
+```
+
+BF shows a clear advantage for the Fast Guess model.  This is a bit unsettling because the Fast Guess model is clearly different from the true generating process. $\hat{elpdf}$-CV cannot distinguish between the models. 
+
+But the LogNormal race model had terrible priors, what if they are more realistic?
+
+\begin{aligned}
+\alpha &\sim \text{Normal}(5.2, 1) \\
+\beta &\sim \text{Normal}(0, .2) \\
+\sigma &\sim \text{Normal}_+(0.5, 0.25) \\
+ T_{0} &\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)} 
+\end{aligned}
+
+
+This is implemented in Stan [@Stan2023] and the model comparison is repeated.
+
+```{stan output.var = "fastguessstan", code = readLines("LogNormalRace.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+```{r, include = FALSE, message = FALSE}
+fits_speed$LNRace_reg_priors <- stan("./LogNormalRace.stan",   
+                      data = dsim_speed_list,
+                      warmup = 1000,
+                      iter = 10000)
+
+lm_speed$LNRace_reg_priors <- bridge_sampler(fits_speed$LNRace_reg_priors)
+loo_speed$LNRace_reg_priors <- loo(fits_speed$LNRace_reg_priors)
+```
+
+
+
+```{r}
+bf_compare(lm_speed) 
+```
+
+```{r}
+loo_compare(loo_speed) 
+```
+
+The best model is still the theory-agnostic flexible model with a log-normal likelihood. 
+
+
+Considering only the cognitive models, we see the differences between BF and $\hat{elpd}$:
+
+```{r}
+bf_compare(lm_speed[!startsWith(names(lm_speed),"agnostic")])
+```
+
+```{r}
+loo_compare(loo_speed[!startsWith(names(lm_speed),"agnostic")])
+```
+
+With better priors, the LNR model is prefered according to the BF. This shows that the comparison of (cognitive) models that entail very different generative but can mimic the data well (for different reasons) can be very strongly prior dependent. In contrast,  $\hat{elpd}$-CV is less enthusiastic in selecting a model.
+
+
+### Case 1.c Yet another competitor: A more flexible implementation of the LNR model
+
+A more flexible implementation of the Log Normal race model relaxes the assumption that the noise parameter is the same for all the accumulators. This supposed to allow it to capture more flexible patterns in the data. 
+
+I implement it with the following likelihood:
+
+\begin{aligned}
+\mu_1 &= \alpha_1 \cdot diff_n \cdot \beta_1\\
+\mu_2 &= \alpha_2 \cdot diff_n \cdot \beta_2\\
+\mu_3 &= \alpha_3 \cdot diff_n \cdot \beta_3\\
+\mu_4 &= \alpha_4 \cdot diff_n \cdot \beta_4\\
+(rt_n; response_n ) &\sim \text{LNR}(\{\mu_1;\mu_2\}, \{\exp(mu_3); \exp(mu_4)\}, T_0)
+\end{aligned}
+
+We try two flavors,
+
+- with very uninformative priors
+
+
+\begin{aligned}
+\alpha_{1;2} &\sim \text{Normal}(0, 100) \\
+\alpha_{3;4} &\sim \text{Normal}(0, 2) \\
+\beta &\sim \text{Normal}(0, 10) \\
+ T_{0} &\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)} 
+\end{aligned}
+
+```{stan output.var = "lnraceflex", code = readLines("LogNormalRace_fl_badpriors.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+- and with regularizing priors.
+
+
+\begin{aligned}
+\alpha_{1;2} &\sim \text{Normal}(5.2, 1) \\
+\alpha_{3;4} &\sim \text{Normal}(\log(0.5), 1) \\
+\beta &\sim \text{Normal}(0, .2) \\
+ T_{0} &\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)} 
+\end{aligned}
+
+```{stan output.var = "lnraceflex", code = readLines("LogNormalRace_fl.stan"),  tidy = TRUE, comment="", eval = FALSE, cache = FALSE, cache.lazy = FALSE}
+```
+
+
+```{r, include = FALSE, message = FALSE}
+if(!file.exists("lm_LNRace_fl.RDS")){
+  fits_speed$LNRace_fl <- stan("./LogNormalRace_fl_badpriors.stan",
+                               data = dsim_speed_list,
+                               warmup = 1000,
+                               iter = 10000,
+                               control = list(adapt_delta = .9,
+                                              max_treedepth = 12))
+  fits_speed$LNRace_fl_reg_priors <- stan("./LogNormalRace_fl.stan",
+                                          control = list(adapt_delta = .9,
+                                                         max_treedepth = 12),
+                                          data = dsim_speed_list,
+                                          warmup = 1000,
+                                          iter = 10000,
+
+                                          )
+  saveRDS(fits_speed$LNRace_fl, "LNRace_fl.RDS")
+  saveRDS(fits_speed$LNRace_fl_reg_priors, "LNRace_fl_better_priors.RDS")
+  lm_speed$LNRace_fl <- bridge_sampler(fits_speed$LNRace_fl)
+  lm_speed$LNRace_fl_reg_priors <- bridge_sampler(fits_speed$LNRace_fl_reg_priors)
+  saveRDS(lm_speed$LNRace_fl, "lm_LNRace_fl.RDS")
+  saveRDS(lm_speed$LNRace_fl_reg_priors, "lm_LNRace_fl_better_priors.RDS")
+} else {
+  fits_speed$LNRace_fl <- readRDS("LNRace_fl.RDS")
+  fits_speed$LNRace_fl_reg_priors <- readRDS("LNRace_fl_better_priors.RDS")
+  lm_speed$LNRace_fl <- readRDS("lm_LNRace_fl.RDS")
+  lm_speed$LNRace_fl_reg_priors <- readRDS("lm_LNRace_fl_better_priors.RDS")
+}
+
+loo_speed$LNRace_fl <- loo(fits_speed$LNRace_fl)
+loo_speed$LNRace_fl_reg_priors <- loo(fits_speed$LNRace_fl_reg_priors)
+```
+
+
+#### Posterior predictive checks
+
+
+```{r}
+fit_plot <- fits_speed[!endsWith(names(fits_speed),"reg_priors")]
+violins <- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_speed_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))
+```
+
+
+```{r, message = FALSE}
+dens_speed <- map2(
+  fit_plot, 
+  names(fit_plot), ~ ppc_dens_overlay_grouped(df_sim_speed_train$rt,
+                                           yrep = extract(.x,pars = "pred_rt")[[1]][1:200,, drop = FALSE],
+                                           group = df_sim_speed_train$difficulty) +
+
+  coord_cartesian(xlim= c(0, 1500)) + ggtitle(.y))
+walk(dens_speed, ~ plot(.x ))
+```
+
+
+<!-- ```{r, message = FALSE} -->
+<!-- qpf_speed <- map(fit_plot, ~ do_qpf(.x, df_sim_speed_train, cond = difficulty) + -->
+<!--                  coord_cartesian(ylim= c(100, 500))) -->
+<!-- walk(qpf_speed, ~ plot(.x + ggtitle(names(fit_plot)))) -->
+<!-- ``` -->
+
+#### Model comparison
+
+```{r}
+bf_compare(lm_speed)
+```
+
+```{r}
+bf_compare(lm_speed[c("LNRace_fl_reg_priors","agnosticLog")])
+```
+
+```{r}
+bf_compare(lm_speed[c("LNRace_fl","agnosticLog")])
+```
+
+```{r}
+loo_compare(loo_speed)
+```
+
+Only with good priors, the flexible version of the LNR model is the best model according the Bayes Factor.  CV cannot really distinguish betwen them.
+
+Considering only the cognitive models, there is slightly more agreement between the model comparison methods. The flexible version of the LNR model is the superior model for both methods.
+
+This shows that even the selection of a model that relatively closely resembles the data generative process can be strongly prior dependent for the BF.
+
+
+```{r}
+bf_compare(lm_speed[!startsWith(names(lm_speed),"agnostic")])
+```
+
+```{r}
+loo_compare(loo_speed[!startsWith(names(lm_speed),"agnostic")])
+```
+
+
+
+#### Visualization of elpd: Fast Guess vs Flexible LNR
+
+The plots show the difference in pointwise predictive accuracy of the Flexible LNR vs Fast Guess models. A more positive value indicates an advantage for the Flexible LNR.
+
+```{r} 
+df_sim_speed_train <- ungroup(df_sim_speed_train) %>%
+  mutate(diff_elpd_LNRF_FG =  loo_speed$LNRace_fl$pointwise[,"elpd_loo"] -  loo_speed$FG $pointwise[,"elpd_loo"],
+         diff_elpd_LNRF_AL =  loo_speed$LNRace_fl$pointwise[,"elpd_loo"] -  loo_speed$FG$pointwise[,"elpd_loo"])
+
+
+ggplot(df_sim_speed_train,
+       aes(x = rt, y = diff_elpd_LNRF_FG)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp) +
+  geom_hline(yintercept = 0, linetype = "dashed")
+```
+
+## Case 2. Accuracy emphasis
+
+I fit again all the models for a subset of the data where accuracy is emphasized.
+
+```{r fit-acc, results = "hide", message = FALSE, eval = !file.exists("fits_acc.RDS")}
+set.seed(123)
+df_sim_acc <- df_sim |>
+  filter(emphasis =="accuracy") |>
+  group_by(difficulty) |>
+  mutate(train = rbinom(n(),1,.9))
+df_sim_acc_train <-  df_sim_acc |>
+  filter(train==1)
+dsim_acc_list <- list(N = nrow(df_sim_acc_train),
+                      rt =df_sim_acc_train$rt,
+                      response = df_sim_acc_train$response,
+                      K = 1,
+                      X = model.matrix(~ 0 + diff, df_sim_acc_train),
+                      only_prior = 0)
+
+fits_acc <- list()
+fits_acc$LNRace <- stan("./LogNormalRace_badpriors.stan",
+                        data = dsim_acc_list,
+                        warmup = 1000,
+                        iter = 10000)
+
+fits_acc$LNRace_reg_priors <- stan("./LogNormalRace.stan",
+                                   data = dsim_acc_list,
+                                   warmup = 1000,
+                                   iter = 10000)
+
+fits_acc$agnostic <- stan("./Agnostic.stan",
+                          data = dsim_acc_list,
+                          warmup = 1000,
+                          iter = 10000)
+
+fits_acc$agnosticLog <- stan("./AgnosticLog.stan",
+                             data = dsim_acc_list,
+                             warmup = 1000,
+                             iter = 10000)
+
+fits_acc$FG <- stan("./FastGuess.stan",
+                    data = dsim_acc_list,
+                    warmup = 1000,
+                    iter = 10000)
+
+fits_acc$LNRace_fl <- stan("./LogNormalRace_fl_badpriors.stan",
+                           data = dsim_acc_list,
+                           control = list(adapt_delta = .9,
+                                          max_treedepth = 12),
+                           warmup = 1000,
+                           iter = 10000)
+
+fits_acc$LNRace_fl_reg_priors <- stan("./LogNormalRace_fl.stan",
+                                      data = dsim_acc_list,
+                                      control = list(adapt_delta = .9,
+                                                     max_treedepth = 12),
+                                      warmup = 1000,
+                                      iter = 10000)
+
+```
+
+```{r, echo = FALSE, message = FALSE, results = "hide"}
+saveread("fits_acc")
+saveread("df_sim_acc_train")
+```
+
+
+### Posterior predictive check
+
+
+```{r}
+fit_plot <- fits_acc[!endsWith(names(fits_acc),"reg_priors")]
+
+violins <- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_acc_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))
+```
+
+
+### Model comparison
+
+```{r bf-acc, message = FALSE, results = "hide", eval = !file.exists("loo_acc.RDS")}
+lm_acc <- map(fits_acc, ~ bridge_sampler(.x))
+loo_acc<- map(fits_acc, ~ loo(.x))
+```
+
+```{r, echo = FALSE, message = FALSE, results = "hide"}
+saveread("lm_acc")
+saveread("loo_acc")
+```
+
+```{r}
+bf_compare(lm_acc) 
+```
+
+
+```{r}
+loo_compare(loo_acc)
+```
+
+As before, the most flexible theory-agnostic model is selected by both methods. What if we only considering  the cognitive models?
+
+
+```{r}
+bf_compare(lm_acc[!startsWith(names(lm_acc),"agnostic")])
+```
+
+```{r}
+loo_compare(loo_acc[!startsWith(names(lm_acc),"agnostic")])
+```
+
+Here, the Fast Guess model, which shouldn't even be able to capture the long errors, is the one selected as the best model. The summary of the posterior of the model below shows that this is achieved because the location of the errors is just a bit faster than non-error, and has a much larger scale parameter:
+
+```{r}
+print_model(fits_acc$FG)   
+```
+
+
+
+
+
+## Case 3. Considering both speed and accuracy emphasis
+
+Now we consider the data with both speed and accuracy emphasis and all the models are fit again.
+
+
+```{r fit-all, results = "hide", message = FALSE, eval = !file.exists("fits.RDS")}
+set.seed(123)
+
+df_sim <- df_sim |>
+  group_by(difficulty) |>
+  mutate(train = rbinom(n(),1,.9))
+df_sim_train <-  df_sim |>
+  filter(train==1)
+
+dsim_list <- list(N = nrow(df_sim_train),
+                  rt =df_sim_train$rt,
+                  response = df_sim_train$response,
+                  K = 2,
+                  X = model.matrix(~ 0 + diff + emph , df_sim_train),
+                  only_prior = 0)
+
+fits <- list()
+fits$LNRace <- stan("./LogNormalRace_badpriors.stan",
+                    data = dsim_list,
+                    warmup = 1000,
+                    iter = 10000)
+
+fits$LNRace_reg_priors <- stan("./LogNormalRace.stan",
+                               data = dsim_list,
+                               warmup = 1000,
+                               iter = 10000)
+ 
+fits$agnostic <- stan("./Agnostic.stan",
+                      data = dsim_list,
+                      warmup = 1000,
+                      iter = 10000)
+
+fits$agnosticLog <- stan("./AgnosticLog.stan",
+                         data = dsim_list,
+                         warmup = 1000,
+                         iter = 10000)
+
+fits$FG <- stan("./FastGuess.stan",
+                data = dsim_list,
+                warmup = 1000,
+                iter = 10000)
+
+fits$LNRace_fl <- stan("./LogNormalRace_fl_badpriors.stan",
+                       data = dsim_list,
+                       warmup = 1000,
+                       iter = 10000,
+                       control = list(adapt_delta = .9,
+                                      max_treedepth = 12))
+fits$LNRace_fl_reg_priors <- stan("./LogNormalRace_fl.stan",
+                                  data = dsim_list,
+                                  warmup = 1000,
+                                  iter = 10000,
+                                  control = list(adapt_delta = .9,
+                                                 max_treedepth = 12))
+```
+
+```{r, echo = FALSE, message = FALSE, results = "hide"}
+saveread("fits")
+saveread("df_sim_train")
+```
+
+
+### Posterior predictive check
+
+
+```{r}
+fit_plot <- fits[!endsWith(names(fits),"reg_priors")]
+violins <- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))
+```
+
+### Model comparison
+
+```{r bf-all, message = FALSE, results = "hide", eval = !file.exists("loo.RDS")}
+lm <- map(fits, ~ bridge_sampler(.x))
+loo<- map(fits, ~ loo(.x))
+```
+
+```{r, echo = FALSE, message = FALSE}
+saveread("lm")
+saveread("loo")
+```
+
+
+The result of the comparison of the original models (no flexible LogNormal Race model) is similar to the speed emphasis comparison. A theory-agnostic model makes the better predictions.
+
+```{r}
+bf_compare(lm[!startsWith(names(lm),"LNRace_fl")])
+```
+
+
+```{r}
+loo_compare(loo[!startsWith(names(loo),"LNRace_fl")])
+```
+
+
+The model closer to the true generative process makes the better predictions according to the BF.
+
+```{r}
+bf_compare(lm) 
+```
+
+```{r}
+loo_compare(loo)
+```
+
+
+Interestingly, now the prior dependency is less strong, even without regularing priors the model with a generative process closer to the truth is the best model:
+
+```{r}
+bf_compare(lm[!endsWith(names(lm),"reg_priors")])
+```
+
+
+#### Visualization of elpd
+
+-  Flexible LNRace vs FG
+
+```{r} 
+df_sim_train <- ungroup(df_sim_train) %>%
+  mutate(diff_elpd_LNRF_FG =  loo$LNRace_fl$pointwise[,"elpd_loo"] -  loo$FG $pointwise[,"elpd_loo"])
+
+
+ggplot(df_sim_train,
+       aes(x = rt, y = diff_elpd_LNRF_FG)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp + emphasis) +
+  geom_hline(yintercept = 0, linetype = "dashed")
+```
+
+- Flexible LNRace vs Theory-agnostic Log
+
+```{r} 
+df_sim_train <- ungroup(df_sim_train) %>%
+  mutate(diff_elpd_LNRF_AL =  loo$LNRace_fl$pointwise[,"elpd_loo"] -  loo$agnosticLog $pointwise[,"elpd_loo"])
+
+
+ggplot(df_sim_train,
+       aes(x = rt, y = diff_elpd_LNRF_AL)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp + emphasis) +
+  geom_hline(yintercept = 0, linetype = "dashed")
+```
+
+
+
+## Conclusion
+
+In the context of both Bayes Factor  analysis and Cross-Validation  using the log-score rule, we notice the following:
+
+- It is not always the case that a model which aligns more closely with the underlying truth will exhibit superior predictive capabilities. This shows how the best model in terms of predictions is not necessarily the one that is most faithful to the actual generative process.
+- Models that are designed to be flexible and not bound to any specific theoretical framework may deliver the most accurate predictions, despite potentially lacking resemblance to the actual process that generates the data.
+
+Specific to Bayes Factor:
+
+- When comparing cognitive models that have significantly different underlying generative processes but are capable of closely mimicking the observed data (albeit for varied reasons), the outcome of such comparisons can be highly dependent on the priors. This suggests a strong influence of the initial assumptions on the comparative analysis of models.
+- The process of selecting a model that appears to closely match the process generating the observed data can also be heavily influenced by the choice of priors, although this is not always the case.
+
+Specific to Cross-Validation:
+
+Cross-Validation remains inconclusive unless there is a demonstrable improvement in prediction quality. This stance is maintained irrespective of the proximity of a model to the true generative process, showing how CV prioritizes predictive performance over theoretical fidelity to the generative mechanism.
+
+
+-----------
+
+I used `r papaja::cite_r("r-references.bib")` for all our analyses.
+
+# References

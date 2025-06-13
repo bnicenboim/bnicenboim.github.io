@@ -6,7 +6,7 @@ title: Bruno Nicenboim
 :::: {style="display: grid; grid-template-columns: 30% 65%; grid-column-gap: 1px; "}
 
 ::: {}
-![](fig/s200_bruno.nicenboim.jpg)
+![](fig/me.jpeg)
 
 
 :::
@@ -90,7 +90,9 @@ Most of the data and code from my published papers are available on the [OSF web
 
 ## News
 
-- A new recurring meeting on computational psycholinguistics, co-organized with [Jakub Dotlačil](https://www.jakubdotlacil.com/), [Lena Jäger](https://www.cl.uzh.ch/en/research-groups/digital-linguistics/people/group-leader/jaeger.html), and me, will take place in Utrecht on December 18–19, 2025. More details on the [official website](https://cpl2025.sites.uu.nl/).
+- I'll be talking about how Bayesia model comparison can go wrong in [Bayes in Bayonne: Methods Workshop for Linguistics and Cognitive Sciences (17th June, 2025)](https://bayes-bayonne-workshop.gitlab.io/).
+
+- A new recurring meeting on computational psycholinguistics, co-organized with [Jakub Dotlačil](https://www.jakubdotlacil.com/), [Lena Jäger](https://www.cl.uzh.ch/en/research-groups/digital-linguistics/people/group-leader/jaeger.html), and me, will take place in Utrecht on December 18–19, 2025. **Deadline is very soon: June 29, 2025** More details on the [official website](https://cpl2025.sites.uu.nl/).
 
 
 
