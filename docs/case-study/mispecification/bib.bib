@@ -1,0 +1,224 @@
+@book{ROS,
+  title={Regression and other stories},
+  author={Gelman, Andrew and Hill, Jennifer and Vehtari, Aki},
+  year={2020},
+  publisher={Cambridge University Press}
+}
+@article{introbayes,
+  title={An introduction to Bayesian data analysis for cognitive science},
+  author={Nicenboim, Bruno and Schad, DJ and Vasishth, Shravan},
+  journal={Under contract with Chapman and Hall/CRC Statistics in the Social and Behavioral Sciences Series},
+  year={2023}
+}
+
+
+@article{vehtari2019rank,
+  Author = {Vehtari, Aki and Gelman, Andrew and Simpson, Daniel and Carpenter, Bob and B{\"u}rkner, Paul-Christian},
+  Date-Added = {2020-01-13 15:56:25 +0100},
+  Date-Modified = {2020-02-04 21:19:28 +0100},
+  Journal = {arXiv preprint arXiv:1903.08008},
+  Title = {Rank-normalization, folding, and localization: An improved $\widehat R$ for assessing convergence of {MCMC}},
+  Year = {2019}
+}
+
+
+@misc{vehtari2019ranknormalization,
+    title={Rank-normalization, folding, and localization: {An} improved $\widehat{R}$ for assessing convergence of {MCMC}},
+    author={Aki Vehtari and Andrew Gelman and Daniel Simpson and Bob Carpenter and Paul-Christian Bürkner},
+    year={2019},
+    eprint={1903.08008},
+    archivePrefix={arXiv},
+    primaryClass={stat.CO}
+}
+@article{kallioinen2021detecting,
+  title={Detecting and diagnosing prior and likelihood sensitivity with power-scaling},
+  author={Kallioinen, Noa and Paananen, Topi and B{\"u}rkner, Paul-Christian and Vehtari, Aki},
+  journal={arXiv preprint arXiv:2107.14054},
+  year={2021}
+}
+@article{Vehtari:2017aa,
+  Author = {Vehtari, Aki and Gelman, Andrew and Gabry, Jonah},
+  Date-Added = {2019-01-22 19:45:10 +0100},
+  Date-Modified = {2019-01-22 19:46:00 +0100},
+  Journal = {Statistics and Computing},
+  Number = {5},
+  Pages = {1413--1432},
+  Title = {Practical {Bayesian model evaluation using leave-one-out cross-validation and WAIC}},
+  Volume = {27},
+  Year = {2017}
+}
+@Article{VehtariLampinen2002,
+  author   = {Vehtari, Aki and Lampinen, Jouko},
+  title    = {Bayesian Model Assessment and Comparison Using Cross-Validation Predictive Densities},
+  doi      = {10.1162/08997660260293292},
+  eprint   = {https://doi.org/10.1162/08997660260293292},
+  number   = {10},
+  pages    = {2439-2468},
+  url      = {https://doi.org/10.1162/08997660260293292},
+  volume   = {14},
+  abstract = {In this work, we discuss practical methods for the assessment, comparison, and selection of complex hierarchical Bayesian models. A natural way to assess the goodness of the model is to estimate its future predictive capability by estimating expected utilities. Instead of just making a point estimate, it is important to obtain the distribution of the expected utility estimate because it describes the uncertainty in the estimate. The distributions of the expected utility estimates can also be used to compare models, for example, by computing the probability of one model having a better expected utility than some other model. We propose an approach using cross-validation predictive densities to obtain expected utility estimates and Bayesian bootstrap to obtain samples from their distributions. We also discuss the probabilistic assumptions made and properties of two practical cross-validation methods, importance sampling and k-fold cross-validation. As illustrative examples, we use multilayer perceptron neural networks and gaussian processes with Markov chain Monte Carlo sampling in one toy problem and two challenging real-world problems.},
+  journal  = {Neural Computation},
+  year     = {2002},
+}
+
+@article{vehtariLimitationsLimitationsBayesian2019,
+  Abstract = {In an earlier article in this journal, Gronau and Wagenmakers (2018) discuss some problems with leave-one-out cross-validation (LOO) for Bayesian model selection. However, the variant of LOO that Gronau and Wagenmakers discuss is at odds with a long literature on how to use LOO well. In this discussion, we discuss the use of LOO in practical data analysis, from the perspective that we need to abandon the idea that there is a device that will produce a single-number decision rule.},
+  Author = {Vehtari, Aki and Simpson, Daniel P. and Yao, Yuling and Gelman, Andrew},
+  Year = {2019},
+  Doi = {10.1007/s42113-018-0020-6},
+  Issn = {2522-087X},
+  Journal = {Computational Brain \& Behavior},
+  Keywords = {M-closed,M-open,Principle of complexity,Reality,Statistical convenience},
+  Langid = {english},
+  Number = {1},
+  Pages = {22-27},
+  Shortjournal = {Comput Brain Behav},
+  Title = {Limitations of ``{{Limitations}} of {{Bayesian Leave}}-One-out {{Cross}}-{{Validation}} for {{Model Selection}}''},
+  Url = {https://doi.org/10.1007/s42113-018-0020-6},
+  Urldate = {2019-06-02},
+  Volume = {2},
+  Bdsk-Url-1 = {https://doi.org/10.1007/s42113-018-0020-6}}
+
+
+@article{VehtariGelman2015Pareto,
+  Author = {Vehtari, Aki and Gelman, Andrew},
+  Journal = {arXiv preprint arXiv:1507.02646},
+  Title = {Pareto Smoothed Importance Sampling},
+  Year = {2015}}
+
+@article{vehtariPracticalBayesianModel2017,
+  Abstract = {Leave-one-out cross-validation (LOO) and the widely applicable information criterion (WAIC) are methods for estimating pointwise out-of-sample prediction accuracy from a fitted Bayesian model using the log-likelihood evaluated at the posterior simulations of the parameter values. LOO and WAIC have various advantages over simpler estimates of predictive error such as AIC and DIC but are less used in practice because they involve additional computational steps. Here we lay out fast and stable computations for LOO and WAIC that can be performed using existing simulation draws. We introduce an efficient computation of LOO using Pareto-smoothed importance sampling (PSIS), a new procedure for regularizing importance weights. Although WAIC is asymptotically equal to LOO, we demonstrate that PSIS-LOO is more robust in the finite case with weak priors or influential observations. As a byproduct of our calculations, we also obtain approximate standard errors for estimated predictive errors and for comparison of predictive errors between two models. We implement the computations in an R package called loo and demonstrate using models fit with the Bayesian inference package Stan.},
+  Author = {Vehtari, Aki and Gelman, Andrew and Gabry, Jonah},
+  Year = {2017},
+  Doi = {10.1007/s11222-016-9696-4},
+  Issn = {1573-1375},
+  Journal = {Statistics and Computing},
+  Keywords = {Bayesian computation,K-fold cross-validation,Leave-one-out cross-validation (LOO),Pareto smoothed importance sampling (PSIS),Stan,Widely applicable information criterion (WAIC)},
+  Langid = {english},
+  Number = {5},
+  Pages = {1413-1432},
+  Shortjournal = {Stat Comput},
+  Title = {Practical {{Bayesian}} Model Evaluation Using Leave-One-out Cross-Validation and {{WAIC}}},
+  Url = {https://doi.org/10.1007/s11222-016-9696-4},
+  Urldate = {2019-09-07},
+  Volume = {27},
+  Bdsk-Url-1 = {https://doi.org/10.1007/s11222-016-9696-4}}
+
+@article{PV,
+author = {Juho Piironen and Aki Vehtari},
+title = {{Sparsity information and regularization in the horseshoe and other shrinkage priors}},
+volume = {11},
+journal = {Electronic Journal of Statistics},
+number = {2},
+publisher = {Institute of Mathematical Statistics and Bernoulli Society},
+pages = {5018 -- 5051},
+keywords = {Bayesian inference, horseshoe prior, shrinkage priors, Sparse estimation},
+year = {2017},
+doi = {10.1214/17-EJS1337SI},
+URL = {https://doi.org/10.1214/17-EJS1337SI}
+}
+@article{PV2016,
+  title={Comparison of Bayesian predictive methods for model selection},
+  author={Piironen, Juho and Vehtari, Aki},
+  journal={Statistics and Computing},
+  volume={27},
+  pages={711--735},
+  year={2017},
+  publisher={Springer}
+}
+
+@inproceedings{carvalho2009,
+  title={Handling sparsity via the horseshoe},
+  author={Carvalho, Carlos M and Polson, Nicholas G and Scott, James G},
+  booktitle={Artificial intelligence and statistics},
+  pages={73--80},
+  year={2009},
+  organization={PMLR}
+}
+
+@book{BDA,
+  Author = {Andrew Gelman and John B. Carlin and Hal S. Stern and  David B. Dunson and Aki Vehtari and Donald B. Rubin},
+  Edition = {Third Edition},
+  Publisher = {Chapman and Hall/CRC Press},
+  address = {Boca Raton, FL},
+  Title = {Bayesian Data Analysis},
+  Year = {2014}}
+
+@article{DC,
+  title={Decision curve analysis: {A} novel method for evaluating prediction models},
+  author={Vickers, Andrew J and Elkin, Elena B},
+  journal={Medical Decision Making},
+  volume={26},
+  number={6},
+  pages={565--574},
+  year={2006},
+  publisher={Sage Publications Sage CA: Thousand Oaks, CA}
+}
+@article{imbalance,
+    author = {van den Goorbergh, Ruben and van Smeden, Maarten and Timmerman, Dirk and Van Calster, Ben},
+    title = "{The harm of class imbalance corrections for risk prediction models: illustration and simulation using logistic regression}",
+    journal = {Journal of the American Medical Informatics Association},
+    volume = {29},
+    number = {9},
+    pages = {1525-1534},
+    year = {2022},
+    month = {06},
+    abstract = "{Methods to correct class imbalance (imbalance between the frequency of outcome events and nonevents) are receiving increasing interest for developing prediction models. We examined the effect of imbalance correction on the performance of logistic regression models.Prediction models were developed using standard and penalized (ridge) logistic regression under 4 methods to address class imbalance: no correction, random undersampling, random oversampling, and SMOTE. Model performance was evaluated in terms of discrimination, calibration, and classification. Using Monte Carlo simulations, we studied the impact of training set size, number of predictors, and the outcome event fraction. A case study on prediction modeling for ovarian cancer diagnosis is presented.The use of random undersampling, random oversampling, or SMOTE yielded poorly calibrated models: the probability to belong to the minority class was strongly overestimated. These methods did not result in higher areas under the ROC curve when compared with models developed without correction for class imbalance. Although imbalance correction improved the balance between sensitivity and specificity, similar results were obtained by shifting the probability threshold instead.Imbalance correction led to models with strong miscalibration without better ability to distinguish between patients with and without the outcome event. The inaccurate probability estimates reduce the clinical utility of the model, because decisions about treatment are ill-informed.Outcome imbalance is not a problem in itself, imbalance correction may even worsen model performance.}",
+    issn = {1527-974X},
+    doi = {10.1093/jamia/ocac093},
+    url = {https://doi.org/10.1093/jamia/ocac093},
+    eprint = {https://academic.oup.com/jamia/article-pdf/29/9/1525/45444435/ocac093.pdf},
+}
+@article{harrell2017regression,
+  title={Regression modeling strategies},
+  author={Harrell, Frank E},
+  journal={Bios},
+  volume={330},
+  number={2018},
+  pages={14},
+  year={2017},
+  publisher={Springer}
+}
+@article{schad2020capitalize,
+  title={How to capitalize on a priori contrasts in linear (mixed) models: A tutorial},
+  author={Schad, Daniel J and Vasishth, Shravan and Hohenstein, Sven and Kliegl, Reinhold},
+  journal={Journal of memory and language},
+  volume={110},
+  pages={104038},
+  year={2020},
+  publisher={Elsevier}
+}
+@article{van2020tutorial,
+  title={A tutorial on Bayesian penalized regression with shrinkage priors for small sample sizes},
+  author={van Erp, Sara},
+  journal={Small sample size solutions},
+  pages={71--84},
+  year={2020},
+  publisher={Routledge}
+}
+@Article{Terry2015,
+  author       = {Terry, Andrew and Marley, A. A. J. and Barnwal, Avinash and Wagenmakers, E.-J. and Heathcote, Andrew and Brown, Scott D.},
+  date         = {2015-10},
+  journaltitle = {Journal of Mathematical Psychology},
+  title        = {Generalising the Drift Rate Distribution for Linear Ballistic Accumulators},
+  doi          = {10.1016/j.jmp.2015.09.002},
+  issn         = {0022-2496},
+  pages        = {49--58},
+  url          = {https://linkinghub.elsevier.com/retrieve/pii/S0022249615000577},
+  urldate      = {2019-05-17},
+  volume       = {68-69},
+  abstract     = {The linear ballistic accumulator model is a theory of decision-making that has been used to analyse data from human and animal experiments. It represents decisions as a race between independent evidence accumulators, and has proven successful in a form assuming a normal distribution for accumulation (‘‘drift’’) rates. However, this assumption has some limitations, including the corollary that some decision times are negative or undefined. We show that various drift rate distributions with strictly positive support can be substituted for the normal distribution without loss of analytic tractability, provided the candidate distribution has a closed-form expression for its mean when truncated to a closed interval. We illustrate the approach by developing three new linear ballistic accumulation variants, in which the normal distribution for drift rates is replaced by either the lognormal, Fréchet, or gamma distribution. We compare some properties of these new variants to the original normal-rate model.},
+  file         = {:Terry2015 - Generalising the Drift Rate Distribution for Linear Ballistic Accumulators.pdf:},
+  langid       = {english},
+}
+
+@book{Nicenboim2024Bayesian,
+  author    = {Bruno Nicenboim and Daniel J. Schad and Shravan Vasishth},
+  title     = {Introduction to Bayesian Data Analysis for Cognitive Science},
+  edition   = {1},
+  year      = {2025},
+  publisher = {Chapman and Hall/CRC},
+  doi       = {10.1201/9780429342646},
+  url       = {https://doi.org/10.1201/9780429342646},
+  eprint   = {https://bruno.nicenboim.me/bayescogsci/}
+  }

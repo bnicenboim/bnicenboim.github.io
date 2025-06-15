@@ -11,9 +11,9 @@
 
 <meta name="author" content="Bruno Nicenboim" />
 
-<meta name="date" content="2025-06-13" />
+<meta name="date" content="2025-06-15" />
 
-<title>Case study: Nasalization</title>
+<title>Case study: Mixture modeling of nasalization in Basque</title>
 
 <script src="mixture-nasal_files/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -35,6 +35,7 @@
 <script src="mixture-nasal_files/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="mixture-nasal_files/navigation-1.1/tabsets.js"></script>
 <script src="mixture-nasal_files/navigation-1.1/codefolding.js"></script>
+<script src="mixture-nasal_files/accessible-code-block-0.0.1/empty-anchor.js"></script>
 <link href="mixture-nasal_files/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
 <script src="mixture-nasal_files/pagedtable-1.1/js/pagedtable.js"></script>
 
@@ -59,9 +60,8 @@
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
@@ -70,7 +70,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -166,29 +166,6 @@ code span.wa { color: #bf0303; } /* Warning */
 
 
 
-<style type="text/css">
-/* for pandoc --citeproc since 2.11 */
-div.csl-bib-body { }
-div.csl-entry {
-  clear: both;
-  margin-bottom: 0em;
-}
-.hanging div.csl-entry {
-  margin-left:2em;
-  text-indent:-2em;
-}
-div.csl-left-margin {
-  min-width:2em;
-  float:left;
-}
-div.csl-right-inline {
-  margin-left:2em;
-  padding-left:1em;
-}
-div.csl-indent {
-  margin-left: 2em;
-}
-</style>
 
 
 
@@ -376,28 +353,13 @@ div.tocify {
 
 
 
-<h1 class="title toc-ignore">Case study: Nasalization</h1>
+<h1 class="title toc-ignore">Case study: Mixture modeling of nasalization in Basque</h1>
 <h4 class="author">Bruno Nicenboim</h4>
-<h4 class="date">2025-06-13</h4>
+<h4 class="date">2025-06-15</h4>
 
 </div>
 
 
-<div class="sourceCode" id="cb1"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="do">## Global options</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">options</span>(<span class="at">max.print =</span> <span class="st">&quot;75&quot;</span>,</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>        <span class="at">width =</span> <span class="dv">80</span>,</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>        <span class="at">tibble.width =</span> <span class="dv">80</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">options</span>(<span class="at">scipen =</span> <span class="dv">1</span>, <span class="at">digits =</span> <span class="dv">2</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">echo =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>                    <span class="at">cache =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>                    <span class="at">prompt =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>                    <span class="at">cache.lazy =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>                    <span class="at">tidy =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>                    <span class="at">comment =</span> <span class="cn">NA</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>                    <span class="at">message =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>                    <span class="at">warning =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>knitr<span class="sc">::</span>opts_knit<span class="sc">$</span><span class="fu">set</span>(<span class="at">width =</span> <span class="dv">80</span>)</span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">cache.extra =</span> knitr<span class="sc">::</span>rand_seed)</span></code></pre></div>
 <style>
 .exercise {
   border: 2px solid #007ACC;
@@ -426,7 +388,7 @@ div.tocify {
   margin: 1em 0;
 }
 </style>
-<div id="introduction" class="section level1 unnumbered">
+<div id="introduction" class="section level1 unnumbered" number="">
 <h1>Introduction</h1>
 <p>This case study examines how <em>nasalance</em> varies across three etymological categories of Basque aspirates: <strong>oral</strong>, <strong>contact-nasalized</strong> (i.e., following a nasal consonant), and historically <strong>nasalized</strong> aspirates that are reported to be in flux.</p>
 </div>
@@ -435,15 +397,14 @@ div.tocify {
 <div id="packages" class="section level2" number="1.1">
 <h2><span class="header-section-number">1.1</span> Packages</h2>
 <p>The analysis relies on <strong>tidytable</strong> for fast data manipulation, <strong>cmdstanr</strong> for Stan interfacing, and a handful of tidy-Bayes helpers for visualisation and model comparison.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(tidytable) <span class="co"># nice alternative to dplyr</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">library</span>(cmdstanr)</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">library</span>(posterior)</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">library</span>(bayesplot)</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">library</span>(brms)</span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">library</span>(loo)</span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">options</span>(<span class="at">mc.cores =</span> <span class="dv">4</span>)</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">write_bib</span>(<span class="fu">.packages</span>(), <span class="st">&quot;r-references.bib&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">library</span>(tidytable) <span class="co"># nice alternative to dplyr</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">library</span>(cmdstanr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">library</span>(posterior)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">library</span>(bayesplot)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">library</span>(brms)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">library</span>(ggplot2)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="kw">library</span>(loo)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="kw">options</span>(<span class="dt">mc.cores =</span> <span class="dv">4</span>)</span></code></pre></div>
 </div>
 <div id="files" class="section level2" number="1.2">
 <h2><span class="header-section-number">1.2</span> Files</h2>
@@ -466,48 +427,48 @@ div.tocify {
 <li><strong>nasalized</strong></li>
 <li><strong>oral</strong></li>
 </ol>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>nas_data <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">&quot;nas_data.RDS&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>    <span class="at">etymology =</span> E,</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>    <span class="at">root =</span> R,</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>    <span class="at">speaker =</span> S,</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>    <span class="at">nasalance =</span> N</span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(nasalance)) <span class="sc">|&gt;</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="fu">filter</span>(etymology <span class="sc">!=</span> <span class="st">&quot;assimilated&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>    <span class="at">E =</span> <span class="fu">as.factor</span>(etymology) <span class="sc">|&gt;</span> <span class="fu">as.numeric</span>(),</span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>    <span class="at">R =</span> <span class="fu">as.factor</span>(root) <span class="sc">|&gt;</span> <span class="fu">as.numeric</span>(),</span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>    <span class="at">speaker =</span> <span class="fu">as.factor</span>(speaker) <span class="sc">|&gt;</span> <span class="fu">as.numeric</span>()</span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  )</span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>nas_data</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>nas_data &lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="st">&quot;nas_data.RDS&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">rename</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    <span class="dt">etymology =</span> E,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    <span class="dt">root =</span> R,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>    <span class="dt">speaker =</span> S,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>    <span class="dt">nasalance =</span> N</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>  ) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(nasalance)) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(etymology <span class="op">!=</span><span class="st"> &quot;assimilated&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>    <span class="dt">E =</span> <span class="kw">as.factor</span>(etymology) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>(),</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>    <span class="dt">R =</span> <span class="kw">as.factor</span>(root) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>(),</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>    <span class="dt">speaker =</span> <span class="kw">as.factor</span>(speaker) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>()</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>  )</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>nas_data</span></code></pre></div>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
 {"columns":[{"label":["speaker"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["root"],"name":[2],"type":["chr"],"align":["left"]},{"label":["etymology"],"name":[3],"type":["chr"],"align":["left"]},{"label":["nasalance"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["E"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["R"],"name":[6],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"diharu","3":"nasalized","4":"0.102","5":"2","6":"26"},{"1":"1","2":"ihakin","3":"oral","4":"0.136","5":"3","6":"37"},{"1":"1","2":"ihaute","3":"nasalized","4":"0.170","5":"2","6":"41"},{"1":"1","2":"ihintz","3":"nasalized","4":"0.219","5":"2","6":"44"},{"1":"1","2":"ahate","3":"nasalized","4":"0.232","5":"2","6":"8"},{"1":"1","2":"zehe","3":"nasalized","4":"0.144","5":"2","6":"64"},{"1":"1","2":"kahixka","3":"nasalized","4":"0.300","5":"2","6":"46"},{"1":"1","2":"ehe-no","3":"nasalized","4":"0.128","5":"2","6":"28"},{"1":"1","2":"ehe-no","3":"nasalized","4":"0.128","5":"2","6":"28"},{"1":"1","2":"halahola","3":"oral","4":"0.215","5":"3","6":"36"},{"1":"1","2":"halahola","3":"oral","4":"0.256","5":"3","6":"36"},{"1":"1","2":"ahal","3":"nasalized","4":"0.248","5":"2","6":"2"},{"1":"1","2":"desuhue","3":"nasalized","4":"0.353","5":"2","6":"25"},{"1":"1","2":"ohore","3":"nasalized","4":"0.125","5":"2","6":"53"},{"1":"1","2":"ihi","3":"nasalized","4":"0.164","5":"2","6":"43"},{"1":"1","2":"behe","3":"oral","4":"0.139","5":"3","6":"20"},{"1":"1","2":"lañho","3":"contact","4":"0.483","5":"1","6":"47"},{"1":"1","2":"ahul","3":"oral","4":"0.174","5":"3","6":"11"},{"1":"1","2":"gihaur","3":"nasalized","4":"0.158","5":"2","6":"35"},{"1":"1","2":"ehiza","3":"nasalized","4":"0.267","5":"2","6":"30"},{"1":"1","2":"ahate","3":"nasalized","4":"0.234","5":"2","6":"8"},{"1":"1","2":"behi","3":"oral","4":"0.177","5":"3","6":"21"},{"1":"1","2":"bahe","3":"nasalized","4":"0.197","5":"2","6":"18"},{"1":"1","2":"asteharte","3":"oral","4":"0.111","5":"3","6":"16"},{"1":"1","2":"zahar","3":"nasalized","4":"0.198","5":"2","6":"63"},{"1":"1","2":"ehe-bleach","3":"oral","4":"0.136","5":"3","6":"27"},{"1":"1","2":"aharrausi","3":"oral","4":"0.195","5":"3","6":"7"},{"1":"1","2":"gihaur","3":"nasalized","4":"0.113","5":"2","6":"35"},{"1":"1","2":"aholku","3":"nasalized","4":"0.225","5":"2","6":"10"},{"1":"1","2":"ahalke","3":"nasalized","4":"0.234","5":"2","6":"3"},{"1":"1","2":"aihai","3":"oral","4":"0.188","5":"3","6":"13"},{"1":"1","2":"aholku","3":"nasalized","4":"0.240","5":"2","6":"10"},{"1":"1","2":"ohol","3":"nasalized","4":"0.195","5":"2","6":"52"},{"1":"1","2":"ahur","3":"oral","4":"0.249","5":"3","6":"12"},{"1":"1","2":"lohi","3":"nasalized","4":"0.163","5":"2","6":"50"},{"1":"1","2":"aha","3":"oral","4":"0.189","5":"3","6":"1"},{"1":"1","2":"eñhe","3":"contact","4":"0.579","5":"1","6":"33"},{"1":"1","2":"ahantzi","3":"nasalized","4":"0.239","5":"2","6":"4"},{"1":"1","2":"sehi","3":"nasalized","4":"0.158","5":"2","6":"55"},{"1":"1","2":"ahul","3":"oral","4":"0.144","5":"3","6":"11"},{"1":"1","2":"zahar","3":"nasalized","4":"0.223","5":"2","6":"63"},{"1":"1","2":"anho","3":"contact","4":"0.518","5":"1","6":"15"},{"1":"1","2":"añharba","3":"contact","4":"0.492","5":"1","6":"14"},{"1":"1","2":"ahizpa","3":"nasalized","4":"0.160","5":"2","6":"9"},{"1":"1","2":"aholku","3":"nasalized","4":"0.094","5":"2","6":"10"},{"1":"1","2":"ohore","3":"nasalized","4":"0.067","5":"2","6":"53"},{"1":"1","2":"ihes","3":"nasalized","4":"0.184","5":"2","6":"42"},{"1":"1","2":"ehi-finger","3":"oral","4":"0.183","5":"3","6":"29"},{"1":"1","2":"ihaur","3":"nasalized","4":"0.142","5":"2","6":"40"},{"1":"1","2":"auher","3":"oral","4":"0.160","5":"3","6":"17"},{"1":"1","2":"ahizpa","3":"nasalized","4":"0.219","5":"2","6":"9"},{"1":"1","2":"bihi","3":"oral","4":"0.178","5":"3","6":"22"},{"1":"1","2":"uñhu","3":"contact","4":"0.563","5":"1","6":"58"},{"1":"1","2":"iharrausi","3":"nasalized","4":"0.160","5":"2","6":"39"},{"1":"1","2":"xehe","3":"nasalized","4":"0.116","5":"2","6":"61"},{"1":"1","2":"aharrausi","3":"oral","4":"0.245","5":"3","6":"7"},{"1":"1","2":"eihe","3":"oral","4":"0.160","5":"3","6":"32"},{"1":"1","2":"ahal","3":"nasalized","4":"0.183","5":"2","6":"2"},{"1":"1","2":"ahari","3":"nasalized","4":"0.204","5":"2","6":"6"},{"1":"1","2":"bihotz","3":"oral","4":"0.157","5":"3","6":"23"},{"1":"1","2":"sehi","3":"nasalized","4":"0.149","5":"2","6":"55"},{"1":"1","2":"ahardi","3":"nasalized","4":"0.139","5":"2","6":"5"},{"1":"1","2":"behi","3":"oral","4":"0.163","5":"3","6":"21"},{"1":"1","2":"ihardetsi","3":"nasalized","4":"0.160","5":"2","6":"38"},{"1":"1","2":"ohatu","3":"oral","4":"0.153","5":"3","6":"51"},{"1":"1","2":"bihurtu","3":"oral","4":"0.130","5":"3","6":"24"},{"1":"1","2":"zuhur","3":"nasalized","4":"0.130","5":"2","6":"65"},{"1":"1","2":"ihue","3":"nasalized","4":"0.137","5":"2","6":"45"},{"1":"1","2":"ehiza","3":"nasalized","4":"0.183","5":"2","6":"30"},{"1":"1","2":"ihintz","3":"nasalized","4":"0.186","5":"2","6":"44"},{"1":"1","2":"ihardetsi","3":"nasalized","4":"0.199","5":"2","6":"38"},{"1":"1","2":"gehien-gehiago","3":"oral","4":"0.230","5":"3","6":"34"},{"1":"1","2":"lehoi","3":"nasalized","4":"0.137","5":"2","6":"49"},{"1":"2","2":"ahul","3":"oral","4":"0.189","5":"3","6":"11"},{"1":"2","2":"sehi","3":"nasalized","4":"0.180","5":"2","6":"55"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <p>The quick summary below confirms the expected ranking: <em>contact</em> tokens are the most nasal, <em>oral</em> tokens the least, and the <em>nasalized</em> class falls somewhere in between.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>(summary <span class="ot">&lt;-</span> nas_data <span class="sc">|&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>    <span class="at">mean =</span> <span class="fu">mean</span>(nasalance),</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>    <span class="at">sd =</span> <span class="fu">sd</span>(nasalance),</span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="at">SE =</span> <span class="fu">sd</span>(nasalance) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()),</span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>    <span class="at">lq =</span> <span class="fu">quantile</span>(nasalance, <span class="fl">0.025</span>),</span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="at">hq =</span> <span class="fu">quantile</span>(nasalance, <span class="fl">0.975</span>),</span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>    <span class="at">.by =</span> <span class="fu">c</span>(<span class="st">&quot;etymology&quot;</span>, <span class="st">&quot;E&quot;</span>)))</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>(summary &lt;-<span class="st"> </span>nas_data <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">summarize</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>    <span class="dt">mean =</span> <span class="kw">mean</span>(nasalance),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>    <span class="dt">sd =</span> <span class="kw">sd</span>(nasalance),</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>    <span class="dt">SE =</span> <span class="kw">sd</span>(nasalance) <span class="op">/</span><span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">n</span>()),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>    <span class="dt">lq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.025</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>    <span class="dt">hq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.975</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>    <span class="dt">.by =</span> <span class="kw">c</span>(<span class="st">&quot;etymology&quot;</span>, <span class="st">&quot;E&quot;</span>)))</span></code></pre></div>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
 {"columns":[{"label":["etymology"],"name":[1],"type":["chr"],"align":["left"]},{"label":["E"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["mean"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["sd"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["SE"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lq"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["hq"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"contact","2":"1","3":"0.54","4":"0.115","5":"0.0145","6":"0.310","7":"0.75"},{"1":"nasalized","2":"2","3":"0.23","4":"0.176","5":"0.0086","6":"0.054","7":"0.72"},{"1":"oral","2":"3","3":"0.17","4":"0.099","5":"0.0067","6":"0.054","7":"0.46"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">ggplot</span>(nas_data, <span class="fu">aes</span>(<span class="at">x =</span> nasalance, <span class="at">fill =</span> etymology, <span class="at">color =</span> etymology)) <span class="sc">+</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Distribution of nasalance by etymology&quot;</span>,</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Nasalance (N)&quot;</span>,</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Density&quot;</span></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  )</span></code></pre></div>
-<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">ggplot</span>(nas_data, <span class="kw">aes</span>(<span class="dt">x =</span> nasalance, <span class="dt">fill =</span> etymology, <span class="dt">color =</span> etymology)) <span class="op">+</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_density</span>(<span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">linewidth =</span> <span class="fl">1.2</span>) <span class="op">+</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">labs</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    <span class="dt">title =</span> <span class="st">&quot;Distribution of nasalance by etymology&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    <span class="dt">x =</span> <span class="st">&quot;Nasalance (N)&quot;</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>    <span class="dt">y =</span> <span class="st">&quot;Density&quot;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>  )</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
 <p>We are modelling proportions of nasalance, with a categorical predictor (etymological category or group), to try to understand if <em>some</em> aspirates /h/ are nasalized in Basque.</p>
 <p><strong>Assumptions:</strong></p>
 <ul>
@@ -549,71 +510,71 @@ p_2(\Theta_2), &amp; \text{ if } z_n=0
 \nu = \frac{\mu(1 - \mu)}{\text{var}} - 1, \quad
 \alpha = \mu \nu, \quad \beta = (1 - \mu) \nu
 \]</span></p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>beta_pars <span class="ot">&lt;-</span> <span class="cf">function</span>(mean, sd) {</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  var <span class="ot">&lt;-</span> sd<span class="sc">^</span><span class="dv">2</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> ((<span class="dv">1</span> <span class="sc">-</span> mean) <span class="sc">/</span> var <span class="sc">-</span> <span class="dv">1</span> <span class="sc">/</span> mean) <span class="sc">*</span> mean<span class="sc">^</span><span class="dv">2</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  beta <span class="ot">&lt;-</span> alpha <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">/</span> mean <span class="sc">-</span> <span class="dv">1</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">alpha =</span> alpha, <span class="at">beta =</span> beta)</span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>}</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>rbeta2 <span class="ot">&lt;-</span> <span class="cf">function</span>(n, mean, sd) {</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  pars <span class="ot">&lt;-</span> <span class="fu">beta_pars</span>(mean, sd)</span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  <span class="fu">rbeta</span>(<span class="at">n =</span> n, <span class="at">shape1 =</span> pars<span class="sc">$</span>alpha, <span class="at">shape2 =</span> pars<span class="sc">$</span>beta)</span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>beta_pars &lt;-<span class="st"> </span><span class="cf">function</span>(mean, sd) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  var &lt;-<span class="st"> </span>sd<span class="op">^</span><span class="dv">2</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>  alpha &lt;-<span class="st"> </span>((<span class="dv">1</span> <span class="op">-</span><span class="st"> </span>mean) <span class="op">/</span><span class="st"> </span>var <span class="op">-</span><span class="st"> </span><span class="dv">1</span> <span class="op">/</span><span class="st"> </span>mean) <span class="op">*</span><span class="st"> </span>mean<span class="op">^</span><span class="dv">2</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>  beta &lt;-<span class="st"> </span>alpha <span class="op">*</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">/</span><span class="st"> </span>mean <span class="op">-</span><span class="st"> </span><span class="dv">1</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>  <span class="kw">list</span>(<span class="dt">alpha =</span> alpha, <span class="dt">beta =</span> beta)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>}</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>rbeta2 &lt;-<span class="st"> </span><span class="cf">function</span>(n, mean, sd) {</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>  pars &lt;-<span class="st"> </span><span class="kw">beta_pars</span>(mean, sd)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>  <span class="kw">rbeta</span>(<span class="dt">n =</span> n, <span class="dt">shape1 =</span> pars<span class="op">$</span>alpha, <span class="dt">shape2 =</span> pars<span class="op">$</span>beta)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>}</span></code></pre></div>
 </div>
 <div id="simulate-data-from-a-mixture-process" class="section level3" number="2.1.2">
 <h3><span class="header-section-number">2.1.2</span> Simulate data from a <em>mixture</em> process</h3>
 <p><code>prob_nas</code> below is the root-level probability that a historically nasalised aspirate is realised via a “high-nasalance mechanism” (as in contact condition). By varying this single probability you can dial-in anything from a pure-contact to a pure-oral realisation.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">99</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>true <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">mu_oral =</span> <span class="fl">0.166</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">sigma_oral =</span> <span class="fl">0.0993</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">mu_contact =</span> <span class="fl">0.543</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">sigma_contact =</span> <span class="fl">0.115</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="at">prob_nas =</span> <span class="fl">0.15</span> <span class="co"># made-up probability of nasalization</span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>)</span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>nas_oral <span class="ot">&lt;-</span> <span class="fu">rbeta2</span>(N, <span class="at">mean =</span> true<span class="sc">$</span>mu_oral, <span class="at">sd =</span> true<span class="sc">$</span>sigma_oral)</span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>nas_contact <span class="ot">&lt;-</span> <span class="fu">rbeta2</span>(N, <span class="at">mean =</span> true<span class="sc">$</span>mu_contact, <span class="at">sd =</span> true<span class="sc">$</span>sigma_contact)</span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>is_nas <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(N, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> true<span class="sc">$</span>prob_nas)</span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>nas_nasalized <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(</span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>  is_nas <span class="sc">==</span> <span class="dv">1</span>,</span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>  <span class="fu">rbeta2</span>(N, <span class="at">mean =</span> true<span class="sc">$</span>mu_contact, <span class="at">sd =</span> true<span class="sc">$</span>sigma_contact), <span class="co"># contact</span></span>
-<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>  <span class="fu">rbeta2</span>(N, <span class="at">mean =</span> true<span class="sc">$</span>mu_oral, <span class="at">sd =</span> true<span class="sc">$</span>sigma_oral)         <span class="co"># oral</span></span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>)</span>
-<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a></span>
-<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>mix_data <span class="ot">&lt;-</span> <span class="fu">tidytable</span>(</span>
-<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>  <span class="at">etymology =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;oral&quot;</span>, <span class="st">&quot;contact&quot;</span>, <span class="st">&quot;nasalized&quot;</span>), <span class="at">each =</span> N),</span>
-<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a>  <span class="at">nasalance =</span> <span class="fu">c</span>(nas_oral, nas_contact, nas_nasalized)</span>
-<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">E =</span> <span class="fu">as.factor</span>(etymology) <span class="sc">|&gt;</span> <span class="fu">as.numeric</span>())</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">99</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>N &lt;-<span class="st"> </span><span class="dv">100</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>true &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>  <span class="dt">mu_oral =</span> <span class="fl">0.166</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>  <span class="dt">sigma_oral =</span> <span class="fl">0.0993</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>  <span class="dt">mu_contact =</span> <span class="fl">0.543</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a>  <span class="dt">sigma_contact =</span> <span class="fl">0.115</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a>  <span class="dt">prob_nas =</span> <span class="fl">0.15</span> <span class="co"># made-up probability of nasalization</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a>nas_oral &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true<span class="op">$</span>mu_oral, <span class="dt">sd =</span> true<span class="op">$</span>sigma_oral)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a>nas_contact &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true<span class="op">$</span>mu_contact, <span class="dt">sd =</span> true<span class="op">$</span>sigma_contact)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a>is_nas &lt;-<span class="st"> </span><span class="kw">rbinom</span>(N, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> true<span class="op">$</span>prob_nas)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true"></a>nas_nasalized &lt;-<span class="st"> </span><span class="kw">ifelse</span>(</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true"></a>  is_nas <span class="op">==</span><span class="st"> </span><span class="dv">1</span>,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true"></a>  <span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true<span class="op">$</span>mu_contact, <span class="dt">sd =</span> true<span class="op">$</span>sigma_contact), <span class="co"># contact</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true"></a>  <span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true<span class="op">$</span>mu_oral, <span class="dt">sd =</span> true<span class="op">$</span>sigma_oral)         <span class="co"># oral</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true"></a>)</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true"></a>mix_data &lt;-<span class="st"> </span><span class="kw">tidytable</span>(</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true"></a>  <span class="dt">etymology =</span> <span class="kw">rep</span>(<span class="kw">c</span>(<span class="st">&quot;oral&quot;</span>, <span class="st">&quot;contact&quot;</span>, <span class="st">&quot;nasalized&quot;</span>), <span class="dt">each =</span> N),</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true"></a>  <span class="dt">nasalance =</span> <span class="kw">c</span>(nas_oral, nas_contact, nas_nasalized)</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true"></a>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">E =</span> <span class="kw">as.factor</span>(etymology) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>())</span></code></pre></div>
 <p>Check distribution and visualize:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>mix_data <span class="sc">|&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>    <span class="at">mean =</span> <span class="fu">mean</span>(nasalance),</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>    <span class="at">sd =</span> <span class="fu">sd</span>(nasalance),</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="at">SE =</span> <span class="fu">sd</span>(nasalance) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>()),</span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>    <span class="at">lq =</span> <span class="fu">quantile</span>(nasalance, <span class="fl">0.025</span>),</span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>    <span class="at">hq =</span> <span class="fu">quantile</span>(nasalance, <span class="fl">0.975</span>),</span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>    <span class="at">.by =</span> <span class="fu">c</span>(<span class="st">&quot;etymology&quot;</span>, <span class="st">&quot;E&quot;</span>)</span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  )</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>mix_data <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">summarize</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>    <span class="dt">mean =</span> <span class="kw">mean</span>(nasalance),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>    <span class="dt">sd =</span> <span class="kw">sd</span>(nasalance),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>    <span class="dt">SE =</span> <span class="kw">sd</span>(nasalance) <span class="op">/</span><span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">n</span>()),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>    <span class="dt">lq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.025</span>),</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>    <span class="dt">hq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.975</span>),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>    <span class="dt">.by =</span> <span class="kw">c</span>(<span class="st">&quot;etymology&quot;</span>, <span class="st">&quot;E&quot;</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>  )</span></code></pre></div>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
 {"columns":[{"label":["etymology"],"name":[1],"type":["chr"],"align":["left"]},{"label":["E"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["mean"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["sd"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["SE"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lq"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["hq"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"contact","2":"1","3":"0.55","4":"0.119","5":"0.0119","6":"0.323","7":"0.74"},{"1":"nasalized","2":"2","3":"0.22","4":"0.169","5":"0.0169","6":"0.020","7":"0.69"},{"1":"oral","2":"3","3":"0.16","4":"0.089","5":"0.0089","6":"0.033","7":"0.37"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">ggplot</span>(mix_data, <span class="fu">aes</span>(<span class="at">x =</span> nasalance, <span class="at">fill =</span> etymology, <span class="at">color =</span> etymology)) <span class="sc">+</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;SIMULATED distribution of nasalance by etymology (mixture)&quot;</span>,</span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">&quot;Nasalance (N)&quot;</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Density&quot;</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div>
-<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">ggplot</span>(mix_data, <span class="kw">aes</span>(<span class="dt">x =</span> nasalance, <span class="dt">fill =</span> etymology, <span class="dt">color =</span> etymology)) <span class="op">+</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_density</span>(<span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">linewidth =</span> <span class="fl">1.2</span>) <span class="op">+</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">labs</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>    <span class="dt">title =</span> <span class="st">&quot;SIMULATED distribution of nasalance by etymology (mixture)&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>    <span class="dt">x =</span> <span class="st">&quot;Nasalance (N)&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>    <span class="dt">y =</span> <span class="st">&quot;Density&quot;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>  ) <span class="op">+</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">theme_minimal</span>()</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
 <div class="note">
 <p>Experiment with different values of <code>prob_nas</code> and observe the effect on the distribution.</p>
 </div>
@@ -621,44 +582,44 @@ p_2(\Theta_2), &amp; \text{ if } z_n=0
 <div id="simulate-data-from-a-non-mixture-process" class="section level3" number="2.1.3">
 <h3><span class="header-section-number">2.1.3</span> Simulate data from a <em>non-mixture</em> process</h3>
 <p>Here every category gets its <em>own</em> Beta distribution. The parameters for <em>oral</em> and <em>contact</em> are the same as above; the <em>nasalized</em> mean/sd are set to match the empirical data.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">99</span>)</span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a></span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>true2 <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">mu_oral =</span> true<span class="sc">$</span>mu_oral,</span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">sigma_oral =</span> true<span class="sc">$</span>sigma_oral,</span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">mu_contact =</span> true<span class="sc">$</span>mu_contact,</span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  <span class="at">sigma_contact =</span> true<span class="sc">$</span>sigma_contact,</span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>  <span class="at">mu_nasalized =</span> <span class="fl">0.233</span>,</span>
-<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  <span class="at">sigma_nasalized =</span> <span class="fl">0.176</span></span>
-<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>)</span>
-<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>nas_oral <span class="ot">&lt;-</span> <span class="fu">rbeta2</span>(N, <span class="at">mean =</span> true2<span class="sc">$</span>mu_oral, <span class="at">sd =</span> true2<span class="sc">$</span>sigma_oral)</span>
-<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>nas_contact <span class="ot">&lt;-</span> <span class="fu">rbeta2</span>(N, <span class="at">mean =</span> true2<span class="sc">$</span>mu_contact, <span class="at">sd =</span> true2<span class="sc">$</span>sigma_contact)</span>
-<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>nas_nasalized2 <span class="ot">&lt;-</span> <span class="fu">rbeta2</span>(N, <span class="at">mean =</span> true2<span class="sc">$</span>mu_nasalized, <span class="at">sd =</span> true2<span class="sc">$</span>sigma_nasalized)</span>
-<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a></span>
-<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>nonmix_data <span class="ot">&lt;-</span> <span class="fu">tidytable</span>(</span>
-<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>  <span class="at">etymology =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;oral&quot;</span>, <span class="st">&quot;contact&quot;</span>, <span class="st">&quot;nasalized&quot;</span>), <span class="at">each =</span> N),</span>
-<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>  <span class="at">nasalance =</span> <span class="fu">c</span>(nas_oral, nas_contact, nas_nasalized2)</span>
-<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">E =</span> <span class="fu">as.factor</span>(etymology) <span class="sc">|&gt;</span> <span class="fu">as.numeric</span>())</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">99</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>true2 &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>  <span class="dt">mu_oral =</span> true<span class="op">$</span>mu_oral,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>  <span class="dt">sigma_oral =</span> true<span class="op">$</span>sigma_oral,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>  <span class="dt">mu_contact =</span> true<span class="op">$</span>mu_contact,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>  <span class="dt">sigma_contact =</span> true<span class="op">$</span>sigma_contact,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true"></a>  <span class="dt">mu_nasalized =</span> <span class="fl">0.233</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true"></a>  <span class="dt">sigma_nasalized =</span> <span class="fl">0.176</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true"></a>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true"></a>nas_oral &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true2<span class="op">$</span>mu_oral, <span class="dt">sd =</span> true2<span class="op">$</span>sigma_oral)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true"></a>nas_contact &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true2<span class="op">$</span>mu_contact, <span class="dt">sd =</span> true2<span class="op">$</span>sigma_contact)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true"></a>nas_nasalized2 &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true2<span class="op">$</span>mu_nasalized, <span class="dt">sd =</span> true2<span class="op">$</span>sigma_nasalized)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true"></a>nonmix_data &lt;-<span class="st"> </span><span class="kw">tidytable</span>(</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true"></a>  <span class="dt">etymology =</span> <span class="kw">rep</span>(<span class="kw">c</span>(<span class="st">&quot;oral&quot;</span>, <span class="st">&quot;contact&quot;</span>, <span class="st">&quot;nasalized&quot;</span>), <span class="dt">each =</span> N),</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true"></a>  <span class="dt">nasalance =</span> <span class="kw">c</span>(nas_oral, nas_contact, nas_nasalized2)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true"></a>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">E =</span> <span class="kw">as.factor</span>(etymology) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>())</span></code></pre></div>
 <p>Check distribution and visualize:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>nonmix_data <span class="sc">|&gt;</span> <span class="fu">summarize</span>(<span class="at">mean =</span> <span class="fu">mean</span>(nasalance),</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>            <span class="at">sd =</span> <span class="fu">sd</span>(nasalance),</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>            <span class="at">SE =</span> <span class="fu">mean</span>(nasalance)<span class="sc">/</span><span class="fu">sqrt</span>(<span class="fu">n</span>()),</span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>            <span class="at">lq =</span> <span class="fu">quantile</span>(nasalance, <span class="fl">0.025</span>),</span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>            <span class="at">hq =</span> <span class="fu">quantile</span>(nasalance, <span class="fl">0.975</span>),</span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>            <span class="at">.by =</span> <span class="fu">c</span>(<span class="st">&quot;etymology&quot;</span>,<span class="st">&quot;E&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a>nonmix_data <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">summarize</span>(<span class="dt">mean =</span> <span class="kw">mean</span>(nasalance),</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>            <span class="dt">sd =</span> <span class="kw">sd</span>(nasalance),</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>            <span class="dt">SE =</span> <span class="kw">mean</span>(nasalance)<span class="op">/</span><span class="kw">sqrt</span>(<span class="kw">n</span>()),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>            <span class="dt">lq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.025</span>),</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>            <span class="dt">hq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.975</span>),</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>            <span class="dt">.by =</span> <span class="kw">c</span>(<span class="st">&quot;etymology&quot;</span>,<span class="st">&quot;E&quot;</span>))</span></code></pre></div>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
 {"columns":[{"label":["etymology"],"name":[1],"type":["chr"],"align":["left"]},{"label":["E"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["mean"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["sd"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["SE"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lq"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["hq"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"contact","2":"1","3":"0.55","4":"0.119","5":"0.055","6":"0.323","7":"0.74"},{"1":"nasalized","2":"2","3":"0.23","4":"0.183","5":"0.023","6":"0.011","7":"0.64"},{"1":"oral","2":"3","3":"0.16","4":"0.089","5":"0.016","6":"0.033","7":"0.37"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">ggplot</span>(nonmix_data, <span class="fu">aes</span>(<span class="at">x =</span> nasalance, <span class="at">fill =</span> etymology, <span class="at">color =</span> etymology))  <span class="sc">+</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;SIMULATED distribution of nasalance by etymology&quot;</span>,</span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;N&quot;</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="sc">+</span></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div>
-<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">ggplot</span>(nonmix_data, <span class="kw">aes</span>(<span class="dt">x =</span> nasalance, <span class="dt">fill =</span> etymology, <span class="dt">color =</span> etymology))  <span class="op">+</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_density</span>(<span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">linewidth =</span> <span class="fl">1.2</span>) <span class="op">+</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;SIMULATED distribution of nasalance by etymology&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>       <span class="dt">x =</span> <span class="st">&quot;N&quot;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true"></a>       <span class="dt">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="op">+</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true"></a><span class="st">  </span><span class="kw">theme_minimal</span>()</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
 <p><strong>Both distributions are visually similar, underscoring the difficulty of distinguishing the underlying generative processes by eye alone.</strong></p>
 <hr />
 </div>
@@ -677,109 +638,117 @@ p_2(\Theta_2), &amp; \text{ if } z_n=0
 <p><span class="math display">\[
   p(y_n\mid\Theta) = \theta\,p_1(y_n\mid\Theta_1) + (1-\theta)\,p_2(y_n\mid\Theta_2),
 \]</span></p>
-<p>where <span class="math inline">\(p_1\)</span> and <span class="math inline">\(p_2\)</span> are Beta distributions parameterised by their means and standard deviations. Because Stan does not allow discrete parameters in the <code>parameters</code> block, we marginalise over the latent indicator $z_n$ via <code>log_sum_exp</code>.</p>
+<p>where <span class="math inline">\(p_1\)</span> and <span class="math inline">\(p_2\)</span> are Beta distributions parameterised by their means and standard deviations. Because Stan does not allow discrete parameters in the <code>parameters</code> block, we marginalise over the latent indicator <span class="math inline">\(z_n\)</span> via <code>log_sum_exp()</code>.</p>
 <p>Stan model:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode stan"><code class="sourceCode stan"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co">#include beta2.stan</span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="kw">data</span> {</span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; N;</span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="dt">vector</span>[N] nasalance;</span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="dt">array</span>[N] <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; E;</span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>}</span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="kw">parameters</span> {</span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; mu_contact;</span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = sqrt(mu_contact*(<span class="dv">1</span>-mu_contact))&gt; sigma_contact;</span>
-<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span> &gt; mu_oral;</span>
-<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span>= <span class="dv">0</span>, <span class="kw">upper</span> = sqrt(mu_oral*(<span class="dv">1</span>-mu_oral))&gt; sigma_oral;</span>
-<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; prob_nas;</span>
-<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>}</span>
-<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="kw">model</span> {</span>
-<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>  <span class="co">// priors for the task component</span></span>
-<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(mu_contact | <span class="fl">0.6</span>, <span class="fl">0.2</span>);</span>
-<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(mu_oral | <span class="fl">0.2</span>, <span class="fl">0.3</span>);</span>
-<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(sigma_oral | <span class="dv">0</span>, <span class="fl">0.3</span>);</span>
-<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(sigma_contact | <span class="dv">0</span>, <span class="fl">0.3</span>);</span>
-<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a></span>
-<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a>  <span class="kw">target +=</span> beta_lpdf(prob_nas | <span class="dv">3</span>, <span class="dv">10</span>);</span>
-<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a></span>
-<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a>  <span class="cf">for</span>(n <span class="cf">in</span> <span class="dv">1</span>:N){</span>
-<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a>    <span class="cf">if</span>(E[n] == <span class="dv">1</span>)  <span class="co">// contact</span></span>
-<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a>      <span class="kw">target +=</span>  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);</span>
-<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a>     <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">3</span>)  <span class="co">// oral</span></span>
-<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a>       <span class="kw">target +=</span> beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);</span>
-<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">2</span>) <span class="co">//nas</span></span>
-<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a>       <span class="kw">target +=</span> log_sum_exp(log(prob_nas) +</span>
-<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a>                  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),</span>
-<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a>                  log1m(prob_nas) +</span>
-<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a>                  beta2_lpdf(nasalance[n] | mu_oral, sigma_oral));</span>
-<span id="cb14-33"><a href="#cb14-33" tabindex="-1"></a>  }</span>
-<span id="cb14-34"><a href="#cb14-34" tabindex="-1"></a>}</span>
-<span id="cb14-35"><a href="#cb14-35" tabindex="-1"></a><span class="kw">generated quantities</span> {</span>
-<span id="cb14-36"><a href="#cb14-36" tabindex="-1"></a>  <span class="dt">vector</span>[N] log_lik;</span>
-<span id="cb14-37"><a href="#cb14-37" tabindex="-1"></a> <span class="cf">for</span>(n <span class="cf">in</span> <span class="dv">1</span>:N){</span>
-<span id="cb14-38"><a href="#cb14-38" tabindex="-1"></a>    <span class="cf">if</span>(E[n] == <span class="dv">1</span>)  <span class="co">// contact</span></span>
-<span id="cb14-39"><a href="#cb14-39" tabindex="-1"></a>      log_lik[n] =  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);</span>
-<span id="cb14-40"><a href="#cb14-40" tabindex="-1"></a>     <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">3</span>)  <span class="co">// oral</span></span>
-<span id="cb14-41"><a href="#cb14-41" tabindex="-1"></a>       log_lik[n] = beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);</span>
-<span id="cb14-42"><a href="#cb14-42" tabindex="-1"></a>     <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">2</span>) <span class="co">//nas</span></span>
-<span id="cb14-43"><a href="#cb14-43" tabindex="-1"></a>       log_lik[n] = log_sum_exp(log(prob_nas) +</span>
-<span id="cb14-44"><a href="#cb14-44" tabindex="-1"></a>                                beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),</span>
-<span id="cb14-45"><a href="#cb14-45" tabindex="-1"></a>                                log1m(prob_nas) +</span>
-<span id="cb14-46"><a href="#cb14-46" tabindex="-1"></a>                                beta2_lpdf(nasalance[n] | mu_oral, sigma_oral));</span>
-<span id="cb14-47"><a href="#cb14-47" tabindex="-1"></a>  }</span>
-<span id="cb14-48"><a href="#cb14-48" tabindex="-1"></a></span>
-<span id="cb14-49"><a href="#cb14-49" tabindex="-1"></a>  <span class="co">// Posterior predictions:</span></span>
-<span id="cb14-50"><a href="#cb14-50" tabindex="-1"></a>  <span class="dt">vector</span>[N] nasalance_rep;</span>
-<span id="cb14-51"><a href="#cb14-51" tabindex="-1"></a>  <span class="cf">for</span> (n <span class="cf">in</span> <span class="dv">1</span>:N) {</span>
-<span id="cb14-52"><a href="#cb14-52" tabindex="-1"></a>    <span class="cf">if</span> (E[n] == <span class="dv">1</span>)</span>
-<span id="cb14-53"><a href="#cb14-53" tabindex="-1"></a>      nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);</span>
-<span id="cb14-54"><a href="#cb14-54" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> (E[n] == <span class="dv">3</span>)</span>
-<span id="cb14-55"><a href="#cb14-55" tabindex="-1"></a>      nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);</span>
-<span id="cb14-56"><a href="#cb14-56" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> (E[n] == <span class="dv">2</span>) {</span>
-<span id="cb14-57"><a href="#cb14-57" tabindex="-1"></a>      <span class="cf">if</span> (bernoulli_rng(prob_nas) == <span class="dv">1</span>)</span>
-<span id="cb14-58"><a href="#cb14-58" tabindex="-1"></a>        nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);</span>
-<span id="cb14-59"><a href="#cb14-59" tabindex="-1"></a>      <span class="cf">else</span></span>
-<span id="cb14-60"><a href="#cb14-60" tabindex="-1"></a>        nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);</span>
-<span id="cb14-61"><a href="#cb14-61" tabindex="-1"></a>    }</span>
-<span id="cb14-62"><a href="#cb14-62" tabindex="-1"></a>  }</span>
-<span id="cb14-63"><a href="#cb14-63" tabindex="-1"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>mix_m <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(<span class="st">&quot;./mix.stan&quot;</span>)</span></code></pre></div>
+<pre class="stan"><code>#include beta2.stan
+data {
+  int&lt;lower = 1&gt; N;
+  vector[N] nasalance;
+  array[N] int&lt;lower = 1&gt; E;
+}
+parameters {
+  real&lt;lower = 0, upper = 1&gt; mu_contact;
+  real&lt;lower = 0, upper = sqrt(mu_contact*(1-mu_contact))&gt; sigma_contact;
+  real&lt;lower = 0, upper = 1 &gt; mu_oral;
+  real&lt;lower= 0, upper = sqrt(mu_oral*(1-mu_oral))&gt; sigma_oral;
+  real&lt;lower = 0, upper = 1&gt; prob_nas;
+}
+model {
+  // priors for the task component
+  target += normal_lpdf(mu_contact | 0.6, 0.2);
+  target += normal_lpdf(mu_oral | 0.2, 0.3);
+  target += normal_lpdf(sigma_oral | 0, 0.3);
+  target += normal_lpdf(sigma_contact | 0, 0.3);
+
+  target += beta_lpdf(prob_nas | 3, 10);
+
+  for(n in 1:N){
+    if(E[n] == 1)  // contact
+      target +=  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+     else if(E[n] == 3)  // oral
+       target += beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+    else if(E[n] == 2) //nas
+       target += log_sum_exp(log(prob_nas) +
+                  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),
+                  log1m(prob_nas) +
+                  beta2_lpdf(nasalance[n] | mu_oral, sigma_oral));
+  }
+}
+generated quantities {
+  vector[N] log_lik;
+ for(n in 1:N){
+    if(E[n] == 1)  // contact
+      log_lik[n] =  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+     else if(E[n] == 3)  // oral
+       log_lik[n] = beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+     else if(E[n] == 2) //nas
+       log_lik[n] = log_sum_exp(log(prob_nas) +
+                                beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),
+                                log1m(prob_nas) +
+                                beta2_lpdf(nasalance[n] | mu_oral, sigma_oral));
+  }
+
+  // Posterior predictions:
+  vector[N] nasalance_rep;
+  for (n in 1:N) {
+    if (E[n] == 1)
+      nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+    else if (E[n] == 3)
+      nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    else if (E[n] == 2) {
+      if (bernoulli_rng(prob_nas) == 1)
+        nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+      else
+        nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    }
+  }
+}</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a>mix_m &lt;-<span class="st"> </span><span class="kw">cmdstan_model</span>(<span class="st">&quot;./mix.stan&quot;</span>)</span></code></pre></div>
 <hr />
 </div>
 <div id="model-fits" class="section level3" number="2.2.2">
 <h3><span class="header-section-number">2.2.2</span> Model fits</h3>
-<p>Posterior recovery plots (<code>mcmc_recover_hist</code>) show that all five parameters are recovered when the data truly come from a mixture. Notably, the same Stan model also <em>fits</em> the non-mixture data well.</p>
+<p>Posterior recovery plots (<code>mcmc_recover_hist</code>) show that all five parameters are recovered when the data truly come from a mixture. <span class="citation">(A complete pipeline would also include SBC, which we omit for brevity: Talts et al. 2018; Modrák et al. 2023)</span>. We skip this step here.
+Notably, the same Stan model also <em>fits</em> the non-mixture data well.</p>
 <div id="fiting-data-generated-by-a-non-mixture-process-with-a-mixture-model" class="section level4" number="2.2.2.1">
 <h4><span class="header-section-number">2.2.2.1</span> Fiting data generated by a non-mixture process with a mixture model</h4>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>mix_ls <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  <span class="at">N =</span> <span class="fu">nrow</span>(mix_data),</span>
-<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="at">nasalance =</span> mix_data<span class="sc">$</span>nasalance,</span>
-<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="at">E =</span> <span class="fu">as.integer</span>(mix_data<span class="sc">$</span>E)</span>
-<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>)</span>
-<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a></span>
-<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>mixm_mixd <span class="ot">&lt;-</span> mix_m<span class="sc">$</span><span class="fu">sample</span>(<span class="at">data =</span> mix_ls, <span class="at">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a>mix_ls &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>  <span class="dt">N =</span> <span class="kw">nrow</span>(mix_data),</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a>  <span class="dt">nasalance =</span> mix_data<span class="op">$</span>nasalance,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a>  <span class="dt">E =</span> <span class="kw">as.integer</span>(mix_data<span class="op">$</span>E)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true"></a>mixm_mixd &lt;-<span class="st"> </span>mix_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> mix_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
 <p>Parameter recovery:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>bayesplot<span class="sc">::</span><span class="fu">mcmc_recover_hist</span>(</span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>  <span class="at">x =</span> mixm_mixd<span class="sc">$</span><span class="fu">draws</span>(<span class="fu">c</span>(<span class="st">&quot;mu_oral&quot;</span>, <span class="st">&quot;sigma_oral&quot;</span>, <span class="st">&quot;mu_contact&quot;</span>, <span class="st">&quot;sigma_contact&quot;</span>, <span class="st">&quot;prob_nas&quot;</span>)),</span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  <span class="at">true =</span> <span class="fu">unlist</span>(true)</span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>)</span></code></pre></div>
-<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>yrep <span class="ot">&lt;-</span> mixm_mixd<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="sc">|&gt;</span> posterior<span class="sc">::</span><span class="fu">as_draws_matrix</span>()</span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">ppc_dens_overlay_grouped</span>(<span class="at">y =</span> mix_data<span class="sc">$</span>nasalance, <span class="at">yrep =</span> yrep[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, ], <span class="at">group =</span> mix_data<span class="sc">$</span>etymology)<span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;Mixture model on mixture data&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a>bayesplot<span class="op">::</span><span class="kw">mcmc_recover_hist</span>(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>  <span class="dt">x =</span> mixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="kw">c</span>(<span class="st">&quot;mu_oral&quot;</span>, <span class="st">&quot;sigma_oral&quot;</span>, <span class="st">&quot;mu_contact&quot;</span>, <span class="st">&quot;sigma_contact&quot;</span>, <span class="st">&quot;prob_nas&quot;</span>)),</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a>  <span class="dt">true =</span> <span class="kw">unlist</span>(true)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a>)</span></code></pre></div>
 <p><img src="mixture-nasal_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a>yrep &lt;-<span class="st"> </span>mixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(<span class="dt">y =</span> mix_data<span class="op">$</span>nasalance,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>                         <span class="dt">yrep =</span> yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true"></a>                         <span class="dt">group =</span> mix_data<span class="op">$</span>etymology) <span class="op">+</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Mixture model on mixture data&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
 </div>
 <div id="fitting-non-mixture-data-with-a-mixture-model" class="section level4" number="2.2.2.2">
 <h4><span class="header-section-number">2.2.2.2</span> Fitting non-mixture data with a mixture model</h4>
 <p>Data not generated by a mixture model can be perfectly fit by a mixture model!</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>nonmix_ls <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>  <span class="at">N =</span> <span class="fu">nrow</span>(nonmix_data),</span>
-<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>  <span class="at">nasalance =</span> nonmix_data<span class="sc">$</span>nasalance,</span>
-<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>  <span class="at">E =</span> <span class="fu">as.integer</span>(nonmix_data<span class="sc">$</span>E)</span>
-<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>)</span>
-<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a></span>
-<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>mixm_nonmixd <span class="ot">&lt;-</span> mix_m<span class="sc">$</span><span class="fu">sample</span>(<span class="at">data =</span> nonmix_ls, <span class="at">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>yrep <span class="ot">&lt;-</span> mixm_nonmixd<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="sc">|&gt;</span> posterior<span class="sc">::</span><span class="fu">as_draws_matrix</span>()</span>
-<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">ppc_dens_overlay_grouped</span>(<span class="at">y =</span> nonmix_data<span class="sc">$</span>nasalance, <span class="at">yrep =</span> yrep[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, ],<span class="at">group =</span> nonmix_data<span class="sc">$</span>etymology)<span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;Mixture model on non-mixture data&quot;</span>)</span></code></pre></div>
-<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a>nonmix_ls &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a>  <span class="dt">N =</span> <span class="kw">nrow</span>(nonmix_data),</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a>  <span class="dt">nasalance =</span> nonmix_data<span class="op">$</span>nasalance,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a>  <span class="dt">E =</span> <span class="kw">as.integer</span>(nonmix_data<span class="op">$</span>E)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true"></a>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true"></a>mixm_nonmixd &lt;-<span class="st"> </span>mix_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> nonmix_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a>yrep &lt;-<span class="st"> </span>mixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(<span class="dt">y =</span> nonmix_data<span class="op">$</span>nasalance,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a>                         <span class="dt">yrep =</span> yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true"></a>                         <span class="dt">group =</span> nonmix_data<span class="op">$</span>etymology) <span class="op">+</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Mixture model on non-mixture data&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
 </div>
 </div>
 </div>
@@ -787,62 +756,62 @@ p_2(\Theta_2), &amp; \text{ if } z_n=0
 <h2><span class="header-section-number">2.3</span> Alternative model: non-mixture model</h2>
 <p>This alternative Stan program replaces the Bernoulli mixture with a dedicated Beta for the nasalised class. Everything else remains the same. This model therefore embodies the (maybe unrealistic) hypothesis that historically nasalised aspirates form a coherent third distribution rather than a mixture of two.</p>
 <p>Stan model:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode stan"><code class="sourceCode stan"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="co">#include beta2.stan</span></span>
-<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a><span class="kw">data</span> {</span>
-<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; N;</span>
-<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>  <span class="dt">vector</span>[N] nasalance;</span>
-<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>  <span class="dt">array</span>[N] <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; E;</span>
-<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>}</span>
-<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a><span class="kw">parameters</span> {</span>
-<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; mu_contact;</span>
-<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = sqrt(mu_contact*(<span class="dv">1</span>-mu_contact))&gt; sigma_contact;</span>
-<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span> &gt; mu_oral;</span>
-<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span>= <span class="dv">0</span>, <span class="kw">upper</span> = sqrt(mu_oral*(<span class="dv">1</span>-mu_oral))&gt; sigma_oral;</span>
-<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a> <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; mu_nasalized;</span>
-<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = sqrt(mu_nasalized*(<span class="dv">1</span>-mu_nasalized))&gt; sigma_nasalized;</span>
-<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a>}</span>
-<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a><span class="kw">model</span> {</span>
-<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a>  <span class="co">// priors for the task component</span></span>
-<span id="cb21-17"><a href="#cb21-17" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(mu_contact | <span class="fl">0.6</span>, <span class="fl">0.2</span>);</span>
-<span id="cb21-18"><a href="#cb21-18" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(mu_oral | <span class="fl">0.2</span>, <span class="fl">0.3</span>);</span>
-<span id="cb21-19"><a href="#cb21-19" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(mu_nasalized | <span class="fl">0.2</span>, <span class="fl">0.3</span>);</span>
-<span id="cb21-20"><a href="#cb21-20" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(sigma_oral | <span class="dv">0</span>, <span class="fl">0.3</span>);</span>
-<span id="cb21-21"><a href="#cb21-21" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(sigma_contact | <span class="dv">0</span>, <span class="fl">0.3</span>);</span>
-<span id="cb21-22"><a href="#cb21-22" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(sigma_nasalized | <span class="dv">0</span>, <span class="fl">0.3</span>);</span>
-<span id="cb21-23"><a href="#cb21-23" tabindex="-1"></a></span>
-<span id="cb21-24"><a href="#cb21-24" tabindex="-1"></a>  <span class="cf">for</span>(n <span class="cf">in</span> <span class="dv">1</span>:N){</span>
-<span id="cb21-25"><a href="#cb21-25" tabindex="-1"></a>    <span class="cf">if</span>(E[n] == <span class="dv">1</span>)  <span class="co">// contact</span></span>
-<span id="cb21-26"><a href="#cb21-26" tabindex="-1"></a>      <span class="kw">target +=</span>  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);</span>
-<span id="cb21-27"><a href="#cb21-27" tabindex="-1"></a>     <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">3</span>)  <span class="co">// oral</span></span>
-<span id="cb21-28"><a href="#cb21-28" tabindex="-1"></a>       <span class="kw">target +=</span> beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);</span>
-<span id="cb21-29"><a href="#cb21-29" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">2</span>) <span class="co">//nas</span></span>
-<span id="cb21-30"><a href="#cb21-30" tabindex="-1"></a>       <span class="kw">target +=</span> beta2_lpdf(nasalance[n] | mu_nasalized, sigma_nasalized);</span>
-<span id="cb21-31"><a href="#cb21-31" tabindex="-1"></a>  }</span>
-<span id="cb21-32"><a href="#cb21-32" tabindex="-1"></a>}</span>
-<span id="cb21-33"><a href="#cb21-33" tabindex="-1"></a><span class="kw">generated quantities</span> {</span>
-<span id="cb21-34"><a href="#cb21-34" tabindex="-1"></a>  <span class="dt">vector</span>[N] log_lik;</span>
-<span id="cb21-35"><a href="#cb21-35" tabindex="-1"></a>  <span class="dt">vector</span>[N] nasalance_rep;</span>
-<span id="cb21-36"><a href="#cb21-36" tabindex="-1"></a></span>
-<span id="cb21-37"><a href="#cb21-37" tabindex="-1"></a>  <span class="cf">for</span> (n <span class="cf">in</span> <span class="dv">1</span>:N) {</span>
-<span id="cb21-38"><a href="#cb21-38" tabindex="-1"></a>    <span class="cf">if</span> (E[n] == <span class="dv">1</span>) {  <span class="co">// contact</span></span>
-<span id="cb21-39"><a href="#cb21-39" tabindex="-1"></a>      log_lik[n] = beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);</span>
-<span id="cb21-40"><a href="#cb21-40" tabindex="-1"></a>      nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);</span>
-<span id="cb21-41"><a href="#cb21-41" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (E[n] == <span class="dv">3</span>) {  <span class="co">// oral</span></span>
-<span id="cb21-42"><a href="#cb21-42" tabindex="-1"></a>      log_lik[n] = beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);</span>
-<span id="cb21-43"><a href="#cb21-43" tabindex="-1"></a>      nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);</span>
-<span id="cb21-44"><a href="#cb21-44" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (E[n] == <span class="dv">2</span>) {  <span class="co">// nasalized</span></span>
-<span id="cb21-45"><a href="#cb21-45" tabindex="-1"></a>      log_lik[n] = beta2_lpdf(nasalance[n] | mu_nasalized, sigma_nasalized);</span>
-<span id="cb21-46"><a href="#cb21-46" tabindex="-1"></a>      nasalance_rep[n] = beta2_rng(mu_nasalized, sigma_nasalized);</span>
-<span id="cb21-47"><a href="#cb21-47" tabindex="-1"></a>    }</span>
-<span id="cb21-48"><a href="#cb21-48" tabindex="-1"></a>  }</span>
-<span id="cb21-49"><a href="#cb21-49" tabindex="-1"></a>}</span></code></pre></div>
+<pre class="stan"><code>#include beta2.stan
+data {
+  int&lt;lower = 1&gt; N;
+  vector[N] nasalance;
+  array[N] int&lt;lower = 1&gt; E;
+}
+parameters {
+  real&lt;lower = 0, upper = 1&gt; mu_contact;
+  real&lt;lower = 0, upper = sqrt(mu_contact*(1-mu_contact))&gt; sigma_contact;
+  real&lt;lower = 0, upper = 1 &gt; mu_oral;
+  real&lt;lower= 0, upper = sqrt(mu_oral*(1-mu_oral))&gt; sigma_oral;
+ real&lt;lower = 0, upper = 1&gt; mu_nasalized;
+  real&lt;lower = 0, upper = sqrt(mu_nasalized*(1-mu_nasalized))&gt; sigma_nasalized;
+}
+model {
+  // priors for the task component
+  target += normal_lpdf(mu_contact | 0.6, 0.2);
+  target += normal_lpdf(mu_oral | 0.2, 0.3);
+  target += normal_lpdf(mu_nasalized | 0.2, 0.3);
+  target += normal_lpdf(sigma_oral | 0, 0.3);
+  target += normal_lpdf(sigma_contact | 0, 0.3);
+  target += normal_lpdf(sigma_nasalized | 0, 0.3);
+
+  for(n in 1:N){
+    if(E[n] == 1)  // contact
+      target +=  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+     else if(E[n] == 3)  // oral
+       target += beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+    else if(E[n] == 2) //nas
+       target += beta2_lpdf(nasalance[n] | mu_nasalized, sigma_nasalized);
+  }
+}
+generated quantities {
+  vector[N] log_lik;
+  vector[N] nasalance_rep;
+
+  for (n in 1:N) {
+    if (E[n] == 1) {  // contact
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+      nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+    } else if (E[n] == 3) {  // oral
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+      nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    } else if (E[n] == 2) {  // nasalized
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_nasalized, sigma_nasalized);
+      nasalance_rep[n] = beta2_rng(mu_nasalized, sigma_nasalized);
+    }
+  }
+}</code></pre>
 <div id="fitting-mixture-and-non-mixture-data-with-a-non-mixture-model" class="section level3" number="2.3.1">
 <h3><span class="header-section-number">2.3.1</span> Fitting mixture and non-mixture data with a non-mixture model</h3>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>nonmix_m <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(<span class="st">&quot;./nonmix.stan&quot;</span>)</span>
-<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a></span>
-<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a>nonmixm_mixd <span class="ot">&lt;-</span> nonmix_m<span class="sc">$</span><span class="fu">sample</span>(<span class="at">data =</span> mix_ls, <span class="at">parallel_chains =</span> <span class="dv">4</span>)</span>
-<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a>nonmixm_nonmixd <span class="ot">&lt;-</span> nonmix_m<span class="sc">$</span><span class="fu">sample</span>(<span class="at">data =</span> nonmix_ls, <span class="at">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>nonmixm_mixd</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true"></a>nonmix_m &lt;-<span class="st"> </span><span class="kw">cmdstan_model</span>(<span class="st">&quot;./nonmix.stan&quot;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true"></a>nonmixm_mixd &lt;-<span class="st"> </span>nonmix_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> mix_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true"></a>nonmixm_nonmixd &lt;-<span class="st"> </span>nonmix_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> nonmix_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a>nonmixm_mixd</span></code></pre></div>
 <pre><code>        variable   mean median   sd  mad     q5    q95 rhat ess_bulk ess_tail
  lp__            223.15 223.47 1.75 1.56 219.71 225.34 1.00     1813     2718
  mu_contact        0.55   0.55 0.01 0.01   0.53   0.57 1.00     4616     2815
@@ -856,7 +825,7 @@ p_2(\Theta_2), &amp; \text{ if } z_n=0
  log_lik[3]        0.84   0.84 0.08 0.08   0.70   0.97 1.00     5775     2994
 
  # showing 10 of 607 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>nonmixm_nonmixd</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true"></a>nonmixm_nonmixd</span></code></pre></div>
 <pre><code>        variable   mean median   sd  mad     q5    q95 rhat ess_bulk ess_tail
  lp__            214.49 214.84 1.75 1.53 211.07 216.67 1.00     2090     2769
  mu_contact        0.55   0.55 0.01 0.01   0.53   0.57 1.00     4788     3191
@@ -871,46 +840,50 @@ p_2(\Theta_2), &amp; \text{ if } z_n=0
 
  # showing 10 of 607 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
 <p>Recovery of the parameters of the non-mixture with the non-mixture model:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a>bayesplot<span class="sc">::</span><span class="fu">mcmc_recover_hist</span>(</span>
-<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>  <span class="at">x =</span> nonmixm_nonmixd<span class="sc">$</span><span class="fu">draws</span>(<span class="fu">c</span>(<span class="st">&quot;mu_oral&quot;</span>, <span class="st">&quot;sigma_oral&quot;</span>, <span class="st">&quot;mu_contact&quot;</span>, <span class="st">&quot;sigma_contact&quot;</span>, <span class="st">&quot;mu_nasalized&quot;</span>, <span class="st">&quot;sigma_nasalized&quot;</span>)),</span>
-<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>  <span class="at">true =</span> <span class="fu">unlist</span>(true2)</span>
-<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>)</span></code></pre></div>
-<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>yrep_mixfit <span class="ot">&lt;-</span> nonmixm_mixd<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="sc">|&gt;</span> posterior<span class="sc">::</span><span class="fu">as_draws_matrix</span>()</span>
-<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a><span class="fu">ppc_dens_overlay_grouped</span>(</span>
-<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a>  <span class="at">y =</span> mix_data<span class="sc">$</span>nasalance,</span>
-<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a>  <span class="at">yrep =</span> yrep_mixfit[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, ],  </span>
-<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a>  <span class="at">group =</span> mix_data<span class="sc">$</span>etymology</span>
-<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;Non-mixture model on mixture data&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true"></a>bayesplot<span class="op">::</span><span class="kw">mcmc_recover_hist</span>(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true"></a>  <span class="dt">x =</span> nonmixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="kw">c</span>(<span class="st">&quot;mu_oral&quot;</span>, <span class="st">&quot;sigma_oral&quot;</span>, <span class="st">&quot;mu_contact&quot;</span>, <span class="st">&quot;sigma_contact&quot;</span>, <span class="st">&quot;mu_nasalized&quot;</span>, <span class="st">&quot;sigma_nasalized&quot;</span>)),</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true"></a>  <span class="dt">true =</span> <span class="kw">unlist</span>(true2)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true"></a>)</span></code></pre></div>
 <p><img src="mixture-nasal_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a>yrep_nonmixfit <span class="ot">&lt;-</span> nonmixm_nonmixd<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="sc">|&gt;</span> posterior<span class="sc">::</span><span class="fu">as_draws_matrix</span>()</span>
-<span id="cb29-2"><a href="#cb29-2" tabindex="-1"></a><span class="fu">ppc_dens_overlay_grouped</span>(</span>
-<span id="cb29-3"><a href="#cb29-3" tabindex="-1"></a>  <span class="at">y =</span> nonmix_data<span class="sc">$</span>nasalance,</span>
-<span id="cb29-4"><a href="#cb29-4" tabindex="-1"></a>  <span class="at">yrep =</span> yrep_nonmixfit[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, ],</span>
-<span id="cb29-5"><a href="#cb29-5" tabindex="-1"></a>  <span class="at">group =</span> nonmix_data<span class="sc">$</span>etymology</span>
-<span id="cb29-6"><a href="#cb29-6" tabindex="-1"></a>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;Non-mixture model on non-mixture data&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true"></a>yrep_mixfit &lt;-<span class="st"> </span>nonmixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true"></a>  <span class="dt">y =</span> mix_data<span class="op">$</span>nasalance,</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true"></a>  <span class="dt">yrep =</span> yrep_mixfit[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],  </span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true"></a>  <span class="dt">group =</span> mix_data<span class="op">$</span>etymology</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true"></a>) <span class="op">+</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Non-mixture model on mixture data&quot;</span>)</span></code></pre></div>
 <p><img src="mixture-nasal_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true"></a>yrep_nonmixfit &lt;-<span class="st"> </span>nonmixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true"></a>  <span class="dt">y =</span> nonmix_data<span class="op">$</span>nasalance,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true"></a>  <span class="dt">yrep =</span> yrep_nonmixfit[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true"></a>  <span class="dt">group =</span> nonmix_data<span class="op">$</span>etymology</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true"></a>) <span class="op">+</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Non-mixture model on non-mixture data&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
 </div>
 </div>
 <div id="model-comparison" class="section level2" number="2.4">
 <h2><span class="header-section-number">2.4</span> Model comparison</h2>
 <p>Model comparison via approximate leave-one-out cross-validation (LOO-CV) is rather inconclusive (in this small-data setting):</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a>loo_mixm_mixd <span class="ot">&lt;-</span> <span class="fu">loo</span>(mixm_mixd<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span>
-<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a>loo_mixm_nonmixd <span class="ot">&lt;-</span> <span class="fu">loo</span>(mixm_nonmixd<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span>
-<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a>loo_nonmixm_mixd <span class="ot">&lt;-</span> <span class="fu">loo</span>(nonmixm_mixd<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span>
-<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a>loo_nonmixm_nonmixd <span class="ot">&lt;-</span> <span class="fu">loo</span>(nonmixm_nonmixd<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true"></a>loo_mixm_mixd &lt;-<span class="st"> </span><span class="kw">loo</span>(mixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true"></a>loo_mixm_nonmixd &lt;-<span class="st"> </span><span class="kw">loo</span>(mixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true"></a>loo_nonmixm_mixd &lt;-<span class="st"> </span><span class="kw">loo</span>(nonmixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true"></a>loo_nonmixm_nonmixd &lt;-<span class="st"> </span><span class="kw">loo</span>(nonmixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span></code></pre></div>
 <div id="data-generated-by-a-mixture-process" class="section level3" number="2.4.1">
 <h3><span class="header-section-number">2.4.1</span> Data generated by a mixture process</h3>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a><span class="fu">loo_compare</span>(<span class="fu">list</span>(<span class="at">mixture_model =</span> loo_mixm_mixd,</span>
-<span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>                 <span class="at">non_mixture   =</span> loo_nonmixm_mixd))</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(<span class="kw">list</span>(<span class="dt">mixture_model =</span> loo_mixm_mixd,</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true"></a>                 <span class="dt">non_mixture   =</span> loo_nonmixm_mixd))</span></code></pre></div>
 <pre><code>              elpd_diff se_diff
 mixture_model  0.0       0.0   
 non_mixture   -8.1       4.1   </code></pre>
 </div>
 <div id="data-generated-by-a-nonmixture-process" class="section level3" number="2.4.2">
 <h3><span class="header-section-number">2.4.2</span> Data generated by a non‑mixture process</h3>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a><span class="fu">loo_compare</span>(<span class="fu">list</span>(<span class="at">mixture_model =</span> loo_mixm_nonmixd,</span>
-<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a>                 <span class="at">non_mixture   =</span> loo_nonmixm_nonmixd))</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(<span class="kw">list</span>(<span class="dt">mixture_model =</span> loo_mixm_nonmixd,</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true"></a>                 <span class="dt">non_mixture   =</span> loo_nonmixm_nonmixd))</span></code></pre></div>
 <pre><code>              elpd_diff se_diff
 non_mixture    0.0       0.0   
 mixture_model -2.1       3.8   </code></pre>
@@ -924,128 +897,130 @@ mixture_model -2.1       3.8   </code></pre>
 <p>Real speakers differ in how faithfully they produce nasalised aspirates. The next two Stan programs introduce <strong>speaker-level group effects</strong> on the mixture weight and, in the final version, also on the contact/oral means via a Cholesky-factor LKJ prior. The high-level structure is unchanged.</p>
 <div id="subject-level-adjustments-for-the-mixture-weight" class="section level3" number="2.5.1">
 <h3><span class="header-section-number">2.5.1</span> Subject level adjustments for the mixture weight</h3>
-<div class="sourceCode" id="cb35"><pre class="sourceCode stan"><code class="sourceCode stan"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a><span class="co">#include beta2.stan</span></span>
-<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a><span class="kw">data</span> {</span>
-<span id="cb35-3"><a href="#cb35-3" tabindex="-1"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; N;</span>
-<span id="cb35-4"><a href="#cb35-4" tabindex="-1"></a>  <span class="dt">vector</span>[N] nasalance;</span>
-<span id="cb35-5"><a href="#cb35-5" tabindex="-1"></a>  <span class="dt">array</span>[N] <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; E;</span>
-<span id="cb35-6"><a href="#cb35-6" tabindex="-1"></a>  <span class="dt">array</span>[N] <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; speaker;</span>
-<span id="cb35-7"><a href="#cb35-7" tabindex="-1"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; N_speaker;</span>
-<span id="cb35-8"><a href="#cb35-8" tabindex="-1"></a>}</span>
-<span id="cb35-9"><a href="#cb35-9" tabindex="-1"></a><span class="kw">parameters</span> {</span>
-<span id="cb35-10"><a href="#cb35-10" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; mu_contact;</span>
-<span id="cb35-11"><a href="#cb35-11" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = sqrt(mu_contact*(<span class="dv">1</span>-mu_contact))&gt; sigma_contact;</span>
-<span id="cb35-12"><a href="#cb35-12" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span> &gt; mu_oral;</span>
-<span id="cb35-13"><a href="#cb35-13" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span>= <span class="dv">0</span>, <span class="kw">upper</span> = sqrt(mu_oral*(<span class="dv">1</span>-mu_oral))&gt; sigma_oral;</span>
-<span id="cb35-14"><a href="#cb35-14" tabindex="-1"></a></span>
-<span id="cb35-15"><a href="#cb35-15" tabindex="-1"></a>  <span class="co">// now it&#39;s log odds</span></span>
-<span id="cb35-16"><a href="#cb35-16" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; av_prob_nas;</span>
-<span id="cb35-17"><a href="#cb35-17" tabindex="-1"></a></span>
-<span id="cb35-18"><a href="#cb35-18" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>&gt;  tau_u;</span>
-<span id="cb35-19"><a href="#cb35-19" tabindex="-1"></a>  <span class="dt">vector</span>[N_speaker] z_u;</span>
-<span id="cb35-20"><a href="#cb35-20" tabindex="-1"></a>}</span>
-<span id="cb35-21"><a href="#cb35-21" tabindex="-1"></a><span class="kw">transformed parameters</span> {</span>
-<span id="cb35-22"><a href="#cb35-22" tabindex="-1"></a>  <span class="dt">vector</span>[N_speaker] u;</span>
-<span id="cb35-23"><a href="#cb35-23" tabindex="-1"></a>  u = tau_u * z_u;</span>
-<span id="cb35-24"><a href="#cb35-24" tabindex="-1"></a>}</span>
-<span id="cb35-25"><a href="#cb35-25" tabindex="-1"></a><span class="kw">model</span> {</span>
-<span id="cb35-26"><a href="#cb35-26" tabindex="-1"></a>  <span class="co">// priors for the task component</span></span>
-<span id="cb35-27"><a href="#cb35-27" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(mu_contact | <span class="fl">0.6</span>, <span class="fl">0.2</span>);</span>
-<span id="cb35-28"><a href="#cb35-28" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(mu_oral | <span class="fl">0.2</span>, <span class="fl">0.3</span>);</span>
-<span id="cb35-29"><a href="#cb35-29" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(sigma_oral | <span class="dv">0</span>, <span class="fl">0.3</span>);</span>
-<span id="cb35-30"><a href="#cb35-30" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(sigma_contact | <span class="dv">0</span>, <span class="fl">0.3</span>);</span>
-<span id="cb35-31"><a href="#cb35-31" tabindex="-1"></a></span>
-<span id="cb35-32"><a href="#cb35-32" tabindex="-1"></a>  <span class="kw">target +=</span> std_normal_lpdf(z_u);</span>
-<span id="cb35-33"><a href="#cb35-33" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(tau_u | <span class="dv">0</span>, <span class="dv">2</span>);</span>
-<span id="cb35-34"><a href="#cb35-34" tabindex="-1"></a>  </span>
-<span id="cb35-35"><a href="#cb35-35" tabindex="-1"></a>  <span class="kw">target +=</span> beta_lpdf(av_prob_nas | <span class="dv">3</span>, <span class="dv">10</span>);</span>
-<span id="cb35-36"><a href="#cb35-36" tabindex="-1"></a></span>
-<span id="cb35-37"><a href="#cb35-37" tabindex="-1"></a>  <span class="cf">for</span>(n <span class="cf">in</span> <span class="dv">1</span>:N){</span>
-<span id="cb35-38"><a href="#cb35-38" tabindex="-1"></a>    <span class="cf">if</span>(E[n] == <span class="dv">1</span>)  <span class="co">// contact</span></span>
-<span id="cb35-39"><a href="#cb35-39" tabindex="-1"></a>      <span class="kw">target +=</span>  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);</span>
-<span id="cb35-40"><a href="#cb35-40" tabindex="-1"></a>     <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">3</span>)  <span class="co">// oral</span></span>
-<span id="cb35-41"><a href="#cb35-41" tabindex="-1"></a>       <span class="kw">target +=</span> beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);</span>
-<span id="cb35-42"><a href="#cb35-42" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">2</span>) { <span class="co">//nas</span></span>
-<span id="cb35-43"><a href="#cb35-43" tabindex="-1"></a>       <span class="dt">real</span> logodds_nas = logit(av_prob_nas) + u[speaker[n]];</span>
-<span id="cb35-44"><a href="#cb35-44" tabindex="-1"></a>       <span class="kw">target +=</span> log_sum_exp(log_inv_logit(logodds_nas) +</span>
-<span id="cb35-45"><a href="#cb35-45" tabindex="-1"></a>                  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),</span>
-<span id="cb35-46"><a href="#cb35-46" tabindex="-1"></a>                  log1m_inv_logit(logodds_nas)+</span>
-<span id="cb35-47"><a href="#cb35-47" tabindex="-1"></a>                  beta2_lpdf(nasalance[n] | mu_oral, sigma_oral));</span>
-<span id="cb35-48"><a href="#cb35-48" tabindex="-1"></a>       }</span>
-<span id="cb35-49"><a href="#cb35-49" tabindex="-1"></a>  }</span>
-<span id="cb35-50"><a href="#cb35-50" tabindex="-1"></a>}</span>
-<span id="cb35-51"><a href="#cb35-51" tabindex="-1"></a><span class="kw">generated quantities</span> {</span>
-<span id="cb35-52"><a href="#cb35-52" tabindex="-1"></a>  <span class="dt">vector</span>[N] log_lik;</span>
-<span id="cb35-53"><a href="#cb35-53" tabindex="-1"></a>  <span class="dt">vector</span>[N] nasalance_rep;</span>
-<span id="cb35-54"><a href="#cb35-54" tabindex="-1"></a>  <span class="dt">vector</span>[N_speaker] prob_nas_speaker = inv_logit(logit(av_prob_nas) + u);</span>
-<span id="cb35-55"><a href="#cb35-55" tabindex="-1"></a>  </span>
-<span id="cb35-56"><a href="#cb35-56" tabindex="-1"></a>  <span class="cf">for</span> (n <span class="cf">in</span> <span class="dv">1</span>:N) {</span>
-<span id="cb35-57"><a href="#cb35-57" tabindex="-1"></a>    <span class="cf">if</span> (E[n] == <span class="dv">1</span>) {  <span class="co">// contact</span></span>
-<span id="cb35-58"><a href="#cb35-58" tabindex="-1"></a>      log_lik[n] = beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);</span>
-<span id="cb35-59"><a href="#cb35-59" tabindex="-1"></a>      nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);</span>
-<span id="cb35-60"><a href="#cb35-60" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (E[n] == <span class="dv">3</span>) {  <span class="co">// oral</span></span>
-<span id="cb35-61"><a href="#cb35-61" tabindex="-1"></a>      log_lik[n] = beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);</span>
-<span id="cb35-62"><a href="#cb35-62" tabindex="-1"></a>      nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);</span>
-<span id="cb35-63"><a href="#cb35-63" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (E[n] == <span class="dv">2</span>) { <span class="co">// nas</span></span>
-<span id="cb35-64"><a href="#cb35-64" tabindex="-1"></a>      <span class="dt">real</span> logodds_nas = logit(av_prob_nas) + u[speaker[n]];</span>
-<span id="cb35-65"><a href="#cb35-65" tabindex="-1"></a>      <span class="dt">real</span> theta = inv_logit(logodds_nas);</span>
-<span id="cb35-66"><a href="#cb35-66" tabindex="-1"></a>      log_lik[n] = log_sum_exp(</span>
-<span id="cb35-67"><a href="#cb35-67" tabindex="-1"></a>        log(theta) + beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),</span>
-<span id="cb35-68"><a href="#cb35-68" tabindex="-1"></a>        log1m(theta) + beta2_lpdf(nasalance[n] | mu_oral, sigma_oral)</span>
-<span id="cb35-69"><a href="#cb35-69" tabindex="-1"></a>      );</span>
-<span id="cb35-70"><a href="#cb35-70" tabindex="-1"></a>      <span class="cf">if</span> (bernoulli_rng(theta) == <span class="dv">1</span>)</span>
-<span id="cb35-71"><a href="#cb35-71" tabindex="-1"></a>        nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);</span>
-<span id="cb35-72"><a href="#cb35-72" tabindex="-1"></a>      <span class="cf">else</span></span>
-<span id="cb35-73"><a href="#cb35-73" tabindex="-1"></a>        nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);</span>
-<span id="cb35-74"><a href="#cb35-74" tabindex="-1"></a>    }</span>
-<span id="cb35-75"><a href="#cb35-75" tabindex="-1"></a>  }</span>
-<span id="cb35-76"><a href="#cb35-76" tabindex="-1"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a>mix_s_m <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(<span class="st">&quot;./mix_s.stan&quot;</span>)</span></code></pre></div>
-<p>We first verify that we can recover the generating parameters. <span class="citation">(A complete pipeline would also include SBC, which we omit for brevity: Talts et al. 2018; Modrák et al. 2023)</span>. We skip this step here.</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" tabindex="-1"></a>nas_ls <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">N =</span> <span class="fu">nrow</span>(nas_data),</span>
-<span id="cb37-2"><a href="#cb37-2" tabindex="-1"></a>               <span class="at">nasalance =</span> nas_data<span class="sc">$</span>nasalance,</span>
-<span id="cb37-3"><a href="#cb37-3" tabindex="-1"></a>               <span class="at">E =</span> nas_data<span class="sc">$</span>E,</span>
-<span id="cb37-4"><a href="#cb37-4" tabindex="-1"></a>               <span class="at">speaker =</span> nas_data<span class="sc">$</span>speaker,</span>
-<span id="cb37-5"><a href="#cb37-5" tabindex="-1"></a>               <span class="at">N_speaker =</span> <span class="fu">max</span>(nas_data<span class="sc">$</span>speaker))</span>
-<span id="cb37-6"><a href="#cb37-6" tabindex="-1"></a>               </span>
-<span id="cb37-7"><a href="#cb37-7" tabindex="-1"></a>nas_mix <span class="ot">&lt;-</span> mix_s_m<span class="sc">$</span><span class="fu">sample</span>(<span class="at">data =</span> nas_ls, <span class="at">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a>yrep <span class="ot">&lt;-</span> nas_mix<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="sc">|&gt;</span> posterior<span class="sc">::</span><span class="fu">as_draws_matrix</span>()</span>
-<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a><span class="fu">ppc_dens_overlay_grouped</span>(</span>
-<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a>  <span class="at">y =</span> nas_data<span class="sc">$</span>nasalance,</span>
-<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a>  <span class="at">yrep =</span> yrep[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, ],</span>
-<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a>  <span class="at">group =</span> nas_data<span class="sc">$</span>etymology</span>
-<span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;Real data&quot;</span>)</span></code></pre></div>
-<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" tabindex="-1"></a>yrep_mat <span class="ot">&lt;-</span> yrep[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, ]  <span class="co"># assuming yrep is already created</span></span>
-<span id="cb39-2"><a href="#cb39-2" tabindex="-1"></a>n_draws <span class="ot">&lt;-</span> <span class="fu">nrow</span>(yrep_mat)</span>
-<span id="cb39-3"><a href="#cb39-3" tabindex="-1"></a></span>
-<span id="cb39-4"><a href="#cb39-4" tabindex="-1"></a><span class="co"># Build long dataframe from yrep and attach metadata</span></span>
-<span id="cb39-5"><a href="#cb39-5" tabindex="-1"></a>yrep_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">t</span>(yrep_mat)) <span class="sc">|&gt;</span></span>
-<span id="cb39-6"><a href="#cb39-6" tabindex="-1"></a>  <span class="fu">setNames</span>(<span class="fu">paste0</span>(<span class="st">&quot;draw&quot;</span>, <span class="dv">1</span><span class="sc">:</span>n_draws)) <span class="sc">|&gt;</span></span>
-<span id="cb39-7"><a href="#cb39-7" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb39-8"><a href="#cb39-8" tabindex="-1"></a>    <span class="at">obs =</span> nas_data<span class="sc">$</span>nasalance,</span>
-<span id="cb39-9"><a href="#cb39-9" tabindex="-1"></a>    <span class="at">speaker =</span> nas_data<span class="sc">$</span>speaker,</span>
-<span id="cb39-10"><a href="#cb39-10" tabindex="-1"></a>    <span class="at">etymology =</span> nas_data<span class="sc">$</span>etymology</span>
-<span id="cb39-11"><a href="#cb39-11" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb39-12"><a href="#cb39-12" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
-<span id="cb39-13"><a href="#cb39-13" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">starts_with</span>(<span class="st">&quot;draw&quot;</span>),</span>
-<span id="cb39-14"><a href="#cb39-14" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">&quot;draw&quot;</span>,</span>
-<span id="cb39-15"><a href="#cb39-15" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">&quot;yrep&quot;</span></span>
-<span id="cb39-16"><a href="#cb39-16" tabindex="-1"></a>  )</span>
-<span id="cb39-17"><a href="#cb39-17" tabindex="-1"></a></span>
-<span id="cb39-18"><a href="#cb39-18" tabindex="-1"></a><span class="co"># Plot</span></span>
-<span id="cb39-19"><a href="#cb39-19" tabindex="-1"></a><span class="fu">ggplot</span>(yrep_df, <span class="fu">aes</span>(<span class="at">x =</span> etymology, <span class="at">y =</span> yrep, <span class="at">fill =</span> etymology)) <span class="sc">+</span></span>
-<span id="cb39-20"><a href="#cb39-20" tabindex="-1"></a>  <span class="fu">geom_violin</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">scale =</span> <span class="st">&quot;width&quot;</span>) <span class="sc">+</span></span>
-<span id="cb39-21"><a href="#cb39-21" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y =</span> obs), <span class="at">shape =</span> <span class="dv">21</span>, <span class="at">size =</span> <span class="fl">1.5</span>, <span class="at">position =</span> <span class="fu">position_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>)) <span class="sc">+</span></span>
-<span id="cb39-22"><a href="#cb39-22" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> speaker, <span class="at">scales =</span> <span class="st">&quot;free_y&quot;</span>) <span class="sc">+</span></span>
-<span id="cb39-23"><a href="#cb39-23" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Posterior predictive violins per speaker and etymology&quot;</span>,</span>
-<span id="cb39-24"><a href="#cb39-24" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;Etymology&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Nasalance&quot;</span>) <span class="sc">+</span></span>
-<span id="cb39-25"><a href="#cb39-25" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb39-26"><a href="#cb39-26" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>))</span></code></pre></div>
+<pre class="stan"><code>#include beta2.stan
+data {
+  int&lt;lower = 1&gt; N;
+  vector[N] nasalance;
+  array[N] int&lt;lower = 1&gt; E;
+  array[N] int&lt;lower = 1&gt; speaker;
+  int&lt;lower = 1&gt; N_speaker;
+}
+parameters {
+  real&lt;lower = 0, upper = 1&gt; mu_contact;
+  real&lt;lower = 0, upper = sqrt(mu_contact*(1-mu_contact))&gt; sigma_contact;
+  real&lt;lower = 0, upper = 1 &gt; mu_oral;
+  real&lt;lower= 0, upper = sqrt(mu_oral*(1-mu_oral))&gt; sigma_oral;
+
+  // now it&#39;s log odds
+  real&lt;lower = 0, upper = 1&gt; av_prob_nas;
+
+  real&lt;lower = 0&gt;  tau_u;
+  vector[N_speaker] z_u;
+}
+transformed parameters {
+  vector[N_speaker] u;
+  u = tau_u * z_u;
+}
+model {
+  // priors for the task component
+  target += normal_lpdf(mu_contact | 0.6, 0.2);
+  target += normal_lpdf(mu_oral | 0.2, 0.3);
+  target += normal_lpdf(sigma_oral | 0, 0.3);
+  target += normal_lpdf(sigma_contact | 0, 0.3);
+
+  target += std_normal_lpdf(z_u);
+  target += normal_lpdf(tau_u | 0, 2);
+  
+  target += beta_lpdf(av_prob_nas | 3, 10);
+
+  for(n in 1:N){
+    if(E[n] == 1)  // contact
+      target +=  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+     else if(E[n] == 3)  // oral
+       target += beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+    else if(E[n] == 2) { //nas
+       real logodds_nas = logit(av_prob_nas) + u[speaker[n]];
+       target += log_sum_exp(log_inv_logit(logodds_nas) +
+                  beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),
+                  log1m_inv_logit(logodds_nas)+
+                  beta2_lpdf(nasalance[n] | mu_oral, sigma_oral));
+       }
+  }
+}
+generated quantities {
+  vector[N] log_lik;
+  vector[N] nasalance_rep;
+  vector[N_speaker] prob_nas_speaker = inv_logit(logit(av_prob_nas) + u);
+  
+  for (n in 1:N) {
+    if (E[n] == 1) {  // contact
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_contact, sigma_contact);
+      nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+    } else if (E[n] == 3) {  // oral
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_oral, sigma_oral);
+      nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    } else if (E[n] == 2) { // nas
+      real logodds_nas = logit(av_prob_nas) + u[speaker[n]];
+      real theta = inv_logit(logodds_nas);
+      log_lik[n] = log_sum_exp(
+        log(theta) + beta2_lpdf(nasalance[n] | mu_contact, sigma_contact),
+        log1m(theta) + beta2_lpdf(nasalance[n] | mu_oral, sigma_oral)
+      );
+      if (bernoulli_rng(theta) == 1)
+        nasalance_rep[n] = beta2_rng(mu_contact, sigma_contact);
+      else
+        nasalance_rep[n] = beta2_rng(mu_oral, sigma_oral);
+    }
+  }
+}</code></pre>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true"></a>mix_s_m &lt;-<span class="st"> </span><span class="kw">cmdstan_model</span>(<span class="st">&quot;./mix_s.stan&quot;</span>)</span></code></pre></div>
+<p>We first verify that we can recover the generating parameters.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true"></a>nas_ls &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">N =</span> <span class="kw">nrow</span>(nas_data),</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true"></a>               <span class="dt">nasalance =</span> nas_data<span class="op">$</span>nasalance,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true"></a>               <span class="dt">E =</span> nas_data<span class="op">$</span>E,</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true"></a>               <span class="dt">speaker =</span> nas_data<span class="op">$</span>speaker,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true"></a>               <span class="dt">N_speaker =</span> <span class="kw">max</span>(nas_data<span class="op">$</span>speaker))</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true"></a>               </span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true"></a>nas_mix &lt;-<span class="st"> </span>mix_s_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> nas_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true"></a>yrep &lt;-<span class="st"> </span>nas_mix<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true"></a>  <span class="dt">y =</span> nas_data<span class="op">$</span>nasalance,</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true"></a>  <span class="dt">yrep =</span> yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true"></a>  <span class="dt">group =</span> nas_data<span class="op">$</span>etymology</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true"></a>) <span class="op">+</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Real data&quot;</span>)</span></code></pre></div>
 <p><img src="mixture-nasal_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
-<p>Are there subjects who nasalize more?</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="fu">mcmc_intervals</span>(nas_mix<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;prob_nas_speaker&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true"></a>yrep_mat &lt;-<span class="st"> </span>yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ]  <span class="co"># assuming yrep is already created</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true"></a>n_draws &lt;-<span class="st"> </span><span class="kw">nrow</span>(yrep_mat)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true"></a></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true"></a><span class="co"># Build long dataframe from yrep and attach metadata</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true"></a>yrep_df &lt;-<span class="st"> </span><span class="kw">as.data.frame</span>(<span class="kw">t</span>(yrep_mat)) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true"></a><span class="st">  </span><span class="kw">setNames</span>(<span class="kw">paste0</span>(<span class="st">&quot;draw&quot;</span>, <span class="dv">1</span><span class="op">:</span>n_draws)) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true"></a>    <span class="dt">obs =</span> nas_data<span class="op">$</span>nasalance,</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true"></a>    <span class="dt">speaker =</span> nas_data<span class="op">$</span>speaker,</span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true"></a>    <span class="dt">etymology =</span> nas_data<span class="op">$</span>etymology</span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true"></a>  ) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true"></a><span class="st">  </span><span class="kw">pivot_longer</span>(</span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true"></a>    <span class="dt">cols =</span> <span class="kw">starts_with</span>(<span class="st">&quot;draw&quot;</span>),</span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true"></a>    <span class="dt">names_to =</span> <span class="st">&quot;draw&quot;</span>,</span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true"></a>    <span class="dt">values_to =</span> <span class="st">&quot;yrep&quot;</span></span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true"></a>  )</span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true"></a></span>
+<span id="cb38-18"><a href="#cb38-18" aria-hidden="true"></a><span class="co"># Plot</span></span>
+<span id="cb38-19"><a href="#cb38-19" aria-hidden="true"></a><span class="kw">ggplot</span>(yrep_df, <span class="kw">aes</span>(<span class="dt">x =</span> etymology, <span class="dt">y =</span> yrep, <span class="dt">fill =</span> etymology)) <span class="op">+</span></span>
+<span id="cb38-20"><a href="#cb38-20" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_violin</span>(<span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">scale =</span> <span class="st">&quot;width&quot;</span>) <span class="op">+</span></span>
+<span id="cb38-21"><a href="#cb38-21" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_point</span>(<span class="kw">aes</span>(<span class="dt">y =</span> obs), <span class="dt">shape =</span> <span class="dv">21</span>, <span class="dt">size =</span> <span class="fl">1.5</span>, <span class="dt">position =</span> <span class="kw">position_jitter</span>(<span class="dt">width =</span> <span class="fl">0.1</span>)) <span class="op">+</span></span>
+<span id="cb38-22"><a href="#cb38-22" aria-hidden="true"></a><span class="st">  </span><span class="kw">facet_wrap</span>(<span class="op">~</span><span class="st"> </span>speaker, <span class="dt">scales =</span> <span class="st">&quot;free_y&quot;</span>) <span class="op">+</span></span>
+<span id="cb38-23"><a href="#cb38-23" aria-hidden="true"></a><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Posterior predictive violins per speaker and etymology&quot;</span>,</span>
+<span id="cb38-24"><a href="#cb38-24" aria-hidden="true"></a>       <span class="dt">x =</span> <span class="st">&quot;Etymology&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;Nasalance&quot;</span>) <span class="op">+</span></span>
+<span id="cb38-25"><a href="#cb38-25" aria-hidden="true"></a><span class="st">  </span><span class="kw">theme_minimal</span>() <span class="op">+</span></span>
+<span id="cb38-26"><a href="#cb38-26" aria-hidden="true"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">axis.text.x =</span> <span class="kw">element_text</span>(<span class="dt">angle =</span> <span class="dv">45</span>, <span class="dt">hjust =</span> <span class="dv">1</span>))</span></code></pre></div>
 <p><img src="mixture-nasal_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
+<p>Are there subjects who nasalize more?</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true"></a><span class="kw">mcmc_intervals</span>(nas_mix<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;prob_nas_speaker&quot;</span>))</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-31-1.png" width="672" /></p>
 <div class="note">
 <p>Add an analogous parameter <code>w</code> which modulates the probability of nasalization by <code>root</code>. Which roots are most likely to be nasalized?</p>
 </div>
@@ -1054,91 +1029,91 @@ mixture_model -2.1       3.8   </code></pre>
 <h3><span class="header-section-number">2.5.2</span> Subject level adjustments for the mixture weight and mean nasalization.</h3>
 <p>A more comprehensive hierarchical model allows <code>mu_contact</code> and <code>mu_oral</code><a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> to vary by speaker and/or by root.</p>
 <p>Stan code:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode stan"><code class="sourceCode stan"><span id="cb41-1"><a href="#cb41-1" tabindex="-1"></a><span class="co">#include beta2.stan</span></span>
-<span id="cb41-2"><a href="#cb41-2" tabindex="-1"></a><span class="kw">data</span> {</span>
-<span id="cb41-3"><a href="#cb41-3" tabindex="-1"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; N;</span>
-<span id="cb41-4"><a href="#cb41-4" tabindex="-1"></a>  <span class="dt">vector</span>[N] nasalance;</span>
-<span id="cb41-5"><a href="#cb41-5" tabindex="-1"></a>  <span class="dt">array</span>[N] <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; E;</span>
-<span id="cb41-6"><a href="#cb41-6" tabindex="-1"></a>  <span class="dt">array</span>[N] <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; speaker;</span>
-<span id="cb41-7"><a href="#cb41-7" tabindex="-1"></a>  <span class="dt">int</span>&lt;<span class="kw">lower</span> = <span class="dv">1</span>&gt; N_speaker;</span>
-<span id="cb41-8"><a href="#cb41-8" tabindex="-1"></a>}</span>
-<span id="cb41-9"><a href="#cb41-9" tabindex="-1"></a><span class="kw">parameters</span> {</span>
-<span id="cb41-10"><a href="#cb41-10" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; mu_contact;</span>
-<span id="cb41-11"><a href="#cb41-11" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = sqrt(mu_contact*(<span class="dv">1</span>-mu_contact))&gt; sigma_contact;</span>
-<span id="cb41-12"><a href="#cb41-12" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span> &gt; mu_oral;</span>
-<span id="cb41-13"><a href="#cb41-13" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span>= <span class="dv">0</span>, <span class="kw">upper</span> = sqrt(mu_oral*(<span class="dv">1</span>-mu_oral))&gt; sigma_oral;</span>
-<span id="cb41-14"><a href="#cb41-14" tabindex="-1"></a></span>
-<span id="cb41-15"><a href="#cb41-15" tabindex="-1"></a>  <span class="co">// now it&#39;s log odds</span></span>
-<span id="cb41-16"><a href="#cb41-16" tabindex="-1"></a>  <span class="dt">real</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>, <span class="kw">upper</span> = <span class="dv">1</span>&gt; av_prob_nas;</span>
-<span id="cb41-17"><a href="#cb41-17" tabindex="-1"></a></span>
-<span id="cb41-18"><a href="#cb41-18" tabindex="-1"></a> <span class="dt">vector</span>&lt;<span class="kw">lower</span> = <span class="dv">0</span>&gt;[<span class="dv">3</span>]  tau_u;</span>
-<span id="cb41-19"><a href="#cb41-19" tabindex="-1"></a>  <span class="dt">matrix</span>[<span class="dv">3</span>, N_speaker] z_u;</span>
-<span id="cb41-20"><a href="#cb41-20" tabindex="-1"></a>  <span class="dt">cholesky_factor_corr</span>[<span class="dv">3</span>] L_u;</span>
-<span id="cb41-21"><a href="#cb41-21" tabindex="-1"></a>}</span>
-<span id="cb41-22"><a href="#cb41-22" tabindex="-1"></a><span class="kw">transformed parameters</span> {</span>
-<span id="cb41-23"><a href="#cb41-23" tabindex="-1"></a>  <span class="dt">matrix</span>[N_speaker, <span class="dv">3</span>] u;</span>
-<span id="cb41-24"><a href="#cb41-24" tabindex="-1"></a>  u = (diag_pre_multiply(tau_u, L_u) * z_u)&#39;;</span>
-<span id="cb41-25"><a href="#cb41-25" tabindex="-1"></a>}</span>
-<span id="cb41-26"><a href="#cb41-26" tabindex="-1"></a><span class="kw">model</span> {</span>
-<span id="cb41-27"><a href="#cb41-27" tabindex="-1"></a>  <span class="co">// priors for the task component</span></span>
-<span id="cb41-28"><a href="#cb41-28" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(mu_contact | <span class="fl">0.6</span>, <span class="fl">0.2</span>);</span>
-<span id="cb41-29"><a href="#cb41-29" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(mu_oral | <span class="fl">0.2</span>, <span class="fl">0.3</span>);</span>
-<span id="cb41-30"><a href="#cb41-30" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(sigma_oral | <span class="dv">0</span>, <span class="fl">0.3</span>);</span>
-<span id="cb41-31"><a href="#cb41-31" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(sigma_contact | <span class="dv">0</span>, <span class="fl">0.3</span>);</span>
-<span id="cb41-32"><a href="#cb41-32" tabindex="-1"></a></span>
-<span id="cb41-33"><a href="#cb41-33" tabindex="-1"></a>  <span class="kw">target +=</span> lkj_corr_cholesky_lpdf(L_u | <span class="dv">2</span>);</span>
-<span id="cb41-34"><a href="#cb41-34" tabindex="-1"></a>  <span class="kw">target +=</span> std_normal_lpdf(to_vector(z_u));</span>
-<span id="cb41-35"><a href="#cb41-35" tabindex="-1"></a>  <span class="kw">target +=</span> normal_lpdf(tau_u | <span class="dv">0</span>, <span class="dv">2</span>);</span>
-<span id="cb41-36"><a href="#cb41-36" tabindex="-1"></a>  </span>
-<span id="cb41-37"><a href="#cb41-37" tabindex="-1"></a>  <span class="kw">target +=</span> beta_lpdf(av_prob_nas | <span class="dv">3</span>, <span class="dv">10</span>);</span>
-<span id="cb41-38"><a href="#cb41-38" tabindex="-1"></a></span>
-<span id="cb41-39"><a href="#cb41-39" tabindex="-1"></a>  <span class="cf">for</span>(n <span class="cf">in</span> <span class="dv">1</span>:N){</span>
-<span id="cb41-40"><a href="#cb41-40" tabindex="-1"></a>      <span class="dt">real</span> mu_c_adj = inv_logit(logit(mu_contact) + u[speaker[n], <span class="dv">1</span>]);</span>
-<span id="cb41-41"><a href="#cb41-41" tabindex="-1"></a>      <span class="dt">real</span> mu_o_adj = inv_logit(logit(mu_oral) + u[speaker[n], <span class="dv">3</span>]);</span>
-<span id="cb41-42"><a href="#cb41-42" tabindex="-1"></a>      <span class="cf">if</span>(E[n] == <span class="dv">1</span>)  <span class="co">// contact</span></span>
-<span id="cb41-43"><a href="#cb41-43" tabindex="-1"></a>      <span class="kw">target +=</span>  beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact);</span>
-<span id="cb41-44"><a href="#cb41-44" tabindex="-1"></a>     <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">3</span>)  <span class="co">// oral</span></span>
-<span id="cb41-45"><a href="#cb41-45" tabindex="-1"></a>       <span class="kw">target +=</span> beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral);</span>
-<span id="cb41-46"><a href="#cb41-46" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span>(E[n] == <span class="dv">2</span>) { <span class="co">//nas</span></span>
-<span id="cb41-47"><a href="#cb41-47" tabindex="-1"></a>       <span class="dt">real</span> logodds_nas = logit(av_prob_nas) + u[speaker[n], <span class="dv">2</span>];</span>
-<span id="cb41-48"><a href="#cb41-48" tabindex="-1"></a>       <span class="kw">target +=</span> log_sum_exp(log_inv_logit(logodds_nas) +</span>
-<span id="cb41-49"><a href="#cb41-49" tabindex="-1"></a>                  beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact),</span>
-<span id="cb41-50"><a href="#cb41-50" tabindex="-1"></a>                  log1m_inv_logit(logodds_nas)+</span>
-<span id="cb41-51"><a href="#cb41-51" tabindex="-1"></a>                  beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral));</span>
-<span id="cb41-52"><a href="#cb41-52" tabindex="-1"></a>       }</span>
-<span id="cb41-53"><a href="#cb41-53" tabindex="-1"></a>  }</span>
-<span id="cb41-54"><a href="#cb41-54" tabindex="-1"></a>}</span>
-<span id="cb41-55"><a href="#cb41-55" tabindex="-1"></a><span class="kw">generated quantities</span> {</span>
-<span id="cb41-56"><a href="#cb41-56" tabindex="-1"></a>  <span class="dt">vector</span>[N] log_lik;</span>
-<span id="cb41-57"><a href="#cb41-57" tabindex="-1"></a>  <span class="dt">vector</span>[N] nasalance_rep;</span>
-<span id="cb41-58"><a href="#cb41-58" tabindex="-1"></a>  <span class="dt">vector</span>[N_speaker] prob_nas_speaker = inv_logit(logit(av_prob_nas) + u[,<span class="dv">3</span>]);</span>
-<span id="cb41-59"><a href="#cb41-59" tabindex="-1"></a>  </span>
-<span id="cb41-60"><a href="#cb41-60" tabindex="-1"></a>  <span class="cf">for</span> (n <span class="cf">in</span> <span class="dv">1</span>:N) {</span>
-<span id="cb41-61"><a href="#cb41-61" tabindex="-1"></a>    <span class="dt">real</span> mu_c_adj = inv_logit(logit(mu_contact) + u[speaker[n], <span class="dv">1</span>]);</span>
-<span id="cb41-62"><a href="#cb41-62" tabindex="-1"></a>     <span class="dt">real</span> mu_o_adj = inv_logit(logit(mu_oral) + u[speaker[n], <span class="dv">3</span>]);</span>
-<span id="cb41-63"><a href="#cb41-63" tabindex="-1"></a>        <span class="cf">if</span> (E[n] == <span class="dv">1</span>) {  <span class="co">// contact</span></span>
-<span id="cb41-64"><a href="#cb41-64" tabindex="-1"></a>      log_lik[n] = beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact);</span>
-<span id="cb41-65"><a href="#cb41-65" tabindex="-1"></a>      nasalance_rep[n] = beta2_rng(mu_c_adj, sigma_contact);</span>
-<span id="cb41-66"><a href="#cb41-66" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (E[n] == <span class="dv">3</span>) {  <span class="co">// oral</span></span>
-<span id="cb41-67"><a href="#cb41-67" tabindex="-1"></a>      log_lik[n] = beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral);</span>
-<span id="cb41-68"><a href="#cb41-68" tabindex="-1"></a>      nasalance_rep[n] = beta2_rng(mu_o_adj, sigma_oral);</span>
-<span id="cb41-69"><a href="#cb41-69" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (E[n] == <span class="dv">2</span>) { <span class="co">// nas</span></span>
-<span id="cb41-70"><a href="#cb41-70" tabindex="-1"></a>      <span class="dt">real</span> logodds_nas = logit(av_prob_nas) + u[speaker[n], <span class="dv">3</span>];</span>
-<span id="cb41-71"><a href="#cb41-71" tabindex="-1"></a>      <span class="dt">real</span> theta = inv_logit(logodds_nas);</span>
-<span id="cb41-72"><a href="#cb41-72" tabindex="-1"></a>      log_lik[n] = log_sum_exp(</span>
-<span id="cb41-73"><a href="#cb41-73" tabindex="-1"></a>        log(theta) + beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact),</span>
-<span id="cb41-74"><a href="#cb41-74" tabindex="-1"></a>        log1m(theta) + beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral)</span>
-<span id="cb41-75"><a href="#cb41-75" tabindex="-1"></a>      );</span>
-<span id="cb41-76"><a href="#cb41-76" tabindex="-1"></a>      <span class="cf">if</span> (bernoulli_rng(theta) == <span class="dv">1</span>)</span>
-<span id="cb41-77"><a href="#cb41-77" tabindex="-1"></a>        nasalance_rep[n] = beta2_rng(mu_c_adj, sigma_contact);</span>
-<span id="cb41-78"><a href="#cb41-78" tabindex="-1"></a>      <span class="cf">else</span></span>
-<span id="cb41-79"><a href="#cb41-79" tabindex="-1"></a>        nasalance_rep[n] = beta2_rng(mu_o_adj, sigma_oral);</span>
-<span id="cb41-80"><a href="#cb41-80" tabindex="-1"></a>    }</span>
-<span id="cb41-81"><a href="#cb41-81" tabindex="-1"></a>  }</span>
-<span id="cb41-82"><a href="#cb41-82" tabindex="-1"></a>}</span></code></pre></div>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a>mix_s2_m <span class="ot">&lt;-</span> <span class="fu">cmdstan_model</span>(<span class="st">&quot;./mix_s2.stan&quot;</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" tabindex="-1"></a>nas2_mix <span class="ot">&lt;-</span> mix_s2_m<span class="sc">$</span><span class="fu">sample</span>(<span class="at">data =</span> nas_ls, <span class="at">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a>nas2_mix</span></code></pre></div>
+<pre class="stan"><code>#include beta2.stan
+data {
+  int&lt;lower = 1&gt; N;
+  vector[N] nasalance;
+  array[N] int&lt;lower = 1&gt; E;
+  array[N] int&lt;lower = 1&gt; speaker;
+  int&lt;lower = 1&gt; N_speaker;
+}
+parameters {
+  real&lt;lower = 0, upper = 1&gt; mu_contact;
+  real&lt;lower = 0, upper = sqrt(mu_contact*(1-mu_contact))&gt; sigma_contact;
+  real&lt;lower = 0, upper = 1 &gt; mu_oral;
+  real&lt;lower= 0, upper = sqrt(mu_oral*(1-mu_oral))&gt; sigma_oral;
+
+  // now it&#39;s log odds
+  real&lt;lower = 0, upper = 1&gt; av_prob_nas;
+
+ vector&lt;lower = 0&gt;[3]  tau_u;
+  matrix[3, N_speaker] z_u;
+  cholesky_factor_corr[3] L_u;
+}
+transformed parameters {
+  matrix[N_speaker, 3] u;
+  u = (diag_pre_multiply(tau_u, L_u) * z_u)&#39;;
+}
+model {
+  // priors for the task component
+  target += normal_lpdf(mu_contact | 0.6, 0.2);
+  target += normal_lpdf(mu_oral | 0.2, 0.3);
+  target += normal_lpdf(sigma_oral | 0, 0.3);
+  target += normal_lpdf(sigma_contact | 0, 0.3);
+
+  target += lkj_corr_cholesky_lpdf(L_u | 2);
+  target += std_normal_lpdf(to_vector(z_u));
+  target += normal_lpdf(tau_u | 0, 2);
+  
+  target += beta_lpdf(av_prob_nas | 3, 10);
+
+  for(n in 1:N){
+      real mu_c_adj = inv_logit(logit(mu_contact) + u[speaker[n], 1]);
+      real mu_o_adj = inv_logit(logit(mu_oral) + u[speaker[n], 3]);
+      if(E[n] == 1)  // contact
+      target +=  beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact);
+     else if(E[n] == 3)  // oral
+       target += beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral);
+    else if(E[n] == 2) { //nas
+       real logodds_nas = logit(av_prob_nas) + u[speaker[n], 2];
+       target += log_sum_exp(log_inv_logit(logodds_nas) +
+                  beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact),
+                  log1m_inv_logit(logodds_nas)+
+                  beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral));
+       }
+  }
+}
+generated quantities {
+  vector[N] log_lik;
+  vector[N] nasalance_rep;
+  vector[N_speaker] prob_nas_speaker = inv_logit(logit(av_prob_nas) + u[,3]);
+  
+  for (n in 1:N) {
+    real mu_c_adj = inv_logit(logit(mu_contact) + u[speaker[n], 1]);
+     real mu_o_adj = inv_logit(logit(mu_oral) + u[speaker[n], 3]);
+        if (E[n] == 1) {  // contact
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact);
+      nasalance_rep[n] = beta2_rng(mu_c_adj, sigma_contact);
+    } else if (E[n] == 3) {  // oral
+      log_lik[n] = beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral);
+      nasalance_rep[n] = beta2_rng(mu_o_adj, sigma_oral);
+    } else if (E[n] == 2) { // nas
+      real logodds_nas = logit(av_prob_nas) + u[speaker[n], 3];
+      real theta = inv_logit(logodds_nas);
+      log_lik[n] = log_sum_exp(
+        log(theta) + beta2_lpdf(nasalance[n] | mu_c_adj, sigma_contact),
+        log1m(theta) + beta2_lpdf(nasalance[n] | mu_o_adj, sigma_oral)
+      );
+      if (bernoulli_rng(theta) == 1)
+        nasalance_rep[n] = beta2_rng(mu_c_adj, sigma_contact);
+      else
+        nasalance_rep[n] = beta2_rng(mu_o_adj, sigma_oral);
+    }
+  }
+}</code></pre>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true"></a>mix_s2_m &lt;-<span class="st"> </span><span class="kw">cmdstan_model</span>(<span class="st">&quot;./mix_s2.stan&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true"></a>nas2_mix &lt;-<span class="st"> </span>mix_s2_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> nas_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true"></a>nas2_mix</span></code></pre></div>
 <pre><code>      variable   mean median   sd  mad     q5    q95 rhat ess_bulk ess_tail
  lp__          546.59 546.95 6.15 6.29 536.10 556.04 1.00      955     1777
  mu_contact      0.54   0.54 0.02 0.02   0.51   0.57 1.00     2771     2464
@@ -1152,13 +1127,15 @@ mixture_model -2.1       3.8   </code></pre>
  z_u[1,1]       -0.52  -0.54 0.87 0.83  -1.93   0.91 1.00     2513     3060
 
  # showing 10 of 1493 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
-<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a>yrep <span class="ot">&lt;-</span> nas2_mix<span class="sc">$</span><span class="fu">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="sc">|&gt;</span> posterior<span class="sc">::</span><span class="fu">as_draws_matrix</span>()</span>
-<span id="cb46-2"><a href="#cb46-2" tabindex="-1"></a><span class="fu">ppc_dens_overlay_grouped</span>(</span>
-<span id="cb46-3"><a href="#cb46-3" tabindex="-1"></a>  <span class="at">y =</span> nas_data<span class="sc">$</span>nasalance,</span>
-<span id="cb46-4"><a href="#cb46-4" tabindex="-1"></a>  <span class="at">yrep =</span> yrep[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>, ],</span>
-<span id="cb46-5"><a href="#cb46-5" tabindex="-1"></a>  <span class="at">group =</span> nas_data<span class="sc">$</span>etymology</span>
-<span id="cb46-6"><a href="#cb46-6" tabindex="-1"></a>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;Real data with the more complex model&quot;</span>)</span></code></pre></div>
-<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true"></a>yrep &lt;-<span class="st"> </span>nas2_mix<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true"></a>  <span class="dt">y =</span> nas_data<span class="op">$</span>nasalance,</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true"></a>  <span class="dt">yrep =</span> yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true"></a>  <span class="dt">group =</span> nas_data<span class="op">$</span>etymology</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true"></a>) <span class="op">+</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Real data with the more complex model&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
 <div class="note">
 <p>Consider additional posterior predictive checks.</p>
 </div>
@@ -1181,9 +1158,9 @@ mixture_model -2.1       3.8   </code></pre>
 </ul>
 <hr />
 </div>
-<div id="session-info" class="section level1 unnumbered">
+<div id="session-info" class="section level1 unnumbered" number="">
 <h1>Session info</h1>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
 <pre><code>R version 4.5.0 (2025-04-11)
 Platform: x86_64-pc-linux-gnu
 Running under: Ubuntu 22.04.5 LTS
@@ -1215,65 +1192,66 @@ loaded via a namespace (and not attached):
  [4] generics_0.1.4       stringi_1.8.7        lattice_0.22-5      
  [7] digest_0.6.37        magrittr_2.0.3       evaluate_1.0.3      
 [10] grid_4.5.0           RColorBrewer_1.1-3   bookdown_0.43       
-[13] mvtnorm_1.3-3        fastmap_1.2.0        jsonlite_2.0.0      
-[16] Matrix_1.7-3         processx_3.8.6       backports_1.5.0     
-[19] ps_1.9.1             Brobdingnag_1.2-9    scales_1.4.0        
-[22] jquerylib_0.1.4      abind_1.4-8          cli_3.6.5           
-[25] rlang_1.1.6          withr_3.0.2          cachem_1.1.0        
-[28] yaml_2.3.10          tools_4.5.0          parallel_4.5.0      
-[31] rstantools_2.4.0     coda_0.19-4.1        checkmate_2.3.2     
-[34] dplyr_1.1.4          vctrs_0.6.5          R6_2.6.1            
-[37] matrixStats_1.5.0    lifecycle_1.0.4      stringr_1.5.1       
-[40] pkgconfig_2.0.3      RcppParallel_5.1.10  pillar_1.10.2       
-[43] bslib_0.9.0          gtable_0.3.6         data.table_1.17.0   
-[46] glue_1.8.0           xfun_0.52            tibble_3.3.0        
-[49] tidyselect_1.2.1     rstudioapi_0.17.1    knitr_1.50          
-[52] farver_2.1.2         nlme_3.1-168         htmltools_0.5.8.1   
-[55] rmarkdown_2.29       compiler_4.5.0       distributional_0.5.0</code></pre>
+[13] mvtnorm_1.3-3        fastmap_1.2.0        plyr_1.8.9          
+[16] jsonlite_2.0.0       Matrix_1.7-3         processx_3.8.6      
+[19] backports_1.5.0      ps_1.9.1             Brobdingnag_1.2-9   
+[22] scales_1.4.0         codetools_0.2-19     jquerylib_0.1.4     
+[25] abind_1.4-8          cli_3.6.5            rlang_1.1.6         
+[28] withr_3.0.2          cachem_1.1.0         yaml_2.3.10         
+[31] tools_4.5.0          parallel_4.5.0       reshape2_1.4.4      
+[34] rstantools_2.4.0     checkmate_2.3.2      coda_0.19-4.1       
+[37] dplyr_1.1.4          vctrs_0.6.5          R6_2.6.1            
+[40] matrixStats_1.5.0    lifecycle_1.0.4      stringr_1.5.1       
+[43] pkgconfig_2.0.3      RcppParallel_5.1.10  pillar_1.10.2       
+[46] bslib_0.9.0          gtable_0.3.6         data.table_1.17.0   
+[49] glue_1.8.0           xfun_0.52            tibble_3.3.0        
+[52] tidyselect_1.2.1     knitr_1.50           farver_2.1.2        
+[55] nlme_3.1-168         htmltools_0.5.8.1    labeling_0.4.3      
+[58] rmarkdown_2.29       compiler_4.5.0       distributional_0.5.0</code></pre>
 <p>I used R <span class="citation">(Version 4.5.0; R Core Team 2025)</span> and the R-packages <em>bayesplot</em> <span class="citation">(Version 1.12.0; Gabry and Mahr 2025)</span>, <em>brms</em> <span class="citation">(Version 2.22.0; Bürkner 2024)</span>, <em>cmdstanr</em> <span class="citation">(Version 0.9.0; Gabry et al. 2025)</span>, <em>ggplot2</em> <span class="citation">(Version 3.5.2; Wickham et al. 2025)</span>, <em>loo</em> <span class="citation">(Version 2.8.0; Vehtari et al. 2024)</span>, <em>posterior</em> <span class="citation">(Version 1.6.1; Bürkner et al. 2025)</span>, <em>Rcpp</em> <span class="citation">(Version 1.0.14; Eddelbuettel et al. 2025)</span> and <em>tidytable</em> <span class="citation">(Version 0.11.2; Fairbanks 2024)</span> for all our analyses.</p>
 </div>
-<div id="references" class="section level1 unnumbered">
+<div id="references" class="section level1 unnumbered" number="">
 <h1>References</h1>
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
-<div id="ref-R-brms" class="csl-entry">
-Bürkner, Paul-Christian. 2024. <em>Brms: Bayesian Regression Models Using Stan</em>. <a href="https://github.com/paul-buerkner/brms">https://github.com/paul-buerkner/brms</a>.
+<div id="refs" class="references hanging-indent">
+<div id="ref-R-brms">
+<p>Bürkner, Paul-Christian. 2024. <em>Brms: Bayesian Regression Models Using Stan</em>. <a href="https://github.com/paul-buerkner/brms">https://github.com/paul-buerkner/brms</a>.</p>
 </div>
-<div id="ref-R-posterior" class="csl-entry">
-Bürkner, Paul-Christian, Jonah Gabry, Matthew Kay, and Aki Vehtari. 2025. <em>Posterior: Tools for Working with Posterior Distributions</em>. <a href="https://mc-stan.org/posterior/">https://mc-stan.org/posterior/</a>.
+<div id="ref-R-posterior">
+<p>Bürkner, Paul-Christian, Jonah Gabry, Matthew Kay, and Aki Vehtari. 2025. <em>Posterior: Tools for Working with Posterior Distributions</em>. <a href="https://mc-stan.org/posterior/">https://mc-stan.org/posterior/</a>.</p>
 </div>
-<div id="ref-R-Rcpp" class="csl-entry">
-Eddelbuettel, Dirk, Romain Francois, JJ Allaire, Kevin Ushey, Qiang Kou, Nathan Russell, Iñaki Ucar, Doug Bates, and John Chambers. 2025. <em>Rcpp: Seamless r and c++ Integration</em>. <a href="https://www.rcpp.org">https://www.rcpp.org</a>.
+<div id="ref-R-Rcpp">
+<p>Eddelbuettel, Dirk, Romain Francois, JJ Allaire, Kevin Ushey, Qiang Kou, Nathan Russell, Iñaki Ucar, Doug Bates, and John Chambers. 2025. <em>Rcpp: Seamless R and C++ Integration</em>. <a href="https://www.rcpp.org">https://www.rcpp.org</a>.</p>
 </div>
-<div id="ref-R-tidytable" class="csl-entry">
-Fairbanks, Mark. 2024. <em>Tidytable: Tidy Interface to Data.table</em>. <a href="https://markfairbanks.github.io/tidytable/">https://markfairbanks.github.io/tidytable/</a>.
+<div id="ref-R-tidytable">
+<p>Fairbanks, Mark. 2024. <em>Tidytable: Tidy Interface to Data.table</em>. <a href="https://markfairbanks.github.io/tidytable/">https://markfairbanks.github.io/tidytable/</a>.</p>
 </div>
-<div id="ref-R-cmdstanr" class="csl-entry">
-Gabry, Jonah, Rok Češnovar, Andrew Johnson, and Steve Bronder. 2025. <em>Cmdstanr: R Interface to CmdStan</em>. <a href="https://mc-stan.org/cmdstanr/">https://mc-stan.org/cmdstanr/</a>.
+<div id="ref-R-cmdstanr">
+<p>Gabry, Jonah, Rok Češnovar, Andrew Johnson, and Steve Bronder. 2025. <em>Cmdstanr: R Interface to Cmdstan</em>. <a href="https://mc-stan.org/cmdstanr/">https://mc-stan.org/cmdstanr/</a>.</p>
 </div>
-<div id="ref-R-bayesplot" class="csl-entry">
-Gabry, Jonah, and Tristan Mahr. 2025. <em>Bayesplot: Plotting for Bayesian Models</em>. <a href="https://mc-stan.org/bayesplot/">https://mc-stan.org/bayesplot/</a>.
+<div id="ref-R-bayesplot">
+<p>Gabry, Jonah, and Tristan Mahr. 2025. <em>Bayesplot: Plotting for Bayesian Models</em>. <a href="https://mc-stan.org/bayesplot/">https://mc-stan.org/bayesplot/</a>.</p>
 </div>
-<div id="ref-ModrakEtAl2023" class="csl-entry">
-Modrák, Martin, Angie H. Moon, Shinyoung Kim, Paul-Christian Bürkner, Niko Huurre, Kateřina Faltejsková, Andrew Gelman, and Aki Vehtari. 2023. <span>“Simulation-Based Calibration Checking for <span>Bayesian</span> Computation: <span>The</span> Choice of Test Quantities Shapes Sensitivity.”</span> <em>Bayesian Analysis</em>, 1–28. <a href="https://doi.org/10.1214/23-BA1404">https://doi.org/10.1214/23-BA1404</a>.
+<div id="ref-ModrakEtAl2023">
+<p>Modrák, Martin, Angie H. Moon, Shinyoung Kim, Paul-Christian Bürkner, Niko Huurre, Kateřina Faltejsková, Andrew Gelman, and Aki Vehtari. 2023. “Simulation-Based Calibration Checking for Bayesian Computation: The Choice of Test Quantities Shapes Sensitivity.” <em>Bayesian Analysis</em>, 1–28. <a href="https://doi.org/10.1214/23-BA1404">https://doi.org/10.1214/23-BA1404</a>.</p>
 </div>
-<div id="ref-NicenboimEtAl2025" class="csl-entry">
-Nicenboim, Bruno, Daniel J. Schad, and Shravan Vasishth. 2025. <em>Introduction to Bayesian Data Analysis for Cognitive Science</em>. 1st ed. Chapman; Hall/CRC. <a href="https://doi.org/10.1201/9780429342646">https://doi.org/10.1201/9780429342646</a>.
+<div id="ref-NicenboimEtAl2025">
+<p>Nicenboim, Bruno, Daniel J. Schad, and Shravan Vasishth. 2025. <em>Introduction to Bayesian Data Analysis for Cognitive Science</em>. 1st ed. Chapman; Hall/CRC. <a href="https://doi.org/10.1201/9780429342646">https://doi.org/10.1201/9780429342646</a>.</p>
 </div>
-<div id="ref-R-base" class="csl-entry">
-R Core Team. 2025. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.
+<div id="ref-R-base">
+<p>R Core Team. 2025. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.</p>
 </div>
-<div id="ref-talts2018validating" class="csl-entry">
-Talts, Sean, Michael J. Betancourt, Daniel P. Simpson, Aki Vehtari, and Andrew Gelman. 2018. <span>“Validating <span>B</span>ayesian Inference Algorithms with Simulation-Based Calibration.”</span> <em>arXiv Preprint arXiv:1804.06788</em>.
+<div id="ref-talts2018validating">
+<p>Talts, Sean, Michael J. Betancourt, Daniel P. Simpson, Aki Vehtari, and Andrew Gelman. 2018. “Validating Bayesian Inference Algorithms with Simulation-Based Calibration.” <em>arXiv Preprint arXiv:1804.06788</em>.</p>
 </div>
-<div id="ref-R-loo" class="csl-entry">
-Vehtari, Aki, Jonah Gabry, Måns Magnusson, Yuling Yao, Paul-Christian Bürkner, Topi Paananen, and Andrew Gelman. 2024. <em>Loo: Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models</em>. <a href="https://mc-stan.org/loo/">https://mc-stan.org/loo/</a>.
+<div id="ref-R-loo">
+<p>Vehtari, Aki, Jonah Gabry, Måns Magnusson, Yuling Yao, Paul-Christian Bürkner, Topi Paananen, and Andrew Gelman. 2024. <em>Loo: Efficient Leave-One-Out Cross-Validation and Waic for Bayesian Models</em>. <a href="https://mc-stan.org/loo/">https://mc-stan.org/loo/</a>.</p>
 </div>
-<div id="ref-R-ggplot2" class="csl-entry">
-Wickham, Hadley, Winston Chang, Lionel Henry, Thomas Lin Pedersen, Kohske Takahashi, Claus Wilke, Kara Woo, Hiroaki Yutani, Dewey Dunnington, and Teun van den Brand. 2025. <em>Ggplot2: Create Elegant Data Visualisations Using the Grammar of Graphics</em>. <a href="https://ggplot2.tidyverse.org">https://ggplot2.tidyverse.org</a>.
+<div id="ref-R-ggplot2">
+<p>Wickham, Hadley, Winston Chang, Lionel Henry, Thomas Lin Pedersen, Kohske Takahashi, Claus Wilke, Kara Woo, Hiroaki Yutani, Dewey Dunnington, and Teun van den Brand. 2025. <em>Ggplot2: Create Elegant Data Visualisations Using the Grammar of Graphics</em>. <a href="https://ggplot2.tidyverse.org">https://ggplot2.tidyverse.org</a>.</p>
 </div>
 </div>
 </div>
-<div class="footnotes footnotes-end-of-document">
+<div class="footnotes">
 <hr />
 <ol>
 <li id="fn1"><p>with considerable extra work we could also deal with <code>sigma</code><a href="#fnref1" class="footnote-back">↩︎</a></p></li>

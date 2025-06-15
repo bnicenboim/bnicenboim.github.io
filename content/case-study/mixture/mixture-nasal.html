@@ -1,37 +1,365 @@
----
-title: "Case study: Mixture modeling of nasalization in Basque"
-author: "Bruno Nicenboim"
-date: "2025-06-13"
-output:
-  bookdown::html_document2:
-    code_folding: show
-    highlight: kate
-    toc: TRUE
-    toc_float: TRUE
-    toc_depth: 3
-    df_print: paged
-    self_contained: false
-    output_file: index.html
-bibliography      : ["r-references.bib", "BayesCogSci.bib"]
----
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Bruno Nicenboim" />
+
+<meta name="date" content="2025-06-15" />
+
+<title>Case study: Mixture modeling of nasalization in Basque</title>
+
+<script src="mixture-nasal_files/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="mixture-nasal_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="mixture-nasal_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="mixture-nasal_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="mixture-nasal_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="mixture-nasal_files/jqueryui-1.13.2/jquery-ui.min.js"></script>
+<link href="mixture-nasal_files/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="mixture-nasal_files/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="mixture-nasal_files/navigation-1.1/tabsets.js"></script>
+<script src="mixture-nasal_files/navigation-1.1/codefolding.js"></script>
+<script src="mixture-nasal_files/accessible-code-block-0.0.1/empty-anchor.js"></script>
+<link href="mixture-nasal_files/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="mixture-nasal_files/pagedtable-1.1/js/pagedtable.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
 
 
-<pre class="r fold-hide"><code>## Global options
-options(max.print = &quot;75&quot;,
-        width = 80,
-        tibble.width = 80)
-options(scipen = 1, digits = 2)
-knitr::opts_chunk$set(echo = TRUE,
-                    cache = TRUE,
-                    prompt = FALSE,
-                    cache.lazy = FALSE,
-                    tidy = FALSE,
-                    comment = NA,
-                    message = FALSE,
-                    warning = TRUE)
-knitr::opts_knit$set(width = 80)
-knitr::opts_chunk$set(cache.extra = knitr::rand_seed)</code></pre>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    background-color: #ffffff;
+    color: #a0a0a0;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #a0a0a0;  padding-left: 4px; }
+div.sourceCode
+  { color: #1f1c1b; background-color: #ffffff; }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span { color: #1f1c1b; } /* Normal */
+code span.al { color: #bf0303; background-color: #f7e6e6; font-weight: bold; } /* Alert */
+code span.an { color: #ca60ca; } /* Annotation */
+code span.at { color: #0057ae; } /* Attribute */
+code span.bn { color: #b08000; } /* BaseN */
+code span.bu { color: #644a9b; font-weight: bold; } /* BuiltIn */
+code span.cf { color: #1f1c1b; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #924c9d; } /* Char */
+code span.cn { color: #aa5500; } /* Constant */
+code span.co { color: #898887; } /* Comment */
+code span.cv { color: #0095ff; } /* CommentVar */
+code span.do { color: #607880; } /* Documentation */
+code span.dt { color: #0057ae; } /* DataType */
+code span.dv { color: #b08000; } /* DecVal */
+code span.er { color: #bf0303; text-decoration: underline; } /* Error */
+code span.ex { color: #0095ff; font-weight: bold; } /* Extension */
+code span.fl { color: #b08000; } /* Float */
+code span.fu { color: #644a9b; } /* Function */
+code span.im { color: #ff5500; } /* Import */
+code span.in { color: #b08000; } /* Information */
+code span.kw { color: #1f1c1b; font-weight: bold; } /* Keyword */
+code span.op { color: #1f1c1b; } /* Operator */
+code span.ot { color: #006e28; } /* Other */
+code span.pp { color: #006e28; } /* Preprocessor */
+code span.re { color: #0057ae; background-color: #e0e9f8; } /* RegionMarker */
+code span.sc { color: #3daee9; } /* SpecialChar */
+code span.ss { color: #ff5500; } /* SpecialString */
+code span.st { color: #bf0303; } /* String */
+code span.va { color: #0057ae; } /* Variable */
+code span.vs { color: #bf0303; } /* VerbatimString */
+code span.wa { color: #bf0303; } /* Warning */
+
+.sourceCode .row {
+  width: 100%;
+}
+.sourceCode {
+  overflow-x: auto;
+}
+.code-folding-btn {
+  margin-right: -30px;
+}
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Case study: Mixture modeling of nasalization in Basque</h1>
+<h4 class="author">Bruno Nicenboim</h4>
+<h4 class="date">2025-06-15</h4>
+
+</div>
+
+
 <style>
 .exercise {
   border: 2px solid #007ACC;
@@ -60,27 +388,26 @@ knitr::opts_chunk$set(cache.extra = knitr::rand_seed)</code></pre>
   margin: 1em 0;
 }
 </style>
-<div id="introduction" class="section level1 unnumbered">
+<div id="introduction" class="section level1 unnumbered" number="">
 <h1>Introduction</h1>
 <p>This case study examines how <em>nasalance</em> varies across three etymological categories of Basque aspirates: <strong>oral</strong>, <strong>contact-nasalized</strong> (i.e., following a nasal consonant), and historically <strong>nasalized</strong> aspirates that are reported to be in flux.</p>
 </div>
-<div id="set-up" class="section level1">
-<h1>Set-up</h1>
-<div id="packages" class="section level2">
-<h2>Packages</h2>
+<div id="set-up" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Set-up</h1>
+<div id="packages" class="section level2" number="1.1">
+<h2><span class="header-section-number">1.1</span> Packages</h2>
 <p>The analysis relies on <strong>tidytable</strong> for fast data manipulation, <strong>cmdstanr</strong> for Stan interfacing, and a handful of tidy-Bayes helpers for visualisation and model comparison.</p>
-<pre class="r"><code>library(tidytable) # nice alternative to dplyr
-library(cmdstanr)
-library(posterior)
-library(bayesplot)
-library(brms)
-library(ggplot2)
-library(loo)
-options(mc.cores = 4)
-knitr::write_bib(.packages(), &quot;r-references.bib&quot;)</code></pre>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">library</span>(tidytable) <span class="co"># nice alternative to dplyr</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">library</span>(cmdstanr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">library</span>(posterior)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">library</span>(bayesplot)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">library</span>(brms)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">library</span>(ggplot2)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="kw">library</span>(loo)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="kw">options</span>(<span class="dt">mc.cores =</span> <span class="dv">4</span>)</span></code></pre></div>
 </div>
-<div id="files" class="section level2">
-<h2>Files</h2>
+<div id="files" class="section level2" number="1.2">
+<h2><span class="header-section-number">1.2</span> Files</h2>
 <p>We’ll use the following files</p>
 <ul>
 <li><a href="./nas_data.RDS"><code>nas_data.RDS</code></a></li>
@@ -92,66 +419,56 @@ knitr::write_bib(.packages(), &quot;r-references.bib&quot;)</code></pre>
 <li><a href="./mixture-nasal.Rmd"><code>mixture-nasal.Rmd</code></a></li>
 </ul>
 </div>
-<div id="data-from-iñigo-urrestarazu-porta" class="section level2">
-<h2>Data from Iñigo Urrestarazu-Porta</h2>
+<div id="data-from-iñigo-urrestarazu-porta" class="section level2" number="1.3">
+<h2><span class="header-section-number">1.3</span> Data from Iñigo Urrestarazu-Porta</h2>
 <p>Basque speakers of the Zuberoan variety were recorded with a nasometer. The etymology has three relevant levels:</p>
 <ol style="list-style-type: decimal">
 <li><strong>contact</strong></li>
 <li><strong>nasalized</strong></li>
 <li><strong>oral</strong></li>
 </ol>
-<pre class="r fold-hide"><code>nas_data &lt;- readRDS(&quot;nas_data.RDS&quot;) |&gt;
-  rename(
-    etymology = E,
-    root = R,
-    speaker = S,
-    nasalance = N
-  ) |&gt;
-  filter(!is.na(nasalance)) |&gt;
-  filter(etymology != &quot;assimilated&quot;) |&gt;
-  mutate(
-    E = as.factor(etymology) |&gt; as.numeric(),
-    R = as.factor(root) |&gt; as.numeric(),
-    speaker = as.factor(speaker) |&gt; as.numeric()
-  )</code></pre>
-<pre class="r"><code>nas_data</code></pre>
-<pre><code># A tidytable: 699 × 6
-   speaker root     etymology nasalance     E     R
-     &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
- 1       1 diharu   nasalized     0.102     2    26
- 2       1 ihakin   oral          0.136     3    37
- 3       1 ihaute   nasalized     0.170     2    41
- 4       1 ihintz   nasalized     0.219     2    44
- 5       1 ahate    nasalized     0.232     2     8
- 6       1 zehe     nasalized     0.144     2    64
- 7       1 kahixka  nasalized     0.300     2    46
- 8       1 ehe-no   nasalized     0.128     2    28
- 9       1 ehe-no   nasalized     0.128     2    28
-10       1 halahola oral          0.215     3    36
-# ℹ 689 more rows</code></pre>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>nas_data &lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="st">&quot;nas_data.RDS&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">rename</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    <span class="dt">etymology =</span> E,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    <span class="dt">root =</span> R,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>    <span class="dt">speaker =</span> S,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>    <span class="dt">nasalance =</span> N</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>  ) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(nasalance)) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(etymology <span class="op">!=</span><span class="st"> &quot;assimilated&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>    <span class="dt">E =</span> <span class="kw">as.factor</span>(etymology) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>(),</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>    <span class="dt">R =</span> <span class="kw">as.factor</span>(root) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>(),</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>    <span class="dt">speaker =</span> <span class="kw">as.factor</span>(speaker) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>()</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>  )</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>nas_data</span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["speaker"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["root"],"name":[2],"type":["chr"],"align":["left"]},{"label":["etymology"],"name":[3],"type":["chr"],"align":["left"]},{"label":["nasalance"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["E"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["R"],"name":[6],"type":["dbl"],"align":["right"]}],"data":[{"1":"1","2":"diharu","3":"nasalized","4":"0.102","5":"2","6":"26"},{"1":"1","2":"ihakin","3":"oral","4":"0.136","5":"3","6":"37"},{"1":"1","2":"ihaute","3":"nasalized","4":"0.170","5":"2","6":"41"},{"1":"1","2":"ihintz","3":"nasalized","4":"0.219","5":"2","6":"44"},{"1":"1","2":"ahate","3":"nasalized","4":"0.232","5":"2","6":"8"},{"1":"1","2":"zehe","3":"nasalized","4":"0.144","5":"2","6":"64"},{"1":"1","2":"kahixka","3":"nasalized","4":"0.300","5":"2","6":"46"},{"1":"1","2":"ehe-no","3":"nasalized","4":"0.128","5":"2","6":"28"},{"1":"1","2":"ehe-no","3":"nasalized","4":"0.128","5":"2","6":"28"},{"1":"1","2":"halahola","3":"oral","4":"0.215","5":"3","6":"36"},{"1":"1","2":"halahola","3":"oral","4":"0.256","5":"3","6":"36"},{"1":"1","2":"ahal","3":"nasalized","4":"0.248","5":"2","6":"2"},{"1":"1","2":"desuhue","3":"nasalized","4":"0.353","5":"2","6":"25"},{"1":"1","2":"ohore","3":"nasalized","4":"0.125","5":"2","6":"53"},{"1":"1","2":"ihi","3":"nasalized","4":"0.164","5":"2","6":"43"},{"1":"1","2":"behe","3":"oral","4":"0.139","5":"3","6":"20"},{"1":"1","2":"lañho","3":"contact","4":"0.483","5":"1","6":"47"},{"1":"1","2":"ahul","3":"oral","4":"0.174","5":"3","6":"11"},{"1":"1","2":"gihaur","3":"nasalized","4":"0.158","5":"2","6":"35"},{"1":"1","2":"ehiza","3":"nasalized","4":"0.267","5":"2","6":"30"},{"1":"1","2":"ahate","3":"nasalized","4":"0.234","5":"2","6":"8"},{"1":"1","2":"behi","3":"oral","4":"0.177","5":"3","6":"21"},{"1":"1","2":"bahe","3":"nasalized","4":"0.197","5":"2","6":"18"},{"1":"1","2":"asteharte","3":"oral","4":"0.111","5":"3","6":"16"},{"1":"1","2":"zahar","3":"nasalized","4":"0.198","5":"2","6":"63"},{"1":"1","2":"ehe-bleach","3":"oral","4":"0.136","5":"3","6":"27"},{"1":"1","2":"aharrausi","3":"oral","4":"0.195","5":"3","6":"7"},{"1":"1","2":"gihaur","3":"nasalized","4":"0.113","5":"2","6":"35"},{"1":"1","2":"aholku","3":"nasalized","4":"0.225","5":"2","6":"10"},{"1":"1","2":"ahalke","3":"nasalized","4":"0.234","5":"2","6":"3"},{"1":"1","2":"aihai","3":"oral","4":"0.188","5":"3","6":"13"},{"1":"1","2":"aholku","3":"nasalized","4":"0.240","5":"2","6":"10"},{"1":"1","2":"ohol","3":"nasalized","4":"0.195","5":"2","6":"52"},{"1":"1","2":"ahur","3":"oral","4":"0.249","5":"3","6":"12"},{"1":"1","2":"lohi","3":"nasalized","4":"0.163","5":"2","6":"50"},{"1":"1","2":"aha","3":"oral","4":"0.189","5":"3","6":"1"},{"1":"1","2":"eñhe","3":"contact","4":"0.579","5":"1","6":"33"},{"1":"1","2":"ahantzi","3":"nasalized","4":"0.239","5":"2","6":"4"},{"1":"1","2":"sehi","3":"nasalized","4":"0.158","5":"2","6":"55"},{"1":"1","2":"ahul","3":"oral","4":"0.144","5":"3","6":"11"},{"1":"1","2":"zahar","3":"nasalized","4":"0.223","5":"2","6":"63"},{"1":"1","2":"anho","3":"contact","4":"0.518","5":"1","6":"15"},{"1":"1","2":"añharba","3":"contact","4":"0.492","5":"1","6":"14"},{"1":"1","2":"ahizpa","3":"nasalized","4":"0.160","5":"2","6":"9"},{"1":"1","2":"aholku","3":"nasalized","4":"0.094","5":"2","6":"10"},{"1":"1","2":"ohore","3":"nasalized","4":"0.067","5":"2","6":"53"},{"1":"1","2":"ihes","3":"nasalized","4":"0.184","5":"2","6":"42"},{"1":"1","2":"ehi-finger","3":"oral","4":"0.183","5":"3","6":"29"},{"1":"1","2":"ihaur","3":"nasalized","4":"0.142","5":"2","6":"40"},{"1":"1","2":"auher","3":"oral","4":"0.160","5":"3","6":"17"},{"1":"1","2":"ahizpa","3":"nasalized","4":"0.219","5":"2","6":"9"},{"1":"1","2":"bihi","3":"oral","4":"0.178","5":"3","6":"22"},{"1":"1","2":"uñhu","3":"contact","4":"0.563","5":"1","6":"58"},{"1":"1","2":"iharrausi","3":"nasalized","4":"0.160","5":"2","6":"39"},{"1":"1","2":"xehe","3":"nasalized","4":"0.116","5":"2","6":"61"},{"1":"1","2":"aharrausi","3":"oral","4":"0.245","5":"3","6":"7"},{"1":"1","2":"eihe","3":"oral","4":"0.160","5":"3","6":"32"},{"1":"1","2":"ahal","3":"nasalized","4":"0.183","5":"2","6":"2"},{"1":"1","2":"ahari","3":"nasalized","4":"0.204","5":"2","6":"6"},{"1":"1","2":"bihotz","3":"oral","4":"0.157","5":"3","6":"23"},{"1":"1","2":"sehi","3":"nasalized","4":"0.149","5":"2","6":"55"},{"1":"1","2":"ahardi","3":"nasalized","4":"0.139","5":"2","6":"5"},{"1":"1","2":"behi","3":"oral","4":"0.163","5":"3","6":"21"},{"1":"1","2":"ihardetsi","3":"nasalized","4":"0.160","5":"2","6":"38"},{"1":"1","2":"ohatu","3":"oral","4":"0.153","5":"3","6":"51"},{"1":"1","2":"bihurtu","3":"oral","4":"0.130","5":"3","6":"24"},{"1":"1","2":"zuhur","3":"nasalized","4":"0.130","5":"2","6":"65"},{"1":"1","2":"ihue","3":"nasalized","4":"0.137","5":"2","6":"45"},{"1":"1","2":"ehiza","3":"nasalized","4":"0.183","5":"2","6":"30"},{"1":"1","2":"ihintz","3":"nasalized","4":"0.186","5":"2","6":"44"},{"1":"1","2":"ihardetsi","3":"nasalized","4":"0.199","5":"2","6":"38"},{"1":"1","2":"gehien-gehiago","3":"oral","4":"0.230","5":"3","6":"34"},{"1":"1","2":"lehoi","3":"nasalized","4":"0.137","5":"2","6":"49"},{"1":"2","2":"ahul","3":"oral","4":"0.189","5":"3","6":"11"},{"1":"2","2":"sehi","3":"nasalized","4":"0.180","5":"2","6":"55"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
 <p>The quick summary below confirms the expected ranking: <em>contact</em> tokens are the most nasal, <em>oral</em> tokens the least, and the <em>nasalized</em> class falls somewhere in between.</p>
-<pre class="r"><code>(summary &lt;- nas_data |&gt;
-  summarize(
-    mean = mean(nasalance),
-    sd = sd(nasalance),
-    SE = sd(nasalance) / sqrt(n()),
-    lq = quantile(nasalance, 0.025),
-    hq = quantile(nasalance, 0.975),
-    .by = c(&quot;etymology&quot;, &quot;E&quot;)))</code></pre>
-<pre><code># A tidytable: 3 × 7
-  etymology     E  mean     sd      SE     lq    hq
-  &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
-1 contact       1 0.543 0.115  0.0145  0.310  0.749
-2 nasalized     2 0.233 0.176  0.00863 0.0536 0.719
-3 oral          3 0.166 0.0993 0.00668 0.0536 0.460</code></pre>
-<pre class="r fold-hide"><code>ggplot(nas_data, aes(x = nasalance, fill = etymology, color = etymology)) +
-  geom_density(alpha = 0.5, linewidth = 1.2) +
-  labs(
-    title = &quot;Distribution of nasalance by etymology&quot;,
-    x = &quot;Nasalance (N)&quot;,
-    y = &quot;Density&quot;
-  )</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>(summary &lt;-<span class="st"> </span>nas_data <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">summarize</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>    <span class="dt">mean =</span> <span class="kw">mean</span>(nasalance),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>    <span class="dt">sd =</span> <span class="kw">sd</span>(nasalance),</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>    <span class="dt">SE =</span> <span class="kw">sd</span>(nasalance) <span class="op">/</span><span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">n</span>()),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>    <span class="dt">lq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.025</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>    <span class="dt">hq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.975</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a>    <span class="dt">.by =</span> <span class="kw">c</span>(<span class="st">&quot;etymology&quot;</span>, <span class="st">&quot;E&quot;</span>)))</span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["etymology"],"name":[1],"type":["chr"],"align":["left"]},{"label":["E"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["mean"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["sd"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["SE"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lq"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["hq"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"contact","2":"1","3":"0.54","4":"0.115","5":"0.0145","6":"0.310","7":"0.75"},{"1":"nasalized","2":"2","3":"0.23","4":"0.176","5":"0.0086","6":"0.054","7":"0.72"},{"1":"oral","2":"3","3":"0.17","4":"0.099","5":"0.0067","6":"0.054","7":"0.46"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">ggplot</span>(nas_data, <span class="kw">aes</span>(<span class="dt">x =</span> nasalance, <span class="dt">fill =</span> etymology, <span class="dt">color =</span> etymology)) <span class="op">+</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_density</span>(<span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">linewidth =</span> <span class="fl">1.2</span>) <span class="op">+</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">labs</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    <span class="dt">title =</span> <span class="st">&quot;Distribution of nasalance by etymology&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    <span class="dt">x =</span> <span class="st">&quot;Nasalance (N)&quot;</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>    <span class="dt">y =</span> <span class="st">&quot;Density&quot;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>  )</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
 <p>We are modelling proportions of nasalance, with a categorical predictor (etymological category or group), to try to understand if <em>some</em> aspirates /h/ are nasalized in Basque.</p>
 <p><strong>Assumptions:</strong></p>
 <ul>
@@ -167,9 +484,9 @@ knitr::write_bib(.packages(), &quot;r-references.bib&quot;)</code></pre>
 <hr />
 </div>
 </div>
-<div id="modeling-the-mixture-of-two-components" class="section level1">
-<h1>Modeling the mixture of two components</h1>
-<p>We focus here on a two-component mixture model <span class="citation">(<a href="#ref-NicenboimEtAl2025">Nicenboim, Schad, and Vasishth 2025</a>)</span>, where each component represents a distinct cognitive process. The latent vector <span class="math inline">\(\mathbf{z}\)</span> indicates which component an observation belongs to:</p>
+<div id="modeling-the-mixture-of-two-components" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Modeling the mixture of two components</h1>
+<p>We focus here on a two-component mixture model <span class="citation">(Nicenboim, Schad, and Vasishth 2025)</span>, where each component represents a distinct cognitive process. The latent vector <span class="math inline">\(\mathbf{z}\)</span> indicates which component an observation belongs to:</p>
 <p><span class="math display" id="eq:mixz">\[\begin{equation}
 \begin{aligned}
 z_n \sim \mathit{Bernoulli}(\theta)\\
@@ -179,151 +496,149 @@ p_1(\Theta_1), &amp; \text{ if } z_n =1 \\
 p_2(\Theta_2), &amp; \text{ if } z_n=0
 \end{cases}
 \end{aligned}
-\tag{1}
+\tag{2.1}
 \end{equation}\]</span></p>
 <p>In this specific case, <span class="math inline">\(y_n\)</span> is the observed nasalance of a historically nasalized root, and the latent binary indicator <span class="math inline">\(z_n\)</span> determines whether the token was produced via the <em>contact-like</em> process <span class="math inline">\((p_1)\)</span> or the <em>oral-like</em> process <span class="math inline">\((p_2)\)</span>.</p>
-<div id="data-simulation" class="section level2">
-<h2>Data simulation</h2>
+<div id="data-simulation" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Data simulation</h2>
 <p>In the next few chunks we generate two artificial data sets so that we can stress-test our models: one <strong>true mixture</strong> and one <strong>true non-mixture</strong>. We ignore subject‑level variability for now.</p>
-<div id="a-custom-beta-parameterisation" class="section level3">
-<h3>A custom Beta parameterisation</h3>
+<div id="a-custom-beta-parameterisation" class="section level3" number="2.1.1">
+<h3><span class="header-section-number">2.1.1</span> A custom Beta parameterisation</h3>
 <p>Before simulating, we re-express the Beta distribution in terms of a more intuitive mean/<span class="math inline">\(\sigma\)</span> parameterisation. The helper functions <code>beta_pars()</code> and <code>rbeta2()</code> <em>only</em> wrap the algebra–they do not affect inference later on, but they make simulation vastly more readable.</p>
 <p><span class="math display">\[
 \text{var} &lt; \mu (1 - \mu), \quad
 \nu = \frac{\mu(1 - \mu)}{\text{var}} - 1, \quad
 \alpha = \mu \nu, \quad \beta = (1 - \mu) \nu
 \]</span></p>
-<pre class="r"><code>beta_pars &lt;- function(mean, sd) {
-  var &lt;- sd^2
-  alpha &lt;- ((1 - mean) / var - 1 / mean) * mean^2
-  beta &lt;- alpha * (1 / mean - 1)
-  list(alpha = alpha, beta = beta)
-}
-
-rbeta2 &lt;- function(n, mean, sd) {
-  pars &lt;- beta_pars(mean, sd)
-  rbeta(n = n, shape1 = pars$alpha, shape2 = pars$beta)
-}</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>beta_pars &lt;-<span class="st"> </span><span class="cf">function</span>(mean, sd) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  var &lt;-<span class="st"> </span>sd<span class="op">^</span><span class="dv">2</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>  alpha &lt;-<span class="st"> </span>((<span class="dv">1</span> <span class="op">-</span><span class="st"> </span>mean) <span class="op">/</span><span class="st"> </span>var <span class="op">-</span><span class="st"> </span><span class="dv">1</span> <span class="op">/</span><span class="st"> </span>mean) <span class="op">*</span><span class="st"> </span>mean<span class="op">^</span><span class="dv">2</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>  beta &lt;-<span class="st"> </span>alpha <span class="op">*</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">/</span><span class="st"> </span>mean <span class="op">-</span><span class="st"> </span><span class="dv">1</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>  <span class="kw">list</span>(<span class="dt">alpha =</span> alpha, <span class="dt">beta =</span> beta)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>}</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>rbeta2 &lt;-<span class="st"> </span><span class="cf">function</span>(n, mean, sd) {</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>  pars &lt;-<span class="st"> </span><span class="kw">beta_pars</span>(mean, sd)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>  <span class="kw">rbeta</span>(<span class="dt">n =</span> n, <span class="dt">shape1 =</span> pars<span class="op">$</span>alpha, <span class="dt">shape2 =</span> pars<span class="op">$</span>beta)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a>}</span></code></pre></div>
 </div>
-<div id="simulate-data-from-a-mixture-process" class="section level3">
-<h3>Simulate data from a <em>mixture</em> process</h3>
+<div id="simulate-data-from-a-mixture-process" class="section level3" number="2.1.2">
+<h3><span class="header-section-number">2.1.2</span> Simulate data from a <em>mixture</em> process</h3>
 <p><code>prob_nas</code> below is the root-level probability that a historically nasalised aspirate is realised via a “high-nasalance mechanism” (as in contact condition). By varying this single probability you can dial-in anything from a pure-contact to a pure-oral realisation.</p>
-<pre class="r"><code>set.seed(99)
-N &lt;- 100
-
-true &lt;- list(
-  mu_oral = 0.166,
-  sigma_oral = 0.0993,
-  mu_contact = 0.543,
-  sigma_contact = 0.115,
-  prob_nas = 0.15 # made-up probability of nasalization
-)
-
-nas_oral &lt;- rbeta2(N, mean = true$mu_oral, sd = true$sigma_oral)
-nas_contact &lt;- rbeta2(N, mean = true$mu_contact, sd = true$sigma_contact)
-
-is_nas &lt;- rbinom(N, size = 1, prob = true$prob_nas)
-nas_nasalized &lt;- ifelse(
-  is_nas == 1,
-  rbeta2(N, mean = true$mu_contact, sd = true$sigma_contact), # contact
-  rbeta2(N, mean = true$mu_oral, sd = true$sigma_oral)         # oral
-)
-
-mix_data &lt;- tidytable(
-  etymology = rep(c(&quot;oral&quot;, &quot;contact&quot;, &quot;nasalized&quot;), each = N),
-  nasalance = c(nas_oral, nas_contact, nas_nasalized)
-) |&gt;
-  mutate(E = as.factor(etymology) |&gt; as.numeric())</code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">99</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>N &lt;-<span class="st"> </span><span class="dv">100</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>true &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>  <span class="dt">mu_oral =</span> <span class="fl">0.166</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>  <span class="dt">sigma_oral =</span> <span class="fl">0.0993</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>  <span class="dt">mu_contact =</span> <span class="fl">0.543</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a>  <span class="dt">sigma_contact =</span> <span class="fl">0.115</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a>  <span class="dt">prob_nas =</span> <span class="fl">0.15</span> <span class="co"># made-up probability of nasalization</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a>nas_oral &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true<span class="op">$</span>mu_oral, <span class="dt">sd =</span> true<span class="op">$</span>sigma_oral)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a>nas_contact &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true<span class="op">$</span>mu_contact, <span class="dt">sd =</span> true<span class="op">$</span>sigma_contact)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a>is_nas &lt;-<span class="st"> </span><span class="kw">rbinom</span>(N, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> true<span class="op">$</span>prob_nas)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true"></a>nas_nasalized &lt;-<span class="st"> </span><span class="kw">ifelse</span>(</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true"></a>  is_nas <span class="op">==</span><span class="st"> </span><span class="dv">1</span>,</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true"></a>  <span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true<span class="op">$</span>mu_contact, <span class="dt">sd =</span> true<span class="op">$</span>sigma_contact), <span class="co"># contact</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true"></a>  <span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true<span class="op">$</span>mu_oral, <span class="dt">sd =</span> true<span class="op">$</span>sigma_oral)         <span class="co"># oral</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true"></a>)</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true"></a></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true"></a>mix_data &lt;-<span class="st"> </span><span class="kw">tidytable</span>(</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true"></a>  <span class="dt">etymology =</span> <span class="kw">rep</span>(<span class="kw">c</span>(<span class="st">&quot;oral&quot;</span>, <span class="st">&quot;contact&quot;</span>, <span class="st">&quot;nasalized&quot;</span>), <span class="dt">each =</span> N),</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true"></a>  <span class="dt">nasalance =</span> <span class="kw">c</span>(nas_oral, nas_contact, nas_nasalized)</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true"></a>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">E =</span> <span class="kw">as.factor</span>(etymology) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>())</span></code></pre></div>
 <p>Check distribution and visualize:</p>
-<pre class="r fold-hide"><code>mix_data |&gt;
-  summarize(
-    mean = mean(nasalance),
-    sd = sd(nasalance),
-    SE = sd(nasalance) / sqrt(n()),
-    lq = quantile(nasalance, 0.025),
-    hq = quantile(nasalance, 0.975),
-    .by = c(&quot;etymology&quot;, &quot;E&quot;)
-  )</code></pre>
-<pre><code># A tidytable: 3 × 7
-  etymology     E  mean     sd      SE     lq    hq
-  &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
-1 contact       1 0.551 0.119  0.0119  0.323  0.744
-2 nasalized     2 0.215 0.169  0.0169  0.0203 0.687
-3 oral          3 0.157 0.0895 0.00895 0.0330 0.374</code></pre>
-<pre class="r fold-hide"><code>ggplot(mix_data, aes(x = nasalance, fill = etymology, color = etymology)) +
-  geom_density(alpha = 0.5, linewidth = 1.2) +
-  labs(
-    title = &quot;SIMULATED distribution of nasalance by etymology (mixture)&quot;,
-    x = &quot;Nasalance (N)&quot;,
-    y = &quot;Density&quot;
-  ) +
-  theme_minimal()</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>mix_data <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">summarize</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>    <span class="dt">mean =</span> <span class="kw">mean</span>(nasalance),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>    <span class="dt">sd =</span> <span class="kw">sd</span>(nasalance),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>    <span class="dt">SE =</span> <span class="kw">sd</span>(nasalance) <span class="op">/</span><span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">n</span>()),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>    <span class="dt">lq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.025</span>),</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>    <span class="dt">hq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.975</span>),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>    <span class="dt">.by =</span> <span class="kw">c</span>(<span class="st">&quot;etymology&quot;</span>, <span class="st">&quot;E&quot;</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>  )</span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["etymology"],"name":[1],"type":["chr"],"align":["left"]},{"label":["E"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["mean"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["sd"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["SE"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lq"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["hq"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"contact","2":"1","3":"0.55","4":"0.119","5":"0.0119","6":"0.323","7":"0.74"},{"1":"nasalized","2":"2","3":"0.22","4":"0.169","5":"0.0169","6":"0.020","7":"0.69"},{"1":"oral","2":"3","3":"0.16","4":"0.089","5":"0.0089","6":"0.033","7":"0.37"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">ggplot</span>(mix_data, <span class="kw">aes</span>(<span class="dt">x =</span> nasalance, <span class="dt">fill =</span> etymology, <span class="dt">color =</span> etymology)) <span class="op">+</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_density</span>(<span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">linewidth =</span> <span class="fl">1.2</span>) <span class="op">+</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">labs</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>    <span class="dt">title =</span> <span class="st">&quot;SIMULATED distribution of nasalance by etymology (mixture)&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>    <span class="dt">x =</span> <span class="st">&quot;Nasalance (N)&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>    <span class="dt">y =</span> <span class="st">&quot;Density&quot;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>  ) <span class="op">+</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">theme_minimal</span>()</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
 <div class="note">
 <p>Experiment with different values of <code>prob_nas</code> and observe the effect on the distribution.</p>
 </div>
 </div>
-<div id="simulate-data-from-a-non-mixture-process" class="section level3">
-<h3>Simulate data from a <em>non-mixture</em> process</h3>
+<div id="simulate-data-from-a-non-mixture-process" class="section level3" number="2.1.3">
+<h3><span class="header-section-number">2.1.3</span> Simulate data from a <em>non-mixture</em> process</h3>
 <p>Here every category gets its <em>own</em> Beta distribution. The parameters for <em>oral</em> and <em>contact</em> are the same as above; the <em>nasalized</em> mean/sd are set to match the empirical data.</p>
-<pre class="r"><code>set.seed(99)
-
-true2 &lt;- list(
-  mu_oral = true$mu_oral,
-  sigma_oral = true$sigma_oral,
-  mu_contact = true$mu_contact,
-  sigma_contact = true$sigma_contact,
-  mu_nasalized = 0.233,
-  sigma_nasalized = 0.176
-)
-nas_oral &lt;- rbeta2(N, mean = true2$mu_oral, sd = true2$sigma_oral)
-nas_contact &lt;- rbeta2(N, mean = true2$mu_contact, sd = true2$sigma_contact)
-nas_nasalized2 &lt;- rbeta2(N, mean = true2$mu_nasalized, sd = true2$sigma_nasalized)
-
-nonmix_data &lt;- tidytable(
-  etymology = rep(c(&quot;oral&quot;, &quot;contact&quot;, &quot;nasalized&quot;), each = N),
-  nasalance = c(nas_oral, nas_contact, nas_nasalized2)
-) |&gt;
-  mutate(E = as.factor(etymology) |&gt; as.numeric())</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">set.seed</span>(<span class="dv">99</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>true2 &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>  <span class="dt">mu_oral =</span> true<span class="op">$</span>mu_oral,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>  <span class="dt">sigma_oral =</span> true<span class="op">$</span>sigma_oral,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>  <span class="dt">mu_contact =</span> true<span class="op">$</span>mu_contact,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>  <span class="dt">sigma_contact =</span> true<span class="op">$</span>sigma_contact,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true"></a>  <span class="dt">mu_nasalized =</span> <span class="fl">0.233</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true"></a>  <span class="dt">sigma_nasalized =</span> <span class="fl">0.176</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true"></a>)</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true"></a>nas_oral &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true2<span class="op">$</span>mu_oral, <span class="dt">sd =</span> true2<span class="op">$</span>sigma_oral)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true"></a>nas_contact &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true2<span class="op">$</span>mu_contact, <span class="dt">sd =</span> true2<span class="op">$</span>sigma_contact)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true"></a>nas_nasalized2 &lt;-<span class="st"> </span><span class="kw">rbeta2</span>(N, <span class="dt">mean =</span> true2<span class="op">$</span>mu_nasalized, <span class="dt">sd =</span> true2<span class="op">$</span>sigma_nasalized)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true"></a>nonmix_data &lt;-<span class="st"> </span><span class="kw">tidytable</span>(</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true"></a>  <span class="dt">etymology =</span> <span class="kw">rep</span>(<span class="kw">c</span>(<span class="st">&quot;oral&quot;</span>, <span class="st">&quot;contact&quot;</span>, <span class="st">&quot;nasalized&quot;</span>), <span class="dt">each =</span> N),</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true"></a>  <span class="dt">nasalance =</span> <span class="kw">c</span>(nas_oral, nas_contact, nas_nasalized2)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true"></a>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">E =</span> <span class="kw">as.factor</span>(etymology) <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">as.numeric</span>())</span></code></pre></div>
 <p>Check distribution and visualize:</p>
-<pre class="r fold-hide"><code>nonmix_data |&gt; summarize(mean = mean(nasalance),
-            sd = sd(nasalance),
-            SE = mean(nasalance)/sqrt(n()),
-            lq = quantile(nasalance, 0.025),
-            hq = quantile(nasalance, 0.975),
-            .by = c(&quot;etymology&quot;,&quot;E&quot;))</code></pre>
-<pre><code># A tidytable: 3 × 7
-  etymology     E  mean     sd     SE     lq    hq
-  &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
-1 contact       1 0.551 0.119  0.0551 0.323  0.744
-2 nasalized     2 0.231 0.183  0.0231 0.0110 0.641
-3 oral          3 0.157 0.0895 0.0157 0.0330 0.374</code></pre>
-<pre class="r fold-hide"><code>ggplot(nonmix_data, aes(x = nasalance, fill = etymology, color = etymology))  +
-  geom_density(alpha = 0.5, linewidth = 1.2) +
-  labs(title = &quot;SIMULATED distribution of nasalance by etymology&quot;,
-       x = &quot;N&quot;,
-       y = &quot;Density&quot;) +
-  theme_minimal()</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a>nonmix_data <span class="op">|</span><span class="er">&gt;</span><span class="st"> </span><span class="kw">summarize</span>(<span class="dt">mean =</span> <span class="kw">mean</span>(nasalance),</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>            <span class="dt">sd =</span> <span class="kw">sd</span>(nasalance),</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>            <span class="dt">SE =</span> <span class="kw">mean</span>(nasalance)<span class="op">/</span><span class="kw">sqrt</span>(<span class="kw">n</span>()),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>            <span class="dt">lq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.025</span>),</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>            <span class="dt">hq =</span> <span class="kw">quantile</span>(nasalance, <span class="fl">0.975</span>),</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>            <span class="dt">.by =</span> <span class="kw">c</span>(<span class="st">&quot;etymology&quot;</span>,<span class="st">&quot;E&quot;</span>))</span></code></pre></div>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["etymology"],"name":[1],"type":["chr"],"align":["left"]},{"label":["E"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["mean"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["sd"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["SE"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lq"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["hq"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"contact","2":"1","3":"0.55","4":"0.119","5":"0.055","6":"0.323","7":"0.74"},{"1":"nasalized","2":"2","3":"0.23","4":"0.183","5":"0.023","6":"0.011","7":"0.64"},{"1":"oral","2":"3","3":"0.16","4":"0.089","5":"0.016","6":"0.033","7":"0.37"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">ggplot</span>(nonmix_data, <span class="kw">aes</span>(<span class="dt">x =</span> nasalance, <span class="dt">fill =</span> etymology, <span class="dt">color =</span> etymology))  <span class="op">+</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_density</span>(<span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">linewidth =</span> <span class="fl">1.2</span>) <span class="op">+</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;SIMULATED distribution of nasalance by etymology&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>       <span class="dt">x =</span> <span class="st">&quot;N&quot;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true"></a>       <span class="dt">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="op">+</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true"></a><span class="st">  </span><span class="kw">theme_minimal</span>()</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
 <p><strong>Both distributions are visually similar, underscoring the difficulty of distinguishing the underlying generative processes by eye alone.</strong></p>
 <hr />
 </div>
 </div>
-<div id="fitting-the-simulated-data" class="section level2">
-<h2>Fitting the simulated data</h2>
+<div id="fitting-the-simulated-data" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Fitting the simulated data</h2>
 <p>We next fit the simulated data sets with <em>both</em> a mixture and a non-mixture model. We expect the following:</p>
 <ol style="list-style-type: decimal">
 <li><p>the mixture model should outperform when the data are a true mixture; and</p></li>
 <li><p>the non-mixture model should win when the data really come from three separate Beta distributions.</p></li>
 </ol>
 <hr />
-<div id="stan-implementation-two-component-mixture" class="section level3">
-<h3>Stan implementation: two-component mixture</h3>
+<div id="stan-implementation-two-component-mixture" class="section level3" number="2.2.1">
+<h3><span class="header-section-number">2.2.1</span> Stan implementation: two-component mixture</h3>
 <p>The Stan program below encodes the likelihood</p>
 <p><span class="math display">\[
   p(y_n\mid\Theta) = \theta\,p_1(y_n\mid\Theta_1) + (1-\theta)\,p_2(y_n\mid\Theta_2),
 \]</span></p>
-<p>where <span class="math inline">\(p_1\)</span> and <span class="math inline">\(p_2\)</span> are Beta distributions parameterised by their means and standard deviations. Because Stan does not allow discrete parameters in the <code>parameters</code> block, we marginalise over the latent indicator $z_n$ via <code>log_sum_exp</code>.</p>
+<p>where <span class="math inline">\(p_1\)</span> and <span class="math inline">\(p_2\)</span> are Beta distributions parameterised by their means and standard deviations. Because Stan does not allow discrete parameters in the <code>parameters</code> block, we marginalise over the latent indicator <span class="math inline">\(z_n\)</span> via <code>log_sum_exp()</code>.</p>
 <p>Stan model:</p>
 <pre class="stan"><code>#include beta2.stan
 data {
@@ -388,49 +703,57 @@ generated quantities {
     }
   }
 }</code></pre>
-<pre class="r"><code>mix_m &lt;- cmdstan_model(&quot;./mix.stan&quot;)</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a>mix_m &lt;-<span class="st"> </span><span class="kw">cmdstan_model</span>(<span class="st">&quot;./mix.stan&quot;</span>)</span></code></pre></div>
 <hr />
 </div>
-<div id="model-fits" class="section level3">
-<h3>Model fits</h3>
-<p>Posterior recovery plots (<code>mcmc_recover_hist</code>) show that all five parameters are recovered when the data truly come from a mixture. Notably, the same Stan model also <em>fits</em> the non-mixture data well.</p>
-<div id="fiting-data-generated-by-a-non-mixture-process-with-a-mixture-model" class="section level4">
-<h4>Fiting data generated by a non-mixture process with a mixture model</h4>
-<pre class="r"><code>mix_ls &lt;- list(
-  N = nrow(mix_data),
-  nasalance = mix_data$nasalance,
-  E = as.integer(mix_data$E)
-)
-
-mixm_mixd &lt;- mix_m$sample(data = mix_ls, parallel_chains = 4)</code></pre>
+<div id="model-fits" class="section level3" number="2.2.2">
+<h3><span class="header-section-number">2.2.2</span> Model fits</h3>
+<p>Posterior recovery plots (<code>mcmc_recover_hist</code>) show that all five parameters are recovered when the data truly come from a mixture. <span class="citation">(A complete pipeline would also include SBC, which we omit for brevity: Talts et al. 2018; Modrák et al. 2023)</span>. We skip this step here.
+Notably, the same Stan model also <em>fits</em> the non-mixture data well.</p>
+<div id="fiting-data-generated-by-a-non-mixture-process-with-a-mixture-model" class="section level4" number="2.2.2.1">
+<h4><span class="header-section-number">2.2.2.1</span> Fiting data generated by a non-mixture process with a mixture model</h4>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a>mix_ls &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a>  <span class="dt">N =</span> <span class="kw">nrow</span>(mix_data),</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a>  <span class="dt">nasalance =</span> mix_data<span class="op">$</span>nasalance,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a>  <span class="dt">E =</span> <span class="kw">as.integer</span>(mix_data<span class="op">$</span>E)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true"></a>mixm_mixd &lt;-<span class="st"> </span>mix_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> mix_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
 <p>Parameter recovery:</p>
-<pre class="r"><code>bayesplot::mcmc_recover_hist(
-  x = mixm_mixd$draws(c(&quot;mu_oral&quot;, &quot;sigma_oral&quot;, &quot;mu_contact&quot;, &quot;sigma_contact&quot;, &quot;prob_nas&quot;)),
-  true = unlist(true)
-)</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
-<pre class="r"><code>yrep &lt;- mixm_mixd$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
-ppc_dens_overlay_grouped(y = mix_data$nasalance, yrep = yrep[1:100, ], group = mix_data$etymology)+ ggtitle(&quot;Mixture model on mixture data&quot;)</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a>bayesplot<span class="op">::</span><span class="kw">mcmc_recover_hist</span>(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>  <span class="dt">x =</span> mixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="kw">c</span>(<span class="st">&quot;mu_oral&quot;</span>, <span class="st">&quot;sigma_oral&quot;</span>, <span class="st">&quot;mu_contact&quot;</span>, <span class="st">&quot;sigma_contact&quot;</span>, <span class="st">&quot;prob_nas&quot;</span>)),</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a>  <span class="dt">true =</span> <span class="kw">unlist</span>(true)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a>yrep &lt;-<span class="st"> </span>mixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(<span class="dt">y =</span> mix_data<span class="op">$</span>nasalance,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>                         <span class="dt">yrep =</span> yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true"></a>                         <span class="dt">group =</span> mix_data<span class="op">$</span>etymology) <span class="op">+</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Mixture model on mixture data&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
 </div>
-<div id="fitting-non-mixture-data-with-a-mixture-model" class="section level4">
-<h4>Fitting non-mixture data with a mixture model</h4>
+<div id="fitting-non-mixture-data-with-a-mixture-model" class="section level4" number="2.2.2.2">
+<h4><span class="header-section-number">2.2.2.2</span> Fitting non-mixture data with a mixture model</h4>
 <p>Data not generated by a mixture model can be perfectly fit by a mixture model!</p>
-<pre class="r"><code>nonmix_ls &lt;- list(
-  N = nrow(nonmix_data),
-  nasalance = nonmix_data$nasalance,
-  E = as.integer(nonmix_data$E)
-)
-
-mixm_nonmixd &lt;- mix_m$sample(data = nonmix_ls, parallel_chains = 4)</code></pre>
-<pre class="r"><code>yrep &lt;- mixm_nonmixd$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
-ppc_dens_overlay_grouped(y = nonmix_data$nasalance, yrep = yrep[1:100, ],group = nonmix_data$etymology)+ ggtitle(&quot;Mixture model on non-mixture data&quot;)</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a>nonmix_ls &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a>  <span class="dt">N =</span> <span class="kw">nrow</span>(nonmix_data),</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a>  <span class="dt">nasalance =</span> nonmix_data<span class="op">$</span>nasalance,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a>  <span class="dt">E =</span> <span class="kw">as.integer</span>(nonmix_data<span class="op">$</span>E)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true"></a>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true"></a>mixm_nonmixd &lt;-<span class="st"> </span>mix_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> nonmix_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a>yrep &lt;-<span class="st"> </span>mixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(<span class="dt">y =</span> nonmix_data<span class="op">$</span>nasalance,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a>                         <span class="dt">yrep =</span> yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true"></a>                         <span class="dt">group =</span> nonmix_data<span class="op">$</span>etymology) <span class="op">+</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Mixture model on non-mixture data&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
 </div>
 </div>
 </div>
-<div id="alternative-model-non-mixture-model" class="section level2">
-<h2>Alternative model: non-mixture model</h2>
+<div id="alternative-model-non-mixture-model" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> Alternative model: non-mixture model</h2>
 <p>This alternative Stan program replaces the Bernoulli mixture with a dedicated Beta for the nasalised class. Everything else remains the same. This model therefore embodies the (maybe unrealistic) hypothesis that historically nasalised aspirates form a coherent third distribution rather than a mixture of two.</p>
 <p>Stan model:</p>
 <pre class="stan"><code>#include beta2.stan
@@ -482,13 +805,13 @@ generated quantities {
     }
   }
 }</code></pre>
-<div id="fitting-mixture-and-non-mixture-data-with-a-non-mixture-model" class="section level3">
-<h3>Fitting mixture and non-mixture data with a non-mixture model</h3>
-<pre class="r"><code>nonmix_m &lt;- cmdstan_model(&quot;./nonmix.stan&quot;)
-
-nonmixm_mixd &lt;- nonmix_m$sample(data = mix_ls, parallel_chains = 4)
-nonmixm_nonmixd &lt;- nonmix_m$sample(data = nonmix_ls, parallel_chains = 4)</code></pre>
-<pre class="r"><code>nonmixm_mixd</code></pre>
+<div id="fitting-mixture-and-non-mixture-data-with-a-non-mixture-model" class="section level3" number="2.3.1">
+<h3><span class="header-section-number">2.3.1</span> Fitting mixture and non-mixture data with a non-mixture model</h3>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true"></a>nonmix_m &lt;-<span class="st"> </span><span class="kw">cmdstan_model</span>(<span class="st">&quot;./nonmix.stan&quot;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true"></a>nonmixm_mixd &lt;-<span class="st"> </span>nonmix_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> mix_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true"></a>nonmixm_nonmixd &lt;-<span class="st"> </span>nonmix_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> nonmix_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a>nonmixm_mixd</span></code></pre></div>
 <pre><code>        variable   mean median   sd  mad     q5    q95 rhat ess_bulk ess_tail
  lp__            223.15 223.47 1.75 1.56 219.71 225.34 1.00     1813     2718
  mu_contact        0.55   0.55 0.01 0.01   0.53   0.57 1.00     4616     2815
@@ -502,7 +825,7 @@ nonmixm_nonmixd &lt;- nonmix_m$sample(data = nonmix_ls, parallel_chains = 4)</co
  log_lik[3]        0.84   0.84 0.08 0.08   0.70   0.97 1.00     5775     2994
 
  # showing 10 of 607 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
-<pre class="r"><code>nonmixm_nonmixd</code></pre>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true"></a>nonmixm_nonmixd</span></code></pre></div>
 <pre><code>        variable   mean median   sd  mad     q5    q95 rhat ess_bulk ess_tail
  lp__            214.49 214.84 1.75 1.53 211.07 216.67 1.00     2090     2769
  mu_contact        0.55   0.55 0.01 0.01   0.53   0.57 1.00     4788     3191
@@ -517,46 +840,50 @@ nonmixm_nonmixd &lt;- nonmix_m$sample(data = nonmix_ls, parallel_chains = 4)</co
 
  # showing 10 of 607 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
 <p>Recovery of the parameters of the non-mixture with the non-mixture model:</p>
-<pre class="r"><code>bayesplot::mcmc_recover_hist(
-  x = nonmixm_nonmixd$draws(c(&quot;mu_oral&quot;, &quot;sigma_oral&quot;, &quot;mu_contact&quot;, &quot;sigma_contact&quot;, &quot;mu_nasalized&quot;, &quot;sigma_nasalized&quot;)),
-  true = unlist(true2)
-)</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
-<pre class="r"><code>yrep_mixfit &lt;- nonmixm_mixd$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
-ppc_dens_overlay_grouped(
-  y = mix_data$nasalance,
-  yrep = yrep_mixfit[1:100, ],  
-  group = mix_data$etymology
-) + ggtitle(&quot;Non-mixture model on mixture data&quot;)</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
-<pre class="r"><code>yrep_nonmixfit &lt;- nonmixm_nonmixd$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
-ppc_dens_overlay_grouped(
-  y = nonmix_data$nasalance,
-  yrep = yrep_nonmixfit[1:100, ],
-  group = nonmix_data$etymology
-) + ggtitle(&quot;Non-mixture model on non-mixture data&quot;)</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true"></a>bayesplot<span class="op">::</span><span class="kw">mcmc_recover_hist</span>(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true"></a>  <span class="dt">x =</span> nonmixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="kw">c</span>(<span class="st">&quot;mu_oral&quot;</span>, <span class="st">&quot;sigma_oral&quot;</span>, <span class="st">&quot;mu_contact&quot;</span>, <span class="st">&quot;sigma_contact&quot;</span>, <span class="st">&quot;mu_nasalized&quot;</span>, <span class="st">&quot;sigma_nasalized&quot;</span>)),</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true"></a>  <span class="dt">true =</span> <span class="kw">unlist</span>(true2)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true"></a>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true"></a>yrep_mixfit &lt;-<span class="st"> </span>nonmixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true"></a>  <span class="dt">y =</span> mix_data<span class="op">$</span>nasalance,</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true"></a>  <span class="dt">yrep =</span> yrep_mixfit[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],  </span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true"></a>  <span class="dt">group =</span> mix_data<span class="op">$</span>etymology</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true"></a>) <span class="op">+</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Non-mixture model on mixture data&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true"></a>yrep_nonmixfit &lt;-<span class="st"> </span>nonmixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true"></a>  <span class="dt">y =</span> nonmix_data<span class="op">$</span>nasalance,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true"></a>  <span class="dt">yrep =</span> yrep_nonmixfit[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true"></a>  <span class="dt">group =</span> nonmix_data<span class="op">$</span>etymology</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true"></a>) <span class="op">+</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Non-mixture model on non-mixture data&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
 </div>
 </div>
-<div id="model-comparison" class="section level2">
-<h2>Model comparison</h2>
+<div id="model-comparison" class="section level2" number="2.4">
+<h2><span class="header-section-number">2.4</span> Model comparison</h2>
 <p>Model comparison via approximate leave-one-out cross-validation (LOO-CV) is rather inconclusive (in this small-data setting):</p>
-<pre class="r"><code>loo_mixm_mixd &lt;- loo(mixm_mixd$draws(&quot;log_lik&quot;))
-loo_mixm_nonmixd &lt;- loo(mixm_nonmixd$draws(&quot;log_lik&quot;))
-loo_nonmixm_mixd &lt;- loo(nonmixm_mixd$draws(&quot;log_lik&quot;))
-loo_nonmixm_nonmixd &lt;- loo(nonmixm_nonmixd$draws(&quot;log_lik&quot;))</code></pre>
-<div id="data-generated-by-a-mixture-process" class="section level3">
-<h3>Data generated by a mixture process</h3>
-<pre class="r"><code>loo_compare(list(mixture_model = loo_mixm_mixd,
-                 non_mixture   = loo_nonmixm_mixd))</code></pre>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true"></a>loo_mixm_mixd &lt;-<span class="st"> </span><span class="kw">loo</span>(mixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true"></a>loo_mixm_nonmixd &lt;-<span class="st"> </span><span class="kw">loo</span>(mixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true"></a>loo_nonmixm_mixd &lt;-<span class="st"> </span><span class="kw">loo</span>(nonmixm_mixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true"></a>loo_nonmixm_nonmixd &lt;-<span class="st"> </span><span class="kw">loo</span>(nonmixm_nonmixd<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;log_lik&quot;</span>))</span></code></pre></div>
+<div id="data-generated-by-a-mixture-process" class="section level3" number="2.4.1">
+<h3><span class="header-section-number">2.4.1</span> Data generated by a mixture process</h3>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(<span class="kw">list</span>(<span class="dt">mixture_model =</span> loo_mixm_mixd,</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true"></a>                 <span class="dt">non_mixture   =</span> loo_nonmixm_mixd))</span></code></pre></div>
 <pre><code>              elpd_diff se_diff
 mixture_model  0.0       0.0   
 non_mixture   -8.1       4.1   </code></pre>
 </div>
-<div id="data-generated-by-a-nonmixture-process" class="section level3">
-<h3>Data generated by a non‑mixture process</h3>
-<pre class="r"><code>loo_compare(list(mixture_model = loo_mixm_nonmixd,
-                 non_mixture   = loo_nonmixm_nonmixd))</code></pre>
+<div id="data-generated-by-a-nonmixture-process" class="section level3" number="2.4.2">
+<h3><span class="header-section-number">2.4.2</span> Data generated by a non‑mixture process</h3>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true"></a><span class="kw">loo_compare</span>(<span class="kw">list</span>(<span class="dt">mixture_model =</span> loo_mixm_nonmixd,</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true"></a>                 <span class="dt">non_mixture   =</span> loo_nonmixm_nonmixd))</span></code></pre></div>
 <pre><code>              elpd_diff se_diff
 non_mixture    0.0       0.0   
 mixture_model -2.1       3.8   </code></pre>
@@ -565,11 +892,11 @@ mixture_model -2.1       3.8   </code></pre>
 </div>
 </div>
 </div>
-<div id="hierarchical-extensions" class="section level2">
-<h2>Hierarchical extensions</h2>
+<div id="hierarchical-extensions" class="section level2" number="2.5">
+<h2><span class="header-section-number">2.5</span> Hierarchical extensions</h2>
 <p>Real speakers differ in how faithfully they produce nasalised aspirates. The next two Stan programs introduce <strong>speaker-level group effects</strong> on the mixture weight and, in the final version, also on the contact/oral means via a Cholesky-factor LKJ prior. The high-level structure is unchanged.</p>
-<div id="subject-level-adjustments-for-the-mixture-weight" class="section level3">
-<h3>Subject level adjustments for the mixture weight</h3>
+<div id="subject-level-adjustments-for-the-mixture-weight" class="section level3" number="2.5.1">
+<h3><span class="header-section-number">2.5.1</span> Subject level adjustments for the mixture weight</h3>
 <pre class="stan"><code>#include beta2.stan
 data {
   int&lt;lower = 1&gt; N;
@@ -646,58 +973,60 @@ generated quantities {
     }
   }
 }</code></pre>
-<pre class="r"><code>mix_s_m &lt;- cmdstan_model(&quot;./mix_s.stan&quot;)</code></pre>
-<p>We first verify that we can recover the generating parameters. <span class="citation">(A complete pipeline would also include SBC, which we omit for brevity: <a href="#ref-talts2018validating">Talts et al. 2018</a>; <a href="#ref-ModrakEtAl2023">Modrák et al. 2023</a>)</span>. We skip this step here.</p>
-<pre class="r"><code>nas_ls &lt;- list(N = nrow(nas_data),
-               nasalance = nas_data$nasalance,
-               E = nas_data$E,
-               speaker = nas_data$speaker,
-               N_speaker = max(nas_data$speaker))
-               
-nas_mix &lt;- mix_s_m$sample(data = nas_ls, parallel_chains = 4)</code></pre>
-<pre class="r"><code>yrep &lt;- nas_mix$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
-ppc_dens_overlay_grouped(
-  y = nas_data$nasalance,
-  yrep = yrep[1:100, ],
-  group = nas_data$etymology
-) + ggtitle(&quot;Real data&quot;)</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
-<pre class="r fold-hide"><code>yrep_mat &lt;- yrep[1:100, ]  # assuming yrep is already created
-n_draws &lt;- nrow(yrep_mat)
-
-# Build long dataframe from yrep and attach metadata
-yrep_df &lt;- as.data.frame(t(yrep_mat)) |&gt;
-  setNames(paste0(&quot;draw&quot;, 1:n_draws)) |&gt;
-  mutate(
-    obs = nas_data$nasalance,
-    speaker = nas_data$speaker,
-    etymology = nas_data$etymology
-  ) |&gt;
-  pivot_longer(
-    cols = starts_with(&quot;draw&quot;),
-    names_to = &quot;draw&quot;,
-    values_to = &quot;yrep&quot;
-  )
-
-# Plot
-ggplot(yrep_df, aes(x = etymology, y = yrep, fill = etymology)) +
-  geom_violin(alpha = 0.5, scale = &quot;width&quot;) +
-  geom_point(aes(y = obs), shape = 21, size = 1.5, position = position_jitter(width = 0.1)) +
-  facet_wrap(~ speaker, scales = &quot;free_y&quot;) +
-  labs(title = &quot;Posterior predictive violins per speaker and etymology&quot;,
-       x = &quot;Etymology&quot;, y = &quot;Nasalance&quot;) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true"></a>mix_s_m &lt;-<span class="st"> </span><span class="kw">cmdstan_model</span>(<span class="st">&quot;./mix_s.stan&quot;</span>)</span></code></pre></div>
+<p>We first verify that we can recover the generating parameters.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true"></a>nas_ls &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">N =</span> <span class="kw">nrow</span>(nas_data),</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true"></a>               <span class="dt">nasalance =</span> nas_data<span class="op">$</span>nasalance,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true"></a>               <span class="dt">E =</span> nas_data<span class="op">$</span>E,</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true"></a>               <span class="dt">speaker =</span> nas_data<span class="op">$</span>speaker,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true"></a>               <span class="dt">N_speaker =</span> <span class="kw">max</span>(nas_data<span class="op">$</span>speaker))</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true"></a>               </span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true"></a>nas_mix &lt;-<span class="st"> </span>mix_s_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> nas_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true"></a>yrep &lt;-<span class="st"> </span>nas_mix<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true"></a>  <span class="dt">y =</span> nas_data<span class="op">$</span>nasalance,</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true"></a>  <span class="dt">yrep =</span> yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true"></a>  <span class="dt">group =</span> nas_data<span class="op">$</span>etymology</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true"></a>) <span class="op">+</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Real data&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r fold-hide"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true"></a>yrep_mat &lt;-<span class="st"> </span>yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ]  <span class="co"># assuming yrep is already created</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true"></a>n_draws &lt;-<span class="st"> </span><span class="kw">nrow</span>(yrep_mat)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true"></a></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true"></a><span class="co"># Build long dataframe from yrep and attach metadata</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true"></a>yrep_df &lt;-<span class="st"> </span><span class="kw">as.data.frame</span>(<span class="kw">t</span>(yrep_mat)) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true"></a><span class="st">  </span><span class="kw">setNames</span>(<span class="kw">paste0</span>(<span class="st">&quot;draw&quot;</span>, <span class="dv">1</span><span class="op">:</span>n_draws)) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true"></a>    <span class="dt">obs =</span> nas_data<span class="op">$</span>nasalance,</span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true"></a>    <span class="dt">speaker =</span> nas_data<span class="op">$</span>speaker,</span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true"></a>    <span class="dt">etymology =</span> nas_data<span class="op">$</span>etymology</span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true"></a>  ) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true"></a><span class="st">  </span><span class="kw">pivot_longer</span>(</span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true"></a>    <span class="dt">cols =</span> <span class="kw">starts_with</span>(<span class="st">&quot;draw&quot;</span>),</span>
+<span id="cb38-14"><a href="#cb38-14" aria-hidden="true"></a>    <span class="dt">names_to =</span> <span class="st">&quot;draw&quot;</span>,</span>
+<span id="cb38-15"><a href="#cb38-15" aria-hidden="true"></a>    <span class="dt">values_to =</span> <span class="st">&quot;yrep&quot;</span></span>
+<span id="cb38-16"><a href="#cb38-16" aria-hidden="true"></a>  )</span>
+<span id="cb38-17"><a href="#cb38-17" aria-hidden="true"></a></span>
+<span id="cb38-18"><a href="#cb38-18" aria-hidden="true"></a><span class="co"># Plot</span></span>
+<span id="cb38-19"><a href="#cb38-19" aria-hidden="true"></a><span class="kw">ggplot</span>(yrep_df, <span class="kw">aes</span>(<span class="dt">x =</span> etymology, <span class="dt">y =</span> yrep, <span class="dt">fill =</span> etymology)) <span class="op">+</span></span>
+<span id="cb38-20"><a href="#cb38-20" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_violin</span>(<span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">scale =</span> <span class="st">&quot;width&quot;</span>) <span class="op">+</span></span>
+<span id="cb38-21"><a href="#cb38-21" aria-hidden="true"></a><span class="st">  </span><span class="kw">geom_point</span>(<span class="kw">aes</span>(<span class="dt">y =</span> obs), <span class="dt">shape =</span> <span class="dv">21</span>, <span class="dt">size =</span> <span class="fl">1.5</span>, <span class="dt">position =</span> <span class="kw">position_jitter</span>(<span class="dt">width =</span> <span class="fl">0.1</span>)) <span class="op">+</span></span>
+<span id="cb38-22"><a href="#cb38-22" aria-hidden="true"></a><span class="st">  </span><span class="kw">facet_wrap</span>(<span class="op">~</span><span class="st"> </span>speaker, <span class="dt">scales =</span> <span class="st">&quot;free_y&quot;</span>) <span class="op">+</span></span>
+<span id="cb38-23"><a href="#cb38-23" aria-hidden="true"></a><span class="st">  </span><span class="kw">labs</span>(<span class="dt">title =</span> <span class="st">&quot;Posterior predictive violins per speaker and etymology&quot;</span>,</span>
+<span id="cb38-24"><a href="#cb38-24" aria-hidden="true"></a>       <span class="dt">x =</span> <span class="st">&quot;Etymology&quot;</span>, <span class="dt">y =</span> <span class="st">&quot;Nasalance&quot;</span>) <span class="op">+</span></span>
+<span id="cb38-25"><a href="#cb38-25" aria-hidden="true"></a><span class="st">  </span><span class="kw">theme_minimal</span>() <span class="op">+</span></span>
+<span id="cb38-26"><a href="#cb38-26" aria-hidden="true"></a><span class="st">  </span><span class="kw">theme</span>(<span class="dt">axis.text.x =</span> <span class="kw">element_text</span>(<span class="dt">angle =</span> <span class="dv">45</span>, <span class="dt">hjust =</span> <span class="dv">1</span>))</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
 <p>Are there subjects who nasalize more?</p>
-<pre class="r"><code>mcmc_intervals(nas_mix$draws(&quot;prob_nas_speaker&quot;))</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true"></a><span class="kw">mcmc_intervals</span>(nas_mix<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;prob_nas_speaker&quot;</span>))</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-31-1.png" width="672" /></p>
 <div class="note">
 <p>Add an analogous parameter <code>w</code> which modulates the probability of nasalization by <code>root</code>. Which roots are most likely to be nasalized?</p>
 </div>
 </div>
-<div id="subject-level-adjustments-for-the-mixture-weight-and-mean-nasalization." class="section level3">
-<h3>Subject level adjustments for the mixture weight and mean nasalization.</h3>
+<div id="subject-level-adjustments-for-the-mixture-weight-and-mean-nasalization." class="section level3" number="2.5.2">
+<h3><span class="header-section-number">2.5.2</span> Subject level adjustments for the mixture weight and mean nasalization.</h3>
 <p>A more comprehensive hierarchical model allows <code>mu_contact</code> and <code>mu_oral</code><a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> to vary by speaker and/or by root.</p>
 <p>Stan code:</p>
 <pre class="stan"><code>#include beta2.stan
@@ -782,9 +1111,9 @@ generated quantities {
     }
   }
 }</code></pre>
-<pre class="r"><code>mix_s2_m &lt;- cmdstan_model(&quot;./mix_s2.stan&quot;)</code></pre>
-<pre class="r"><code>nas2_mix &lt;- mix_s2_m$sample(data = nas_ls, parallel_chains = 4)</code></pre>
-<pre class="r"><code>nas2_mix</code></pre>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true"></a>mix_s2_m &lt;-<span class="st"> </span><span class="kw">cmdstan_model</span>(<span class="st">&quot;./mix_s2.stan&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true"></a>nas2_mix &lt;-<span class="st"> </span>mix_s2_m<span class="op">$</span><span class="kw">sample</span>(<span class="dt">data =</span> nas_ls, <span class="dt">parallel_chains =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true"></a>nas2_mix</span></code></pre></div>
 <pre><code>      variable   mean median   sd  mad     q5    q95 rhat ess_bulk ess_tail
  lp__          546.59 546.95 6.15 6.29 536.10 556.04 1.00      955     1777
  mu_contact      0.54   0.54 0.02 0.02   0.51   0.57 1.00     2771     2464
@@ -798,13 +1127,15 @@ generated quantities {
  z_u[1,1]       -0.52  -0.54 0.87 0.83  -1.93   0.91 1.00     2513     3060
 
  # showing 10 of 1493 rows (change via &#39;max_rows&#39; argument or &#39;cmdstanr_max_rows&#39; option)</code></pre>
-<pre class="r"><code>yrep &lt;- nas2_mix$draws(&quot;nasalance_rep&quot;) |&gt; posterior::as_draws_matrix()
-ppc_dens_overlay_grouped(
-  y = nas_data$nasalance,
-  yrep = yrep[1:100, ],
-  group = nas_data$etymology
-) + ggtitle(&quot;Real data with the more complex model&quot;)</code></pre>
-<p><img src="/case-study/mixture/mixture-nasal_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true"></a>yrep &lt;-<span class="st"> </span>nas2_mix<span class="op">$</span><span class="kw">draws</span>(<span class="st">&quot;nasalance_rep&quot;</span>) <span class="op">|</span><span class="er">&gt;</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true"></a><span class="st">  </span>posterior<span class="op">::</span><span class="kw">as_draws_matrix</span>()</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true"></a><span class="kw">ppc_dens_overlay_grouped</span>(</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true"></a>  <span class="dt">y =</span> nas_data<span class="op">$</span>nasalance,</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true"></a>  <span class="dt">yrep =</span> yrep[<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>, ],</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true"></a>  <span class="dt">group =</span> nas_data<span class="op">$</span>etymology</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true"></a>) <span class="op">+</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true"></a><span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&quot;Real data with the more complex model&quot;</span>)</span></code></pre></div>
+<p><img src="mixture-nasal_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
 <div class="note">
 <p>Consider additional posterior predictive checks.</p>
 </div>
@@ -817,8 +1148,8 @@ ppc_dens_overlay_grouped(
 </div>
 </div>
 </div>
-<div id="conclusions" class="section level1">
-<h1>Conclusions</h1>
+<div id="conclusions" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Conclusions</h1>
 <ul>
 <li><strong>Visual similarity is deceptive.</strong> Simulated mixture and non-mixture data look almost identical.</li>
 <li><strong>Model comparison alone can be inconclusive</strong> at the current sample size: both mixture and non-mixture models achieve very similar LOO‑CV scores on either data-generating process.</li>
@@ -827,9 +1158,9 @@ ppc_dens_overlay_grouped(
 </ul>
 <hr />
 </div>
-<div id="session-info" class="section level1 unnumbered">
+<div id="session-info" class="section level1 unnumbered" number="">
 <h1>Session info</h1>
-<pre class="r"><code>sessionInfo()</code></pre>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
 <pre><code>R version 4.5.0 (2025-04-11)
 Platform: x86_64-pc-linux-gnu
 Running under: Ubuntu 22.04.5 LTS
@@ -857,73 +1188,156 @@ other attached packages:
 [5] bayesplot_1.12.0 posterior_1.6.1  cmdstanr_0.9.0   tidytable_0.11.2
 
 loaded via a namespace (and not attached):
- [1] bridgesampling_1.1-5 tensorA_0.36.2.1     utf8_1.2.6          
- [4] sass_0.4.10          generics_0.1.4       stringi_1.8.7       
- [7] lattice_0.22-5       blogdown_1.21        digest_0.6.37       
-[10] magrittr_2.0.3       evaluate_1.0.3       grid_4.5.0          
-[13] RColorBrewer_1.1-3   bookdown_0.43        mvtnorm_1.3-3       
-[16] fastmap_1.2.0        plyr_1.8.9           Matrix_1.7-3        
-[19] jsonlite_2.0.0       processx_3.8.6       backports_1.5.0     
-[22] ps_1.9.1             Brobdingnag_1.2-9    scales_1.4.0        
-[25] codetools_0.2-19     jquerylib_0.1.4      abind_1.4-8         
-[28] cli_3.6.5            rlang_1.1.6          withr_3.0.2         
-[31] cachem_1.1.0         yaml_2.3.10          tools_4.5.0         
-[34] parallel_4.5.0       reshape2_1.4.4       rstantools_2.4.0    
-[37] coda_0.19-4.1        checkmate_2.3.2      dplyr_1.1.4         
-[40] vctrs_0.6.5          R6_2.6.1             matrixStats_1.5.0   
-[43] lifecycle_1.0.4      stringr_1.5.1        pkgconfig_2.0.3     
-[46] RcppParallel_5.1.10  pillar_1.10.2        bslib_0.9.0         
-[49] gtable_0.3.6         data.table_1.17.0    glue_1.8.0          
-[52] xfun_0.52            tibble_3.3.0         tidyselect_1.2.1    
-[55] rstudioapi_0.17.1    knitr_1.50           farver_2.1.2        
-[58] nlme_3.1-168         htmltools_0.5.8.1    labeling_0.4.3      
-[61] rmarkdown_2.29       compiler_4.5.0       distributional_0.5.0</code></pre>
-<p>I used R <span class="citation">(Version 4.5.0; <a href="#ref-R-base">R Core Team 2025</a>)</span> and the R-packages <em>bayesplot</em> <span class="citation">(Version 1.12.0; <a href="#ref-R-bayesplot">Gabry and Mahr 2025</a>)</span>, <em>brms</em> <span class="citation">(Version 2.22.0; <a href="#ref-R-brms">Bürkner 2024</a>)</span>, <em>cmdstanr</em> <span class="citation">(Version 0.9.0; <a href="#ref-R-cmdstanr">Gabry et al. 2025</a>)</span>, <em>ggplot2</em> <span class="citation">(Version 3.5.2; <a href="#ref-R-ggplot2">Wickham et al. 2025</a>)</span>, <em>loo</em> <span class="citation">(Version 2.8.0; <a href="#ref-R-loo">Vehtari et al. 2024</a>)</span>, <em>posterior</em> <span class="citation">(Version 1.6.1; <a href="#ref-R-posterior">Bürkner et al. 2025</a>)</span>, <em>Rcpp</em> <span class="citation">(Version 1.0.14; <a href="#ref-R-Rcpp">Eddelbuettel et al. 2025</a>)</span> and <em>tidytable</em> <span class="citation">(Version 0.11.2; <a href="#ref-R-tidytable">Fairbanks 2024</a>)</span> for all our analyses.</p>
+ [1] bridgesampling_1.1-5 tensorA_0.36.2.1     sass_0.4.10         
+ [4] generics_0.1.4       stringi_1.8.7        lattice_0.22-5      
+ [7] digest_0.6.37        magrittr_2.0.3       evaluate_1.0.3      
+[10] grid_4.5.0           RColorBrewer_1.1-3   bookdown_0.43       
+[13] mvtnorm_1.3-3        fastmap_1.2.0        plyr_1.8.9          
+[16] jsonlite_2.0.0       Matrix_1.7-3         processx_3.8.6      
+[19] backports_1.5.0      ps_1.9.1             Brobdingnag_1.2-9   
+[22] scales_1.4.0         codetools_0.2-19     jquerylib_0.1.4     
+[25] abind_1.4-8          cli_3.6.5            rlang_1.1.6         
+[28] withr_3.0.2          cachem_1.1.0         yaml_2.3.10         
+[31] tools_4.5.0          parallel_4.5.0       reshape2_1.4.4      
+[34] rstantools_2.4.0     checkmate_2.3.2      coda_0.19-4.1       
+[37] dplyr_1.1.4          vctrs_0.6.5          R6_2.6.1            
+[40] matrixStats_1.5.0    lifecycle_1.0.4      stringr_1.5.1       
+[43] pkgconfig_2.0.3      RcppParallel_5.1.10  pillar_1.10.2       
+[46] bslib_0.9.0          gtable_0.3.6         data.table_1.17.0   
+[49] glue_1.8.0           xfun_0.52            tibble_3.3.0        
+[52] tidyselect_1.2.1     knitr_1.50           farver_2.1.2        
+[55] nlme_3.1-168         htmltools_0.5.8.1    labeling_0.4.3      
+[58] rmarkdown_2.29       compiler_4.5.0       distributional_0.5.0</code></pre>
+<p>I used R <span class="citation">(Version 4.5.0; R Core Team 2025)</span> and the R-packages <em>bayesplot</em> <span class="citation">(Version 1.12.0; Gabry and Mahr 2025)</span>, <em>brms</em> <span class="citation">(Version 2.22.0; Bürkner 2024)</span>, <em>cmdstanr</em> <span class="citation">(Version 0.9.0; Gabry et al. 2025)</span>, <em>ggplot2</em> <span class="citation">(Version 3.5.2; Wickham et al. 2025)</span>, <em>loo</em> <span class="citation">(Version 2.8.0; Vehtari et al. 2024)</span>, <em>posterior</em> <span class="citation">(Version 1.6.1; Bürkner et al. 2025)</span>, <em>Rcpp</em> <span class="citation">(Version 1.0.14; Eddelbuettel et al. 2025)</span> and <em>tidytable</em> <span class="citation">(Version 0.11.2; Fairbanks 2024)</span> for all our analyses.</p>
 </div>
-<div id="references" class="section level1 unnumbered">
+<div id="references" class="section level1 unnumbered" number="">
 <h1>References</h1>
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
-<div id="ref-R-brms" class="csl-entry">
-Bürkner, Paul-Christian. 2024. <em>Brms: Bayesian Regression Models Using Stan</em>. <a href="https://github.com/paul-buerkner/brms">https://github.com/paul-buerkner/brms</a>.
+<div id="refs" class="references hanging-indent">
+<div id="ref-R-brms">
+<p>Bürkner, Paul-Christian. 2024. <em>Brms: Bayesian Regression Models Using Stan</em>. <a href="https://github.com/paul-buerkner/brms">https://github.com/paul-buerkner/brms</a>.</p>
 </div>
-<div id="ref-R-posterior" class="csl-entry">
-Bürkner, Paul-Christian, Jonah Gabry, Matthew Kay, and Aki Vehtari. 2025. <em>Posterior: Tools for Working with Posterior Distributions</em>. <a href="https://mc-stan.org/posterior/">https://mc-stan.org/posterior/</a>.
+<div id="ref-R-posterior">
+<p>Bürkner, Paul-Christian, Jonah Gabry, Matthew Kay, and Aki Vehtari. 2025. <em>Posterior: Tools for Working with Posterior Distributions</em>. <a href="https://mc-stan.org/posterior/">https://mc-stan.org/posterior/</a>.</p>
 </div>
-<div id="ref-R-Rcpp" class="csl-entry">
-Eddelbuettel, Dirk, Romain Francois, JJ Allaire, Kevin Ushey, Qiang Kou, Nathan Russell, Iñaki Ucar, Doug Bates, and John Chambers. 2025. <em>Rcpp: Seamless r and c++ Integration</em>. <a href="https://www.rcpp.org">https://www.rcpp.org</a>.
+<div id="ref-R-Rcpp">
+<p>Eddelbuettel, Dirk, Romain Francois, JJ Allaire, Kevin Ushey, Qiang Kou, Nathan Russell, Iñaki Ucar, Doug Bates, and John Chambers. 2025. <em>Rcpp: Seamless R and C++ Integration</em>. <a href="https://www.rcpp.org">https://www.rcpp.org</a>.</p>
 </div>
-<div id="ref-R-tidytable" class="csl-entry">
-Fairbanks, Mark. 2024. <em>Tidytable: Tidy Interface to Data.table</em>. <a href="https://markfairbanks.github.io/tidytable/">https://markfairbanks.github.io/tidytable/</a>.
+<div id="ref-R-tidytable">
+<p>Fairbanks, Mark. 2024. <em>Tidytable: Tidy Interface to Data.table</em>. <a href="https://markfairbanks.github.io/tidytable/">https://markfairbanks.github.io/tidytable/</a>.</p>
 </div>
-<div id="ref-R-cmdstanr" class="csl-entry">
-Gabry, Jonah, Rok Češnovar, Andrew Johnson, and Steve Bronder. 2025. <em>Cmdstanr: R Interface to CmdStan</em>. <a href="https://mc-stan.org/cmdstanr/">https://mc-stan.org/cmdstanr/</a>.
+<div id="ref-R-cmdstanr">
+<p>Gabry, Jonah, Rok Češnovar, Andrew Johnson, and Steve Bronder. 2025. <em>Cmdstanr: R Interface to Cmdstan</em>. <a href="https://mc-stan.org/cmdstanr/">https://mc-stan.org/cmdstanr/</a>.</p>
 </div>
-<div id="ref-R-bayesplot" class="csl-entry">
-Gabry, Jonah, and Tristan Mahr. 2025. <em>Bayesplot: Plotting for Bayesian Models</em>. <a href="https://mc-stan.org/bayesplot/">https://mc-stan.org/bayesplot/</a>.
+<div id="ref-R-bayesplot">
+<p>Gabry, Jonah, and Tristan Mahr. 2025. <em>Bayesplot: Plotting for Bayesian Models</em>. <a href="https://mc-stan.org/bayesplot/">https://mc-stan.org/bayesplot/</a>.</p>
 </div>
-<div id="ref-ModrakEtAl2023" class="csl-entry">
-Modrák, Martin, Angie H. Moon, Shinyoung Kim, Paul-Christian Bürkner, Niko Huurre, Kateřina Faltejsková, Andrew Gelman, and Aki Vehtari. 2023. <span>“Simulation-Based Calibration Checking for <span>Bayesian</span> Computation: <span>The</span> Choice of Test Quantities Shapes Sensitivity.”</span> <em>Bayesian Analysis</em>, 1–28. <a href="https://doi.org/10.1214/23-BA1404">https://doi.org/10.1214/23-BA1404</a>.
+<div id="ref-ModrakEtAl2023">
+<p>Modrák, Martin, Angie H. Moon, Shinyoung Kim, Paul-Christian Bürkner, Niko Huurre, Kateřina Faltejsková, Andrew Gelman, and Aki Vehtari. 2023. “Simulation-Based Calibration Checking for Bayesian Computation: The Choice of Test Quantities Shapes Sensitivity.” <em>Bayesian Analysis</em>, 1–28. <a href="https://doi.org/10.1214/23-BA1404">https://doi.org/10.1214/23-BA1404</a>.</p>
 </div>
-<div id="ref-NicenboimEtAl2025" class="csl-entry">
-Nicenboim, Bruno, Daniel J. Schad, and Shravan Vasishth. 2025. <em>Introduction to Bayesian Data Analysis for Cognitive Science</em>. 1st ed. Chapman; Hall/CRC. <a href="https://doi.org/10.1201/9780429342646">https://doi.org/10.1201/9780429342646</a>.
+<div id="ref-NicenboimEtAl2025">
+<p>Nicenboim, Bruno, Daniel J. Schad, and Shravan Vasishth. 2025. <em>Introduction to Bayesian Data Analysis for Cognitive Science</em>. 1st ed. Chapman; Hall/CRC. <a href="https://doi.org/10.1201/9780429342646">https://doi.org/10.1201/9780429342646</a>.</p>
 </div>
-<div id="ref-R-base" class="csl-entry">
-R Core Team. 2025. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.
+<div id="ref-R-base">
+<p>R Core Team. 2025. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.</p>
 </div>
-<div id="ref-talts2018validating" class="csl-entry">
-Talts, Sean, Michael J. Betancourt, Daniel P. Simpson, Aki Vehtari, and Andrew Gelman. 2018. <span>“Validating <span>B</span>ayesian Inference Algorithms with Simulation-Based Calibration.”</span> <em>arXiv Preprint arXiv:1804.06788</em>.
+<div id="ref-talts2018validating">
+<p>Talts, Sean, Michael J. Betancourt, Daniel P. Simpson, Aki Vehtari, and Andrew Gelman. 2018. “Validating Bayesian Inference Algorithms with Simulation-Based Calibration.” <em>arXiv Preprint arXiv:1804.06788</em>.</p>
 </div>
-<div id="ref-R-loo" class="csl-entry">
-Vehtari, Aki, Jonah Gabry, Måns Magnusson, Yuling Yao, Paul-Christian Bürkner, Topi Paananen, and Andrew Gelman. 2024. <em>Loo: Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models</em>. <a href="https://mc-stan.org/loo/">https://mc-stan.org/loo/</a>.
+<div id="ref-R-loo">
+<p>Vehtari, Aki, Jonah Gabry, Måns Magnusson, Yuling Yao, Paul-Christian Bürkner, Topi Paananen, and Andrew Gelman. 2024. <em>Loo: Efficient Leave-One-Out Cross-Validation and Waic for Bayesian Models</em>. <a href="https://mc-stan.org/loo/">https://mc-stan.org/loo/</a>.</p>
 </div>
-<div id="ref-R-ggplot2" class="csl-entry">
-Wickham, Hadley, Winston Chang, Lionel Henry, Thomas Lin Pedersen, Kohske Takahashi, Claus Wilke, Kara Woo, Hiroaki Yutani, Dewey Dunnington, and Teun van den Brand. 2025. <em>Ggplot2: Create Elegant Data Visualisations Using the Grammar of Graphics</em>. <a href="https://ggplot2.tidyverse.org">https://ggplot2.tidyverse.org</a>.
+<div id="ref-R-ggplot2">
+<p>Wickham, Hadley, Winston Chang, Lionel Henry, Thomas Lin Pedersen, Kohske Takahashi, Claus Wilke, Kara Woo, Hiroaki Yutani, Dewey Dunnington, and Teun van den Brand. 2025. <em>Ggplot2: Create Elegant Data Visualisations Using the Grammar of Graphics</em>. <a href="https://ggplot2.tidyverse.org">https://ggplot2.tidyverse.org</a>.</p>
 </div>
 </div>
 </div>
-<div class="footnotes footnotes-end-of-document">
+<div class="footnotes">
 <hr />
 <ol>
 <li id="fn1"><p>with considerable extra work we could also deal with <code>sigma</code><a href="#fnref1" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
