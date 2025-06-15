@@ -1,0 +1,216 @@
+
+
+
+
+
+
+
+
+
+# Case 3. Considering both speed and accuracy emphasis
+
+```{r fit-all, results = "hide", message = FALSE, eval = !file.exists("fits.RDS")}
+set.seed(123)
+
+df_sim <- df_sim |>
+  group_by(difficulty) |>
+  mutate(train = rbinom(n(),1,.9))
+df_sim_train <-  df_sim |>
+  filter(train==1)
+
+dsim_list <- list(N = nrow(df_sim_train),
+                  rt =df_sim_train$rt,
+                  response = df_sim_train$response,
+                  K = 2,
+                  X = model.matrix(~ 0 + diff + emph , df_sim_train),
+                  only_prior = 0)
+
+fits <- list()
+fits$LNRace <- stan("./LogNormalRace_badpriors.stan",
+                    data = dsim_list,
+                    warmup = 1000,
+                    iter = 10000)
+
+fits$LNRace_reg_priors <- stan("./LogNormalRace.stan",
+                               data = dsim_list,
+                               warmup = 1000,
+                               iter = 10000)
+ 
+fits$agnostic <- stan("./Agnostic.stan",
+                      data = dsim_list,
+                      warmup = 1000,
+                      iter = 10000)
+
+fits$agnosticLog <- stan("./AgnosticLog.stan",
+                         data = dsim_list,
+                         warmup = 1000,
+                         iter = 10000)
+
+fits$FG <- stan("./FastGuess.stan",
+                data = dsim_list,
+                warmup = 1000,
+                iter = 10000)
+
+fits$LNRace_fl <- stan("./LogNormalRace_fl_badpriors.stan",
+                       data = dsim_list,
+                       warmup = 1000,
+                       iter = 10000,
+                       control = list(adapt_delta = .9,
+                                      max_treedepth = 12))
+fits$LNRace_fl_reg_priors <- stan("./LogNormalRace_fl.stan",
+                                  data = dsim_list,
+                                  warmup = 1000,
+                                  iter = 10000,
+                                  control = list(adapt_delta = .9,
+                                                 max_treedepth = 12))
+```
+
+```{r, echo = FALSE, message = FALSE, results = "hide"}
+#| cache.lazy = FALSE
+saveread("fits")
+saveread("df_sim_train")
+```
+
+## 3. PPC {.scrollable}
+
+
+```{r}
+#| cache.lazy = FALSE
+
+fit_plot <- fits[!endsWith(names(fits),"reg_priors")]
+violins <- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))
+```
+
+## 3. Model comparison {.scrollable}
+
+```{r bf-all, message = FALSE, results = "hide", eval = !file.exists("loo.RDS")}
+lm <- map(fits, ~ bridge_sampler(.x))
+loo<- map(fits, ~ loo(.x))
+```
+
+```{r, echo = FALSE, message = FALSE}
+saveread("lm")
+saveread("loo")
+```
+
+::::: columns
+::: {.column width="50%"}
+#### Bayes factor
+
+```{r}
+bf_compare(lm)  
+
+```
+:::
+
+::: {.column width="50%"}
+#### LOO-CV
+
+```{r}
+loo_compare(loo)|> round(2) 
+
+```
+:::
+:::::
+
+::: fragment
+- Both methods select the theory-agnostic model
+:::
+
+
+### Only cognitive models
+::::: columns
+::: {.column width="50%"}
+
+#### Bayes factor
+
+```{r}
+bf_compare(lm[!startsWith(names(lm),"agnostic")]) 
+
+```
+:::
+
+::: {.column width="50%"}
+#### LOO-CV
+
+```{r}
+loo_compare(loo[!startsWith(names(loo),"agnostic")]) |> round(2) 
+```
+:::
+:::::
+
+
+
+---##__
+
+The result of the comparison of the original models (no flexible LogNormal Race model) is similar to the speed emphasis comparison. A theory-agnostic model makes the better predictions.
+
+```{r}
+bf_compare(lm[!startsWith(names(lm),"LNRace_fl")])
+```
+
+
+```{r}
+loo_compare(loo[!startsWith(names(loo),"LNRace_fl")])
+```
+
+
+The model closer to the true generative process makes the better predictions according to the BF.
+
+```{r}
+bf_compare(lm) 
+```
+
+```{r}
+loo_compare(loo)
+```
+
+
+Interestingly, now the prior dependency is less strong, even without regularing priors the model with a generative process closer to the truth is the best model:
+
+```{r}
+bf_compare(lm[!endsWith(names(lm),"reg_priors")])
+```
+
+
+## 3. elpd
+
+-  Flexible LNRace vs FG
+
+```{r} 
+df_sim_train <- ungroup(df_sim_train) %>%
+  mutate(diff_elpd_LNRF_FG =  loo$LNRace_fl$pointwise[,"elpd_loo"] -  loo$FG $pointwise[,"elpd_loo"])
+
+
+ggplot(df_sim_train,
+       aes(x = rt, y = diff_elpd_LNRF_FG)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp + emphasis) +
+  geom_hline(yintercept = 0, linetype = "dashed")
+```
+
+- Flexible LNRace vs Theory-agnostic Log
+
+```{r} 
+df_sim_train <- ungroup(df_sim_train) %>%
+  mutate(diff_elpd_LNRF_AL =  loo$LNRace_fl$pointwise[,"elpd_loo"] -  loo$agnosticLog $pointwise[,"elpd_loo"])
+
+
+ggplot(df_sim_train,
+       aes(x = rt, y = diff_elpd_LNRF_AL)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp + emphasis) +
+  geom_hline(yintercept = 0, linetype = "dashed")
+```
+
+
+## Conclusions
+
+
+# CPL
+
+## References
+
+
