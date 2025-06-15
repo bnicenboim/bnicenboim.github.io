@@ -1,0 +1,1372 @@
+---
+title: "Case study: Mispecified models of reaction times and choice"
+author: "Bruno Nicenboim"
+date: "2025-06-14"
+output:
+  bookdown::html_document2:
+    code_folding: hide
+    highlight: kate
+    toc: TRUE
+    toc_float: TRUE
+    toc_depth: 3
+    df_print: paged
+    self_contained: false
+    output_file: index.html
+bibliography      : ["r-references.bib", "BayesCogSci.bib", "bib.bib"]
+---
+
+
+
+<pre class="r fold-hide"><code>papaja::r_refs(&quot;r-references.bib&quot;)
+
+## Global options
+options(max.print = &quot;75&quot;,
+        width = 80,
+        tibble.width = 80)
+options(scipen = 1, digits = 2)
+knitr::opts_chunk$set(echo = TRUE,
+                    cache = TRUE,
+                    prompt = FALSE,
+                    cache.lazy = FALSE,
+                    tidy = FALSE,
+                    comment = NA,
+                    message = FALSE,
+                    warning = TRUE)
+knitr::opts_knit$set(width = 80)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)</code></pre>
+<pre class="r"><code># Packages in use
+library(rtdists)
+library(tidytable) # faster replacement of dplyr
+library(ggplot2)
+library(latex2exp) # for math symbols in ggplots
+library(rstan)
+library(bayesplot)
+library(posterior)
+library(bridgesampling)
+library(loo)
+options(mc.cores = parallel::detectCores())
+source(&quot;aux.R&quot;)
+# Plots
+bayesplot_theme_set(theme_light())
+theme_set(theme_light())
+theme_update(plot.title = element_text(hjust = 0.5))
+options(ggplot2.continuous.colour = scale_color_viridis_c)
+options(ggplot2.continuous.fill = scale_fill_viridis_c)
+options(ggplot2.discrete.colour = scale_color_viridis_d)
+options(ggplot2.discrete.fill = scale_fill_viridis_d)
+color_scheme_set(&quot;viridis&quot;)</code></pre>
+<p>To illustrate the effect of mispecified models in model comparison, I will use simulated response times and choice data. These data could be from an experiment representing either a motion detection task, where participants decide the direction of moving dots, or a lexical decision task, which involves determining whether letter strings are real words or nonsensical sequences.</p>
+<p><strong>TL;DR;</strong></p>
+<p>For both BF and CV:</p>
+<ul>
+<li>A model that is closer to the truth is not necessarily the one with the best predictions.</li>
+<li>A flexible theory-agnostic model might yield the best predictions even if it doesn’t resemble the generative process of the data.</li>
+</ul>
+<p>For BF:</p>
+<ul>
+<li>The comparison of (cognitive) models that entail very different generative processes but can mimic the data well (for different reasons) is strongly prior dependent.</li>
+<li>Even the selection of a model that relatively closely resembles the data generative process and has a better fit to the data can be (but not always) also strongly prior dependent.</li>
+</ul>
+<p>For CV:</p>
+<ul>
+<li>Unless there is a clear gain in predictions, CV will be undecided. This is regardless of how close a model is to the true generative process and how good the fit is.</li>
+</ul>
+<div id="true-data-generating-process-with-the-linear-ballistic-accumulator-model" class="section level1">
+<h1>True data generating process with the Linear Ballistic Accumulator Model</h1>
+<p>I’m going to assume that the true generative model for this simulated experiment is a Linear Ballistic Accumulator model <span class="citation">(LBA: <a href="#ref-brownSimplestCompleteModel2008">Brown and Heathcote 2008</a>)</span> with a Gamma distribution for the accumulation rates <span class="citation">(<a href="#ref-Terry2015">Terry et al. 2015</a>)</span>. The LBA model conceptualizes decision-making as a race among several accumulators, each gathering evidence for a different decision option. The first accumulator to reach a predetermined threshold dictates the decision.</p>
+<div class="figure"><span style="display:block;" id="fig:drawing"></span>
+<img src="/case-study/mispecification/mispecified_files/figure-html/drawing-1.png" alt="The figure depicts the parameters for one linear ballistic accumulator." width="672" />
+<p class="caption">
+Figure 1: The figure depicts the parameters for one linear ballistic accumulator.
+</p>
+</div>
+<p>The key parameters of the model are the following:</p>
+<ul>
+<li><span class="math inline">\(v_i\)</span>: The rate of evidence accumulation (drift rate) for choice <span class="math inline">\(i\)</span>. This parameter represents how quickly evidence supporting choice <span class="math inline">\(i\)</span> is gathered.</li>
+<li><span class="math inline">\(p_i\)</span>: The starting point of evidence accumulation for choice <span class="math inline">\(i\)</span>. This parameter accounts for any initial bias or prior evidence in favor of choice <span class="math inline">\(i\)</span>.</li>
+<li><span class="math inline">\(t\)</span>: Time since the start of the decision process.</li>
+<li><span class="math inline">\(b_i\)</span>: The evidence threshold that must be reached for decision <span class="math inline">\(i\)</span> to be made. Once the accumulated evidence <span class="math inline">\(d_i(t)\)</span> for any choice <span class="math inline">\(i\)</span> exceeds <span class="math inline">\(b_i\)</span>, a decision is made in favor of that choice.</li>
+<li><span class="math inline">\(D_i(t)\)</span>: The amount of evidence accumulated for choice <span class="math inline">\(i\)</span> at time <span class="math inline">\(t\)</span>, defined as <span class="math inline">\(D_i(t) = v_i \cdot t + p_i\)</span></li>
+</ul>
+<p>The LBA model assumes that the rates of evidence accumulation (<span class="math inline">\(v_i\)</span>) for different choices are independent and can vary between trials. The model also allows for variability in the starting points (<span class="math inline">\(p_i\)</span>), reflecting differences in initial bias or predisposition towards certain choices.</p>
+<div id="true-values-for-the-parameters" class="section level2">
+<h2>True values for the Parameters</h2>
+<p>Below, I define the true values for the model’s parameters under four distinct conditions.</p>
+<pre class="r fold-hide"><code>df_pars &lt;- tribble(
+  ~difficulty,    ~emphasis,   ~A,   ~b, ~scale_v1, ~shape_v1, ~scale_v2, ~shape_v2, ~t0,
+   &quot;easy&quot;,         &quot;accuracy&quot;,  .5,   5.1,   5,       6,         12,       1,         .1,
+   &quot;hard&quot;,         &quot;accuracy&quot;,  .5,   5.1,  4.2,      6,         12,       1,         .1,
+   &quot;easy&quot;,         &quot;speed&quot;,    3.9,   4.1,   5,       6,         12,       1,         .1,
+   &quot;hard&quot;,         &quot;speed&quot;,    3.9,   4.1,  4.2,      6,         12,       1,         .1
+)
+df_pars</code></pre>
+<pre><code># A tidytable: 4 × 9
+  difficulty emphasis     A     b scale_v1 shape_v1 scale_v2 shape_v2    t0
+  &lt;chr&gt;      &lt;chr&gt;    &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
+1 easy       accuracy   0.5   5.1      5          6       12        1   0.1
+2 hard       accuracy   0.5   5.1      4.2        6       12        1   0.1
+3 easy       speed      3.9   4.1      5          6       12        1   0.1
+4 hard       speed      3.9   4.1      4.2        6       12        1   0.1</code></pre>
+</div>
+<div id="simulated-data" class="section level2">
+<h2>Simulated data</h2>
+<p>I generate data from a LBA with Gamma likelihood using the <code>rtdists</code> package. The differences in emphasis do not alter the parameters that relate to the speed or noise in the accumulation process. Instead, they affect the parameters that control the distance that needs to be accumulated. This is achieved by increasing the likelihood that the initial position (<span class="math inline">\(p\)</span>) is near the threshold (by increasing <span class="math inline">\(A\)</span>) and by decreasing the distance to the threshold (<span class="math inline">\(b\)</span>). In datasets like this, the emphasis on accuracy could be the result of instructions from the experimenter or the intrinsic motivation of the participant.</p>
+<pre class="r fold-hide"><code>set.seed(123)
+N_cond &lt;- 400
+df_sim &lt;- df_pars |&gt;
+  pmap_df(function(A,b,t0, scale_v1, scale_v2, shape_v1, shape_v2, difficulty, emphasis, ...) {
+    rLBA(N_cond, A = A, b = b, t0 = t0,
+         scale_v = c(scale_v1, scale_v2),
+         shape_v = c(shape_v1, shape_v2),
+         distribution = &quot;gamma&quot; ) |&gt;
+      mutate(rt = rt * 1000, # to ms
+             difficulty = difficulty,
+             emphasis = emphasis)
+  }) |&gt; mutate(diff = ifelse(difficulty == &quot;hard&quot;,1,-1),
+               emph = ifelse(emphasis ==&quot;speed&quot;,1,-1),
+               resp = ifelse(response ==1, &quot;correct&quot;,&quot;incorrect&quot;),
+               acc= ifelse(response ==1, 1, 0))</code></pre>
+<p>The simulated data mimic several patterns observed in real-world data, including (i) a predominance of correct over incorrect responses, (ii) a positive skew in response times, (iii) the standard deviation of response times increasing alongside the mean, and (iv) an increase in difficulty resulting in both more incorrect responses and prolonged response times. Additionally, it reflects a speed-accuracy trade-off, where faster decisions tend to be less accurate and slower decisions are more accurate. When speed is emphasized, response times for errors are shorter compared to when accuracy is emphasized, attributable to the shorter distance to the decision threshold.</p>
+<pre class="r"><code>df_sim |&gt; summarize(correct = mean(response==1),
+                    rt_correct = mean(rt[response==1]),
+                    sd_correct = sd(rt[response==1]),
+                    rt_incorrect = mean(rt[response==2]),
+                    sd_incorrect = sd(rt[response==2]),
+                    .by = c(&quot;emphasis&quot;,&quot;difficulty&quot;))</code></pre>
+<pre><code># A tidytable: 4 × 7
+  emphasis difficulty correct rt_correct sd_correct rt_incorrect sd_incorrect
+  &lt;chr&gt;    &lt;chr&gt;        &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;        &lt;dbl&gt;
+1 accuracy easy         0.89        281.       79.0         305.        112. 
+2 accuracy hard         0.848       311.       95.0         323.        145. 
+3 speed    easy         0.805       179.       61.2         164.         47.4
+4 speed    hard         0.78        184.       58.2         171.         50.3</code></pre>
+<pre class="r"><code>ggplot(df_sim, aes(x = rt, y = resp)) + 
+  geom_violin(draw_quantiles = c(.025,.5,.975), scale = &quot;count&quot;, alpha = .5) +
+  geom_jitter(alpha = .2, width = 0, height = .25) +
+  facet_grid(emphasis ~ difficulty) +
+  xlab(&quot;Response time [ms]&quot;) +
+  ylab(&quot;Accuracy&quot;)</code></pre>
+<p><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+</div>
+<div id="case-1.-speed-emphasis" class="section level2">
+<h2>Case 1. Speed emphasis</h2>
+<p>Next, I investigate what would happen if all the data obtained is from a participant who emphazises speed.</p>
+<pre class="r fold-hide"><code>set.seed(123)
+df_sim_speed &lt;- df_sim |&gt;
+  filter(emphasis == &quot;speed&quot;) |&gt;
+  group_by(difficulty) |&gt;
+  mutate(train = rbinom(n(), 1, .9))
+df_sim_speed_train &lt;-  df_sim_speed |&gt;
+  filter(train == 1)
+dsim_speed_list &lt;- list(N = nrow(df_sim_speed_train),
+                  rt =df_sim_speed_train$rt,
+                  response = df_sim_speed_train$response,
+                  K = 1,
+                  X = model.matrix(~ 0 + diff, df_sim_speed_train),
+                  only_prior = 0)
+
+fits_speed &lt;- list()</code></pre>
+<div id="case-1.a.-log-normal-race-model-vs.-theory-agnostic-models" class="section level3">
+<h3>Case 1.a. Log-Normal race model vs. theory-agnostic models</h3>
+<p>I start with three models under consideration:</p>
+<p><strong>1. Log-Normal Race (LNR) model</strong></p>
+<p>Similarly to the LBA, the LNR model describes the decision-making process as a race between several accumulators, each representing a different decision alternative <span class="citation">(<a href="#ref-HeathcoteLove2012">Heathcote and Love 2012</a>; <a href="#ref-RouderEtAl2015">Rouder et al. 2015</a>)</span>. The time it takes for each accumulator to reach a decision threshold is assumed to follow a log-normal distribution. Unlike the LBA, there is no moving starting point, and all the accumulators start from the same initial point. Furthermore, the threshold and accumulation rate cannot be disentangled: a manipulation that affects the rate or the decision threshold will affect the location of the distribution in the same way <span class="citation">(also see <a href="#ref-RouderEtAl2015">Rouder et al. 2015</a>)</span>. Another important observation is that the decision time (<span class="math inline">\(T\)</span>) won’t have a log-normal distribution when the distance to the threshold is not log-normally distributed or constant.</p>
+<p>Following <span class="citation">Rouder et al. (<a href="#ref-RouderEtAl2015">2015</a>)</span>, we assume that the noise parameter is the same for each accumulator, since this means that contrasts between finishing time distributions are captured completely by contrasts of the locations of the log-normal distributions.</p>
+<!-- In a race of accumulators model, the assumption is that the time $T$ taken for each accumulator $i$ of evidence to reach the threshold at distance $D$ is simply defined by -->
+<!-- \begin{equation} -->
+<!-- t_i = d_i/v_i -->
+<!-- \end{equation} -->
+<!-- where the denominator vV$ is the rate (velocity, sometimes also called  drift rate) of  evidence accumulation. -->
+<!-- The log-normal race model assumes that the  rate in each trial is sampled from a log-normal distribution: -->
+<!-- \begin{equation} -->
+<!-- V_i \sim \mathit{LogNormal}(\mu_vi, \sigma_vi) -->
+<!-- \end{equation} -->
+<!-- The observed reaction time corresponds to the sum of a non decision time $T_{0}$ -->
+<!-- and the decision time which is the shortest time taken for an accumulator. The choice made corresponds to the accumulator that reach the threshold faster. -->
+<span class="math display">\[\begin{aligned}
+\mu_1 &amp;= \alpha_1 \cdot \text{diff}_n \cdot \beta_1\\
+\mu_2 &amp;= \alpha_2 \cdot \text{diff}_n \cdot \beta_2
+\end{aligned}\]</span>
+<p><span class="math display">\[\begin{equation}
+(rt_n; \text{response}_n ) \sim \text{LNR}(\{\mu_1;\mu_2\}, \sigma, T_0)
+\end{equation}\]</span></p>
+<p>with <span class="math inline">\(\text{diff}\)</span> sum coded to <span class="math inline">\(-1\)</span> for easy and <span class="math inline">\(1\)</span> for hard.</p>
+<p>For this model, I set the following (very weak and not that good) priors:</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \text{Normal}(0, 100) \\
+\beta &amp;\sim \text{Normal}(0, 10) \\
+\sigma &amp;\sim \text{Normal}_+(0, 100) \\
+T_{0} &amp;\sim \text{Normal}(150, 100) \quad \text{with } T_0 &gt; \min(rt)
+\end{aligned}\]</span>
+<p>This is implemented in Stan <span class="citation">(<a href="#ref-Stan2023">Stan Development Team 2023b</a>)</span>.</p>
+<pre class="stan"><code>functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma) +
+        lognormal_lccdf(T | mu[2], sigma);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma) +
+        lognormal_lccdf(T | mu[1], sigma);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma);
+    real rt2 = lognormal_rng(mu[2], sigma);
+    array[2] real out;
+    if(rt1 &lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[2] real alpha;
+  array[2] vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+  real&lt;lower = 0, upper = min(rt)&gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                       {alpha[1] + X[n] * beta[1],
+                                        alpha[2] + X[n] * beta[2]},
+                                       sigma);
+    }
+}
+model {
+  target += normal_lpdf(alpha | 0, 100);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 10);
+  target += normal_lpdf(sigma | 0, 100)
+    - normal_lccdf(0 | 0, 100);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             sigma);
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}</code></pre>
+<pre class="r"><code>fits_speed$LNRace &lt;- stan(&quot;./LogNormalRace_badpriors.stan&quot;,
+                          data = dsim_speed_list,
+                          warmup = 1000,
+                          iter = 10000)</code></pre>
+<pre class="r"><code>print_model(fits_speed$LNRace)   </code></pre>
+<pre><code># A tibble: 6 × 7
+  variable      mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 alpha[1]   4.4      4.3     4.5     1.0   18019.   19575.
+2 alpha[2]   5.1      5.0     5.2     1.0   32999.   24096.
+3 beta[1,1]  0.046   -0.017   0.11    1.0   33745.   23947.
+4 beta[2,1] -0.00022 -0.085   0.084   1.0   31334.   22407.
+5 sigma      0.82     0.73    0.91    1.0   16692.   18267.
+6 T_nd      94.      88.     99.      1.0   15933.   17341.</code></pre>
+<p><strong>2. Theory-agnostic model</strong></p>
+<p>This model simultaneously addresses response time and binary choice data without any commitment to any theory. It incorporates predictors to explain variability in both outcomes, treating response times as normally distributed and choices as following a Bernoulli distribution.</p>
+<span class="math display">\[\begin{aligned}
+rt &amp;\sim \text{Normal}(\alpha + \text{diff} \cdot \beta_1, \sigma)\\
+acc &amp;\sim \text{Bernoulli}(logit(\text{prob}) + \text{diff} \cdot \beta_2)
+\end{aligned}\]</span>
+<p>I define the following regularizing priors.</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \text{Normal}(500, 50) \\
+\text{prob} &amp;\sim \text{Beta}(900, 100) \\
+\beta_1 &amp;\sim \text{Normal}(0, 50) \\
+\beta_2 &amp;\sim \text{Normal}(0, 0.5) \\
+\sigma &amp;\sim \text{Normal}_+(100, 100)
+\end{aligned}\]</span>
+<p>This is implemented in Stan <span class="citation">(<a href="#ref-Stan2023">Stan Development Team 2023b</a>)</span>.</p>
+<pre class="stan"><code>data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+transformed data {
+  array[N] int acc;
+  for(n in 1:N)
+    if(response[n] == 1)
+      acc[n] = 1;
+    else
+      acc[n] = 0;
+}
+parameters {
+  real alpha;
+  real&lt;lower=0, upper=1&gt; prob;
+  array[2] vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = normal_lpdf(rt[n] | alpha + X[n] * beta[1], sigma) +
+        bernoulli_logit_lpmf(acc[n] | logit(prob) + X[n] * beta[2]);
+    }
+}
+model {
+  target += normal_lpdf(alpha | 500, 50);
+  target += beta_lpdf(prob | 900, 100);
+  
+  target += normal_lpdf(beta[1] | 0, 50);
+  target += normal_lpdf(beta[2] | 0, .5);
+  target += normal_lpdf(sigma | 100, 100)
+    - normal_lccdf(0 | 100, 100);
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    int pacc = bernoulli_logit_rng(logit(prob) + X[n] * beta[2]);
+    if(pacc==1)
+      pred_response[n] = 1;
+    else
+      pred_response[n] = 2;
+    
+    pred_rt[n] = normal_rng(alpha + X[n] * beta[1], sigma);
+    }
+}</code></pre>
+<pre class="r"><code>fits_speed$agnostic &lt;- stan(&quot;./Agnostic.stan&quot;, 
+                            data = dsim_speed_list,
+                            warmup = 1000,
+                            iter = 10000)</code></pre>
+<pre class="r"><code>print_model(fits_speed$agnostic) </code></pre>
+<pre><code># A tibble: 5 × 7
+  variable    mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &lt;chr&gt;      &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 alpha     180.   176.    184.     1.0   45771.   29305.
+2 prob        0.85   0.83    0.87   1.0   42409.   28075.
+3 beta[1,1]   2.1   -2.2     6.4    1.0   46537.   29313.
+4 beta[2,1]  -0.10  -0.30    0.10   1.0   45803.   29146.
+5 sigma      59.    56.     62.     1.0   41886.   27427.</code></pre>
+<p><strong>3. Theory-agnostic model with Log-likelihood</strong></p>
+<p>This model is similar to the previous one, but treats response times as shifted log-normally distributed.</p>
+<span class="math display">\[\begin{aligned}
+(rt - T_{\text{shift}}) &amp;\sim \text{LogNormal}(\alpha + \text{diff} \cdot \beta_1, \sigma)\\
+acc &amp;\sim \text{Bernoulli}(logit(\text{prob}) + \text{diff} \cdot \beta_2)
+\end{aligned}\]</span>
+<p>I define the following very weak priors.</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \text{Normal}(0, 100) \\
+\text{prob} &amp;\sim \text{Beta}(1, 1) \\
+\beta_1 &amp;\sim \text{Normal}(0, 10) \\
+\beta_2 &amp;\sim \text{Normal}(0, 10) \\
+\sigma &amp;\sim \text{Normal}_+(0, 100) \\
+T_{\text{shift}} &amp;\sim \text{Normal}_+(150, 100) \quad \text{with }  T_{\text{shift}} &gt; min(rt)
+\end{aligned}\]</span>
+<p>This is implemented in Stan <span class="citation">(<a href="#ref-Stan2023">Stan Development Team 2023b</a>)</span>.</p>
+<pre class="stan"><code>data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+transformed data {
+  array[N] int acc;
+  for(n in 1:N)
+    if(response[n] == 1)
+      acc[n] = 1;
+    else
+      acc[n] = 0;
+}
+parameters {
+  real alpha;
+  real&lt;lower=0, upper=1&gt; prob;
+  array[2] vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+  real&lt;lower = 0, upper = min(rt)&gt; T_shift;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormal_lpdf(rt[n] - T_shift | alpha + X[n] * beta[1], sigma) +
+        bernoulli_logit_lpmf(acc[n] | logit(prob) + X[n] * beta[2]);
+    }
+}
+model {
+  target += beta_lpdf(prob | 1, 1);
+  target += normal_lpdf(alpha | 0, 100);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 10);
+  target += normal_lpdf(sigma | 0, 100)
+    - normal_lccdf(0 | 0, 100);
+  target += normal_lpdf(T_shift | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    int pacc = bernoulli_logit_rng(logit(prob) + X[n] * beta[2]);
+    if(pacc==1)
+      pred_response[n] = 1;
+    else
+      pred_response[n] = 2;
+    
+    pred_rt[n] = lognormal_rng(alpha + X[n] * beta[1], sigma) + T_shift;
+    }
+}</code></pre>
+<pre class="r"><code>fits_speed$agnosticLog &lt;- stan(&quot;./AgnosticLog.stan&quot;,
+                               data = dsim_speed_list,
+                               warmup = 1000,
+                               iter = 10000)</code></pre>
+<pre class="r"><code>print_model(fits_speed$agnosticLog)</code></pre>
+<pre><code># A tibble: 6 × 7
+  variable    mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &lt;chr&gt;      &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 alpha      4.3    4.2     4.4     1.0   14197.   17094.
+2 prob       0.79   0.75    0.81    1.0   33289.   24355.
+3 beta[1,1]  0.031 -0.016   0.078   1.0   32152.   22840.
+4 beta[2,1] -0.075 -0.25    0.10    1.0   32800.   23617.
+5 sigma      0.63   0.56    0.71    1.0   14817.   17980.
+6 T_shift   89.    81.     95.      1.0   13848.   16188.</code></pre>
+<div id="relationship-between-the-models-and-true-generating-process" class="section level4">
+<h4>Relationship between the models and true generating process</h4>
+<p>The LNR model is the closest to the true generating process, but the priors are relatively ill-defined, much weaker than what we actually know. The theory-agnostic models are very flexible, with the second one allowing for a closer fit to the positively skewed response time.</p>
+</div>
+<div id="posterior-predictive-checks" class="section level4">
+<h4>Posterior predictive checks</h4>
+<p>Posterior predictive checks for the general shape of the distribution of RTs show that no fit is perfect. However, the fit to the proportion of predicted correct vs incorrect responses (area of the violin plots) seems to be approximately fine.</p>
+<!-- ```{r} -->
+<!-- dens_speed <- map2(fits_speed, names(fits_speed), -->
+<!--                    ~ ppc_dens_overlay_grouped(df_sim_speed_train$rt, -->
+<!--                                               yrep = extract(.x,pars = "pred_rt")[[1]][1:200,, drop = FALSE], -->
+<!--                                               group = df_sim_speed_train$difficulty) + -->
+<!--                      ggtitle(.y)) -->
+<!-- walk(dens_speed, ~ plot(.x)) -->
+<!-- ``` -->
+<pre class="r"><code>violins &lt;- map2(fits_speed, names(fits_speed), ~ violin_plot(df_sim_speed_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))</code></pre>
+<p><img src="/case-study/mispecification/mispecified_files/figure-html/violin-acc-1.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/violin-acc-2.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/violin-acc-3.png" width="672" /></p>
+<!-- Quantile probability plot showing   0.1, 0.3, 0.5, 0.7, and 0.9 response times quantiles plotted against  proportion of incorrect responses (left) and proportion of correct responses (right). Word frequency are grouped according to the two difficulty condtions. -->
+<!-- ```{r} -->
+<!-- qpf_speed <- map2(fits_speed, names(fits_speed) ~ -->
+<!--                                do_qpf(.x, -->
+<!--                                       df_sim_speed_train, -->
+<!--                                       cond = difficulty)) -->
+<!-- walk(qpf_speed, ~ plot(.x + ggtitle(names(fits_speed)))) -->
+<!-- ``` -->
+</div>
+<div id="model-comparison" class="section level4">
+<h4>Model comparison</h4>
+<p>I implement model comparison with Bayes Factor (BF) using bridge sampling as well as with PSIS-LOO CV approximation using the log-score rule (<span class="math inline">\(\widehat{elpd}\)</span>). When the model comparison is reported, the first model is the best model and it’s used as reference for the next models.</p>
+<pre class="r"><code>lm_speed &lt;- map(fits_speed, ~ bridge_sampler(.x))</code></pre>
+<pre class="r"><code>loo_speed &lt;- map(fits_speed, ~ loo(.x))</code></pre>
+<pre class="r"><code>bf_compare(lm_speed) </code></pre>
+<pre><code>                 BF logBF
+agnosticLog 1.0e+00     0
+LNRace      1.5e+14    33
+agnostic    1.0e+82   189</code></pre>
+<pre class="r"><code>loo_compare(loo_speed)</code></pre>
+<pre><code>            elpd_diff se_diff
+agnosticLog    0.0       0.0 
+LNRace       -28.2       5.3 
+agnostic    -175.8      28.3 </code></pre>
+<p>Both BF and <span class="math inline">\(\widehat{elpdf}\)</span>-CV agree that the best model is the theory-agnostic with a log-normal likelihood. <strong>This shows that the model that is closer to the truth is not necessarily the one with the best predictions. A flexible theory-agnostic model might yield the best predictions even if it doesn’t resemble the generative process. Crucially, this is true for both BF and CV.</strong></p>
+<p>We add another cognitive model under consideration.</p>
+</div>
+</div>
+<div id="case-1.b-another-competitor-fast-guess-model" class="section level3">
+<h3>Case 1.b Another competitor: Fast guess model</h3>
+<p>Ollman’s <span class="citation">(<a href="#ref-Ollman1966">1966</a>)</span> fast-guess model assumes that the behavior in this task (and in any other choice task) is governed by two distinct cognitive processes: (i) a guessing mode, and (ii) a task-engaged mode. In the guessing mode, responses are fast and accuracy is at chance level. In the task-engaged mode, responses are slower and accuracy approaches 100%. This means that intermediate values of response times and accuracy can only be achieved by mixing responses from the two modes. Further assumptions of this model are that response times depend on the difficulty of the choice, and that the probability of being on one of the two states depend on the speed incentives during the instructions.</p>
+<p>To simplify matters, I follow the implementation of <span class="citation">Nicenboim, Schad, and Vasishth (<a href="#ref-Nicenboim2024Bayesian">2024</a>)</span>, I ignore the possibility that the accuracy of the choice is also affected by the difficulty of the choice. Also, I ignore the possibility that subjects might be biased to one specific response in the guessing mode.</p>
+<p>The fast-guess model makes the assumption that during a task, a single subject would behave in these two ways: They would be engaged in the task a proportion of the trials and would guess on the rest of the trials. This means that for a single subject, there is an underlying probability of being engaged in the task, <span class="math inline">\(p_{task}\)</span>, that determines whether they are actually choosing (<span class="math inline">\(z=1\)</span>) or guessing (<span class="math inline">\(z=0\)</span>):</p>
+<p><span class="math display">\[\begin{equation}
+z_n \sim \mathit{Bernoulli}(p_{task})
+\end{equation}\]</span></p>
+<p>The value of the parameter <span class="math inline">\(z\)</span> in every trial determines the behavior of the subject. This means that the distribution that we observe is a mixture of the two distributions presented before:</p>
+<p><span class="math display">\[\begin{equation}
+rt_n \sim
+\begin{cases}
+\mathit{LogNormal}(\alpha + \beta \cdot diff_n, \sigma), &amp; \text{ if } z_n =1 \\
+\mathit{LogNormal}(\gamma, \sigma_2), &amp; \text{ if } z_n=0
+\end{cases}
+
+\end{equation}\]</span>
+<span class="math display" id="eq:dismix3">\[\begin{equation}
+acc_n \sim
+\begin{cases}
+\mathit{Bernoulli}(p_{correct}), &amp; \text{ if } z_n =1 \\
+\mathit{Bernoulli}(0.5), &amp; \text{ if } z_n=0
+\end{cases}
+\tag{1}
+\end{equation}\]</span></p>
+<p>I use the following priors</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \mathit{Normal}(6, 1)\\
+\beta &amp;\sim \mathit{Normal}(0, .1)\\
+\sigma &amp;\sim \mathit{Normal}_+(.5, .2)\\
+\gamma &amp;\sim \mathit{Normal}(6, 1), \text{for } \gamma &lt; \alpha \\
+\sigma_2 &amp;\sim \mathit{Normal}_+(.5, .2)\\
+p_{task} &amp;\sim \mathit{Beta}(8, 2)
+\end{aligned}\]</span>
+<p><strong>Crucially, this model should capture the pattern of fast errors, but because of the wrong reasons!</strong></p>
+<p>This is implemented in Stan <span class="citation">(<a href="#ref-Stan2023">Stan Development Team 2023b</a>)</span>.</p>
+<pre class="stan"><code>data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+transformed data {
+  array[N] int acc;
+  for(n in 1:N)
+    if(response[n] == 1)
+      acc[n] = 1;
+    else
+      acc[n] = 0;
+}
+parameters {
+  real alpha;
+  vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+  real&lt;upper = alpha&gt; gamma;
+  real&lt;lower = 0&gt; sigma2;
+  real&lt;lower = 0, upper = 1&gt; p_correct;
+  real&lt;lower = 0, upper = 1&gt; p_task;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N)
+      log_lik[n] = log_sum_exp(log(p_task) +
+                            lognormal_lpdf(rt[n] | alpha +  X[n] * beta, sigma) +
+                            bernoulli_lpmf(acc[n] | p_correct),
+                            log1m(p_task) +
+                            lognormal_lpdf(rt[n] | gamma, sigma2) +
+                            bernoulli_lpmf(acc[n] | .5));
+
+}
+model {
+  target += normal_lpdf(alpha | 6, 1);
+  target += normal_lpdf(beta | 0, .3);
+  target += normal_lpdf(sigma | .5, .2)
+    - normal_lccdf(0 | .5, .2);
+  target += normal_lpdf(gamma | 6, 1) -
+    normal_lcdf(alpha | 6, 1);
+  target += normal_lpdf(sigma2 | .5, .2)
+    - normal_lccdf(0 | .5, .2);
+  target += beta_lpdf(p_correct | 995, 5);
+  target += beta_lpdf(p_task | 8, 2);
+  if(only_prior != 1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    int ontask = bernoulli_rng(p_task);
+    if(ontask == 1){
+      pred_response[n] = bernoulli_rng(p_correct) == 1 ? 1 : 2;
+      pred_rt[n] = lognormal_rng(alpha + X[n] * beta, sigma);
+    } else {
+      pred_response[n] = bernoulli_rng(.5) == 1 ? 1 : 2;
+      pred_rt[n] = lognormal_rng(gamma, sigma2);
+
+    }
+  }
+}</code></pre>
+<pre class="r"><code>fits_speed$FG &lt;- stan(&quot;./FastGuess.stan&quot;,  
+                      data = dsim_speed_list,
+                      warmup = 1000,
+                      iter = 10000)</code></pre>
+<pre class="r"><code>print_model(fits_speed$FG)</code></pre>
+<pre><code># A tibble: 7 × 7
+  variable   mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &lt;chr&gt;     &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 alpha     5.2    5.2     5.2     1.0   20792.   22252.
+2 beta[1]   0.017 -0.017   0.050   1.0   40853.   27096.
+3 sigma     0.31   0.29    0.33    1.0   37401.   27191.
+4 gamma     5.1    5.0     5.1     1.0   27563.   24863.
+5 sigma2    0.24   0.22    0.27    1.0   33117.   27203.
+6 p_correct 0.99   0.99    1.0     1.0   35452.   22009.
+7 p_task    0.57   0.50    0.63    1.0   33932.   28178.</code></pre>
+<div id="model-comparison-1" class="section level4">
+<h4>Model comparison</h4>
+<pre class="r"><code>lm_speed$FG &lt;- bridge_sampler(fits_speed$FG)
+loo_speed$FG &lt;- loo(fits_speed$FG)</code></pre>
+<pre class="r"><code>bf_compare(lm_speed) </code></pre>
+<pre><code>                 BF logBF
+agnosticLog 1.0e+00     0
+FG          5.5e+09    22
+LNRace      1.5e+14    33
+agnostic    1.0e+82   189</code></pre>
+<pre class="r"><code>loo_compare(loo_speed)</code></pre>
+<pre><code>            elpd_diff se_diff
+agnosticLog    0.0       0.0 
+LNRace       -28.2       5.3 
+FG           -31.9       8.3 
+agnostic    -175.8      28.3 </code></pre>
+<p>Both BF and <span class="math inline">\(\hat{elpdf}\)</span> agree that the best model is the theory-agnostic with a log-normal likelihood. What if we only considering the cognitive models?</p>
+<pre class="r"><code>bf_compare(lm_speed[!startsWith(names(lm_speed),&quot;agnostic&quot;)])</code></pre>
+<pre><code>          BF logBF
+FG         1     0
+LNRace 27227    10</code></pre>
+<pre class="r"><code>loo_compare(loo_speed[!startsWith(names(lm_speed),&quot;agnostic&quot;)])</code></pre>
+<pre><code>       elpd_diff se_diff
+LNRace  0.0       0.0   
+FG     -3.6      11.3   </code></pre>
+<p>BF shows a clear advantage for the Fast Guess model. This is a bit unsettling because the Fast Guess model is clearly different from the true generating process. <span class="math inline">\(\hat{elpdf}\)</span>-CV cannot distinguish between the models.</p>
+<p>But the LogNormal race model had terrible priors, what if they are more realistic?</p>
+<span class="math display">\[\begin{aligned}
+\alpha &amp;\sim \text{Normal}(5.2, 1) \\
+\beta &amp;\sim \text{Normal}(0, .2) \\
+\sigma &amp;\sim \text{Normal}_+(0.5, 0.25) \\
+T_{0} &amp;\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)}
+\end{aligned}\]</span>
+<p>This is implemented in Stan <span class="citation">(<a href="#ref-Stan2023">Stan Development Team 2023b</a>)</span> and the model comparison is repeated.</p>
+<pre class="stan"><code>functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma) +
+        lognormal_lccdf(T | mu[2], sigma);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma) +
+        lognormal_lccdf(T | mu[1], sigma);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma);
+    real rt2 = lognormal_rng(mu[2], sigma);
+    array[2] real out;
+    if(rt1 &lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[2] real alpha;
+  array[2] vector[K] beta;
+  real&lt;lower = 0&gt; sigma;
+  real&lt;lower = 0, upper = min(rt)&gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                       {alpha[1] + X[n] * beta[1],
+                                        alpha[2] + X[n] * beta[2]},
+                                       sigma);
+    }
+}
+model {
+  target += normal_lpdf(alpha | 5.2, 1);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 0.2);
+  target += normal_lpdf(sigma | 0.5, 0.25)
+    - normal_lccdf(0 | 0.5, .25);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             sigma);
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}</code></pre>
+<pre class="r"><code>lm_speed$LNRace_reg_priors &lt;- bridge_sampler(fits_speed$LNRace_reg_priors)
+loo_speed$LNRace_reg_priors &lt;- loo(fits_speed$LNRace_reg_priors)</code></pre>
+<pre class="r"><code>bf_compare(lm_speed) </code></pre>
+<pre><code>                       BF logBF
+agnosticLog       1.0e+00     0
+LNRace_reg_priors 4.6e+06    15
+FG                5.5e+09    22
+LNRace            1.5e+14    33
+agnostic          1.0e+82   189</code></pre>
+<pre class="r"><code>loo_compare(loo_speed) </code></pre>
+<pre><code>                  elpd_diff se_diff
+agnosticLog          0.0       0.0 
+LNRace_reg_priors  -28.2       5.3 
+LNRace             -28.2       5.3 
+FG                 -31.9       8.3 
+agnostic          -175.8      28.3 </code></pre>
+<p>The best model is still the theory-agnostic flexible model with a log-normal likelihood.</p>
+<p>Considering only the cognitive models, we see the differences between BF and <span class="math inline">\(\hat{elpd}\)</span>:</p>
+<pre class="r"><code>bf_compare(lm_speed[!startsWith(names(lm_speed),&quot;agnostic&quot;)])</code></pre>
+<pre><code>                        BF logBF
+LNRace_reg_priors        1   0.0
+FG                    1197   7.1
+LNRace            32586467  17.3</code></pre>
+<pre class="r"><code>loo_compare(loo_speed[!startsWith(names(lm_speed),&quot;agnostic&quot;)])</code></pre>
+<pre><code>                  elpd_diff se_diff
+LNRace_reg_priors  0.0       0.0   
+LNRace             0.0       0.3   
+FG                -3.7      11.1   </code></pre>
+<p>With better priors, the LNR model is prefered according to the BF. This shows that the comparison of (cognitive) models that entail very different generative but can mimic the data well (for different reasons) can be very strongly prior dependent. In contrast, <span class="math inline">\(\hat{elpd}\)</span>-CV is less enthusiastic in selecting a model.</p>
+</div>
+</div>
+<div id="case-1.c-yet-another-competitor-a-more-flexible-implementation-of-the-lnr-model" class="section level3">
+<h3>Case 1.c Yet another competitor: A more flexible implementation of the LNR model</h3>
+<p>A more flexible implementation of the Log Normal race model relaxes the assumption that the noise parameter is the same for all the accumulators. This supposed to allow it to capture more flexible patterns in the data.</p>
+<p>I implement it with the following likelihood:</p>
+<span class="math display">\[\begin{aligned}
+\mu_1 &amp;= \alpha_1 \cdot diff_n \cdot \beta_1\\
+\mu_2 &amp;= \alpha_2 \cdot diff_n \cdot \beta_2\\
+\mu_3 &amp;= \alpha_3 \cdot diff_n \cdot \beta_3\\
+\mu_4 &amp;= \alpha_4 \cdot diff_n \cdot \beta_4\\
+(rt_n; response_n ) &amp;\sim \text{LNR}(\{\mu_1;\mu_2\}, \{\exp(mu_3); \exp(mu_4)\}, T_0)
+\end{aligned}\]</span>
+<p>We try two flavors,</p>
+<ul>
+<li>with very uninformative priors</li>
+</ul>
+<span class="math display">\[\begin{aligned}
+\alpha_{1;2} &amp;\sim \text{Normal}(0, 100) \\
+\alpha_{3;4} &amp;\sim \text{Normal}(0, 2) \\
+\beta &amp;\sim \text{Normal}(0, 10) \\
+T_{0} &amp;\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)}
+\end{aligned}\]</span>
+<pre class="stan"><code>functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           array[] real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma[1]) +
+        lognormal_lccdf(T | mu[2], sigma[2]);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma[1]) +
+        lognormal_lccdf(T | mu[1], sigma[2]);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          array[] real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma[1]);
+    real rt2 = lognormal_rng(mu[2], sigma[2]);
+    array[2] real out;
+    if(rt1 &lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[4] real alpha;
+  array[4] vector[K] beta;
+  real&lt;lower = 0, upper = min(rt)&gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                        {alpha[1] + X[n] * beta[1],
+                                         alpha[2] + X[n] * beta[2]},
+                                       {exp(alpha[3] + X[n] * beta[3]),
+                                        exp(alpha[4] + X[n] * beta[4])});
+    }
+}
+model {
+  target += normal_lpdf(alpha[1:2] | 0, 100);
+  target += normal_lpdf(alpha[3:4] | 0, 2);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 10);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             {exp(alpha[3] + X[n] * beta[3]),
+                              exp(alpha[4] + X[n] * beta[4])});
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}</code></pre>
+<ul>
+<li>and with regularizing priors.</li>
+</ul>
+<span class="math display">\[\begin{aligned}
+\alpha_{1;2} &amp;\sim \text{Normal}(5.2, 1) \\
+\alpha_{3;4} &amp;\sim \text{Normal}(\log(0.5), 1) \\
+\beta &amp;\sim \text{Normal}(0, .2) \\
+T_{0} &amp;\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)}
+\end{aligned}\]</span>
+<pre class="stan"><code>functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           array[] real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma[1]) +
+        lognormal_lccdf(T | mu[2], sigma[2]);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma[1]) +
+        lognormal_lccdf(T | mu[1], sigma[2]);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          array[] real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma[1]);
+    real rt2 = lognormal_rng(mu[2], sigma[2]);
+    array[2] real out;
+    if(rt1 &lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&lt;lower = 1&gt; N;
+  int&lt;lower = 1&gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[4] real alpha;
+  array[4] vector[K] beta;
+  real&lt;lower = 0, upper = min(rt)&gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                        {alpha[1] + X[n] * beta[1],
+                                         alpha[2] + X[n] * beta[2]},
+                                       {exp(alpha[3] + X[n] * beta[3]),
+                                        exp(alpha[4] + X[n] * beta[4])});
+    }
+}
+model {
+  target += normal_lpdf(alpha[1:2] | 5.2, 1);
+  target += normal_lpdf(alpha[3:4] | log(0.5), 1);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, .2);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             {exp(alpha[3] + X[n] * beta[3]),
+                              exp(alpha[4] + X[n] * beta[4])});
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}</code></pre>
+<div id="posterior-predictive-checks-1" class="section level4">
+<h4>Posterior predictive checks</h4>
+<pre class="r"><code>fit_plot &lt;- fits_speed[!endsWith(names(fits_speed),&quot;reg_priors&quot;)]
+violins &lt;- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_speed_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))</code></pre>
+<p><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-1.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-2.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-3.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-4.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-5.png" width="672" /></p>
+<pre class="r"><code>dens_speed &lt;- map2(
+  fit_plot, 
+  names(fit_plot), ~ ppc_dens_overlay_grouped(df_sim_speed_train$rt,
+                                           yrep = extract(.x,pars = &quot;pred_rt&quot;)[[1]][1:200,, drop = FALSE],
+                                           group = df_sim_speed_train$difficulty) +
+
+  coord_cartesian(xlim= c(0, 1500)) + ggtitle(.y))
+walk(dens_speed, ~ plot(.x ))</code></pre>
+<p><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-1.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-2.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-3.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-4.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-5.png" width="672" /></p>
+<!-- ```{r, message = FALSE} -->
+<!-- qpf_speed <- map(fit_plot, ~ do_qpf(.x, df_sim_speed_train, cond = difficulty) + -->
+<!--                  coord_cartesian(ylim= c(100, 500))) -->
+<!-- walk(qpf_speed, ~ plot(.x + ggtitle(names(fit_plot)))) -->
+<!-- ``` -->
+</div>
+<div id="model-comparison-2" class="section level4">
+<h4>Model comparison</h4>
+<pre class="r"><code>bf_compare(lm_speed)</code></pre>
+<pre><code>                          BF logBF
+LNRace_fl_reg_priors 1.0e+00   0.0
+agnosticLog          3.6e+02   5.9
+LNRace_fl            1.2e+06  14.0
+LNRace_reg_priors    1.6e+09  21.2
+FG                   2.0e+12  28.3
+LNRace               5.3e+16  38.5
+agnostic             3.6e+84 194.7</code></pre>
+<pre class="r"><code>bf_compare(lm_speed[c(&quot;LNRace_fl_reg_priors&quot;,&quot;agnosticLog&quot;)])</code></pre>
+<pre><code>                      BF logBF
+LNRace_fl_reg_priors   1   0.0
+agnosticLog          359   5.9</code></pre>
+<pre class="r"><code>bf_compare(lm_speed[c(&quot;LNRace_fl&quot;,&quot;agnosticLog&quot;)])</code></pre>
+<pre><code>              BF logBF
+agnosticLog    1   0.0
+LNRace_fl   3237   8.1</code></pre>
+<pre class="r"><code>loo_compare(loo_speed)</code></pre>
+<pre><code>                     elpd_diff se_diff
+agnosticLog             0.0       0.0 
+LNRace_fl_reg_priors   -2.3       4.5 
+LNRace_fl              -2.4       4.5 
+LNRace_reg_priors     -28.2       5.3 
+LNRace                -28.2       5.3 
+FG                    -31.9       8.3 
+agnostic             -175.8      28.3 </code></pre>
+<p>Only with good priors, the flexible version of the LNR model is the best model according the Bayes Factor. CV cannot really distinguish betwen them.</p>
+<p>Considering only the cognitive models, there is slightly more agreement between the model comparison methods. The flexible version of the LNR model is the superior model for both methods.</p>
+<p>This shows that even the selection of a model that relatively closely resembles the data generative process can be strongly prior dependent for the BF.</p>
+<pre class="r"><code>bf_compare(lm_speed[!startsWith(names(lm_speed),&quot;agnostic&quot;)])</code></pre>
+<pre><code>                          BF logBF
+LNRace_fl_reg_priors 1.0e+00     0
+LNRace_fl            1.2e+06    14
+LNRace_reg_priors    1.6e+09    21
+FG                   2.0e+12    28
+LNRace               5.3e+16    39</code></pre>
+<pre class="r"><code>loo_compare(loo_speed[!startsWith(names(lm_speed),&quot;agnostic&quot;)])</code></pre>
+<pre><code>                     elpd_diff se_diff
+LNRace_fl_reg_priors   0.0       0.0  
+LNRace_fl             -0.1       0.1  
+LNRace_reg_priors    -25.9       5.8  
+LNRace               -25.9       5.7  
+FG                   -29.6       8.2  </code></pre>
+</div>
+<div id="visualization-of-elpd-fast-guess-vs-flexible-lnr" class="section level4">
+<h4>Visualization of elpd: Fast Guess vs Flexible LNR</h4>
+<p>The plots show the difference in pointwise predictive accuracy of the Flexible LNR vs Fast Guess models. A more positive value indicates an advantage for the Flexible LNR.</p>
+<pre class="r"><code>df_sim_speed_train &lt;- ungroup(df_sim_speed_train) %&gt;%
+  mutate(diff_elpd_LNRF_FG =  loo_speed$LNRace_fl$pointwise[,&quot;elpd_loo&quot;] -  loo_speed$FG $pointwise[,&quot;elpd_loo&quot;],
+         diff_elpd_LNRF_AL =  loo_speed$LNRace_fl$pointwise[,&quot;elpd_loo&quot;] -  loo_speed$FG$pointwise[,&quot;elpd_loo&quot;])
+
+
+ggplot(df_sim_speed_train,
+       aes(x = rt, y = diff_elpd_LNRF_FG)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp) +
+  geom_hline(yintercept = 0, linetype = &quot;dashed&quot;)</code></pre>
+<p><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-45-1.png" width="672" /></p>
+</div>
+</div>
+</div>
+<div id="case-2.-accuracy-emphasis" class="section level2">
+<h2>Case 2. Accuracy emphasis</h2>
+<p>I fit again all the models for a subset of the data where accuracy is emphasized.</p>
+<pre class="r"><code>set.seed(123)
+df_sim_acc &lt;- df_sim |&gt;
+  filter(emphasis ==&quot;accuracy&quot;) |&gt;
+  group_by(difficulty) |&gt;
+  mutate(train = rbinom(n(),1,.9))
+df_sim_acc_train &lt;-  df_sim_acc |&gt;
+  filter(train==1)
+dsim_acc_list &lt;- list(N = nrow(df_sim_acc_train),
+                      rt =df_sim_acc_train$rt,
+                      response = df_sim_acc_train$response,
+                      K = 1,
+                      X = model.matrix(~ 0 + diff, df_sim_acc_train),
+                      only_prior = 0)
+
+fits_acc &lt;- list()
+fits_acc$LNRace &lt;- stan(&quot;./LogNormalRace_badpriors.stan&quot;,
+                        data = dsim_acc_list,
+                        warmup = 1000,
+                        iter = 10000)
+
+fits_acc$LNRace_reg_priors &lt;- stan(&quot;./LogNormalRace.stan&quot;,
+                                   data = dsim_acc_list,
+                                   warmup = 1000,
+                                   iter = 10000)
+
+fits_acc$agnostic &lt;- stan(&quot;./Agnostic.stan&quot;,
+                          data = dsim_acc_list,
+                          warmup = 1000,
+                          iter = 10000)
+
+fits_acc$agnosticLog &lt;- stan(&quot;./AgnosticLog.stan&quot;,
+                             data = dsim_acc_list,
+                             warmup = 1000,
+                             iter = 10000)
+
+fits_acc$FG &lt;- stan(&quot;./FastGuess.stan&quot;,
+                    data = dsim_acc_list,
+                    warmup = 1000,
+                    iter = 10000)
+
+fits_acc$LNRace_fl &lt;- stan(&quot;./LogNormalRace_fl_badpriors.stan&quot;,
+                           data = dsim_acc_list,
+                           control = list(adapt_delta = .9,
+                                          max_treedepth = 12),
+                           warmup = 1000,
+                           iter = 10000)
+
+fits_acc$LNRace_fl_reg_priors &lt;- stan(&quot;./LogNormalRace_fl.stan&quot;,
+                                      data = dsim_acc_list,
+                                      control = list(adapt_delta = .9,
+                                                     max_treedepth = 12),
+                                      warmup = 1000,
+                                      iter = 10000)</code></pre>
+<div id="posterior-predictive-check" class="section level3">
+<h3>Posterior predictive check</h3>
+<pre class="r"><code>fit_plot &lt;- fits_acc[!endsWith(names(fits_acc),&quot;reg_priors&quot;)]
+
+violins &lt;- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_acc_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))</code></pre>
+<p><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-1.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-2.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-3.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-4.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-5.png" width="672" /></p>
+</div>
+<div id="model-comparison-3" class="section level3">
+<h3>Model comparison</h3>
+<pre class="r"><code>lm_acc &lt;- map(fits_acc, ~ bridge_sampler(.x))
+loo_acc&lt;- map(fits_acc, ~ loo(.x))</code></pre>
+<pre class="r"><code>bf_compare(lm_acc) </code></pre>
+<pre><code>                          BF logBF
+agnosticLog          1.0e+00     0
+FG                   8.2e+05    14
+LNRace_reg_priors    2.2e+06    15
+LNRace_fl_reg_priors 5.0e+06    15
+LNRace_fl            6.9e+12    30
+LNRace               1.4e+14    33
+agnostic             2.5e+73   169</code></pre>
+<pre class="r"><code>loo_compare(loo_acc)</code></pre>
+<pre><code>                     elpd_diff se_diff
+agnosticLog             0.0       0.0 
+FG                    -23.2       7.7 
+LNRace_fl_reg_priors  -25.0       7.2 
+LNRace_fl             -25.1       7.2 
+LNRace                -28.0       8.2 
+LNRace_reg_priors     -28.0       8.2 
+agnostic             -181.7      42.1 </code></pre>
+<p>As before, the most flexible theory-agnostic model is selected by both methods. What if we only considering the cognitive models?</p>
+<pre class="r"><code>bf_compare(lm_acc[!startsWith(names(lm_acc),&quot;agnostic&quot;)])</code></pre>
+<pre><code>                          BF logBF
+FG                   1.0e+00  0.00
+LNRace_reg_priors    2.7e+00  0.98
+LNRace_fl_reg_priors 6.1e+00  1.81
+LNRace_fl            8.4e+06 15.95
+LNRace               1.7e+08 18.96</code></pre>
+<pre class="r"><code>loo_compare(loo_acc[!startsWith(names(lm_acc),&quot;agnostic&quot;)])</code></pre>
+<pre><code>                     elpd_diff se_diff
+FG                    0.0       0.0   
+LNRace_fl_reg_priors -1.8      11.0   
+LNRace_fl            -1.9      11.0   
+LNRace               -4.8      11.5   
+LNRace_reg_priors    -4.8      11.5   </code></pre>
+<p>Here, the Fast Guess model, which shouldn’t even be able to capture the long errors, is the one selected as the best model. The summary of the posterior of the model below shows that this is achieved because the location of the errors is just a bit faster than non-error, and has a much larger scale parameter:</p>
+<pre class="r"><code>print_model(fits_acc$FG)   </code></pre>
+<pre><code># A tibble: 7 × 7
+  variable   mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &lt;chr&gt;     &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 alpha     5.7    5.6     5.7     1.0   42748.   26049.
+2 beta[1]   0.051  0.029   0.074   1.0   45729.   27276.
+3 sigma     0.23   0.21    0.25    1.0   33397.   26122.
+4 gamma     5.6    5.6     5.7     1.0   49136.   29303.
+5 sigma2    0.37   0.32    0.42    1.0   34566.   25136.
+6 p_correct 0.99   0.99    1.0     1.0   36978.   23317.
+7 p_task    0.75   0.70    0.79    1.0   39981.   26841.</code></pre>
+</div>
+</div>
+<div id="case-3.-considering-both-speed-and-accuracy-emphasis" class="section level2">
+<h2>Case 3. Considering both speed and accuracy emphasis</h2>
+<p>Now we consider the data with both speed and accuracy emphasis and all the models are fit again.</p>
+<pre class="r"><code>set.seed(123)
+
+df_sim &lt;- df_sim |&gt;
+  group_by(difficulty) |&gt;
+  mutate(train = rbinom(n(),1,.9))
+df_sim_train &lt;-  df_sim |&gt;
+  filter(train==1)
+
+dsim_list &lt;- list(N = nrow(df_sim_train),
+                  rt =df_sim_train$rt,
+                  response = df_sim_train$response,
+                  K = 2,
+                  X = model.matrix(~ 0 + diff + emph , df_sim_train),
+                  only_prior = 0)
+
+fits &lt;- list()
+fits$LNRace &lt;- stan(&quot;./LogNormalRace_badpriors.stan&quot;,
+                    data = dsim_list,
+                    warmup = 1000,
+                    iter = 10000)
+
+fits$LNRace_reg_priors &lt;- stan(&quot;./LogNormalRace.stan&quot;,
+                               data = dsim_list,
+                               warmup = 1000,
+                               iter = 10000)
+ 
+fits$agnostic &lt;- stan(&quot;./Agnostic.stan&quot;,
+                      data = dsim_list,
+                      warmup = 1000,
+                      iter = 10000)
+
+fits$agnosticLog &lt;- stan(&quot;./AgnosticLog.stan&quot;,
+                         data = dsim_list,
+                         warmup = 1000,
+                         iter = 10000)
+
+fits$FG &lt;- stan(&quot;./FastGuess.stan&quot;,
+                data = dsim_list,
+                warmup = 1000,
+                iter = 10000)
+
+fits$LNRace_fl &lt;- stan(&quot;./LogNormalRace_fl_badpriors.stan&quot;,
+                       data = dsim_list,
+                       warmup = 1000,
+                       iter = 10000,
+                       control = list(adapt_delta = .9,
+                                      max_treedepth = 12))
+fits$LNRace_fl_reg_priors &lt;- stan(&quot;./LogNormalRace_fl.stan&quot;,
+                                  data = dsim_list,
+                                  warmup = 1000,
+                                  iter = 10000,
+                                  control = list(adapt_delta = .9,
+                                                 max_treedepth = 12))</code></pre>
+<div id="posterior-predictive-check-1" class="section level3">
+<h3>Posterior predictive check</h3>
+<pre class="r"><code>fit_plot &lt;- fits[!endsWith(names(fits),&quot;reg_priors&quot;)]
+violins &lt;- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))</code></pre>
+<p><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-1.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-2.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-3.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-4.png" width="672" /><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-5.png" width="672" /></p>
+</div>
+<div id="model-comparison-4" class="section level3">
+<h3>Model comparison</h3>
+<pre class="r"><code>lm &lt;- map(fits, ~ bridge_sampler(.x))
+loo&lt;- map(fits, ~ loo(.x))</code></pre>
+<p>The result of the comparison of the original models (no flexible LogNormal Race model) is similar to the speed emphasis comparison. A theory-agnostic model makes the better predictions.</p>
+<pre class="r"><code>bf_compare(lm[!startsWith(names(lm),&quot;LNRace_fl&quot;)])</code></pre>
+<pre><code>                        BF logBF
+agnosticLog        1.0e+00     0
+LNRace_reg_priors  1.1e+23    53
+LNRace             2.6e+34    79
+FG                 2.0e+39    91
+agnostic          1.3e+166   382</code></pre>
+<pre class="r"><code>loo_compare(loo[!startsWith(names(loo),&quot;LNRace_fl&quot;)])</code></pre>
+<pre><code>                  elpd_diff se_diff
+agnosticLog          0.0       0.0 
+LNRace_reg_priors  -73.2       8.4 
+LNRace             -73.3       8.4 
+FG                 -94.0      14.4 
+agnostic          -393.4      67.1 </code></pre>
+<p>The model closer to the true generative process makes the better predictions according to the BF.</p>
+<pre class="r"><code>bf_compare(lm) </code></pre>
+<pre><code>                           BF logBF
+LNRace_fl_reg_priors  1.0e+00     0
+LNRace_fl             8.0e+09    23
+agnosticLog           1.8e+14    33
+LNRace_reg_priors     1.9e+37    86
+LNRace                4.7e+48   112
+FG                    3.7e+53   123
+agnostic             2.3e+180   415</code></pre>
+<pre class="r"><code>loo_compare(loo)</code></pre>
+<pre><code>                     elpd_diff se_diff
+LNRace_fl               0.0       0.0 
+LNRace_fl_reg_priors   -0.1       0.3 
+agnosticLog           -19.7      13.5 
+LNRace_reg_priors     -92.9      14.9 
+LNRace                -93.0      14.9 
+FG                   -113.7      18.8 
+agnostic             -413.1      63.6 </code></pre>
+<p>Interestingly, now the prior dependency is less strong, even without regularing priors the model with a generative process closer to the truth is the best model:</p>
+<pre class="r"><code>bf_compare(lm[!endsWith(names(lm),&quot;reg_priors&quot;)])</code></pre>
+<pre><code>                  BF logBF
+LNRace_fl    1.0e+00     0
+agnosticLog  2.3e+04    10
+LNRace       5.9e+38    89
+FG           4.6e+43   101
+agnostic    2.9e+170   392</code></pre>
+<div id="visualization-of-elpd" class="section level4">
+<h4>Visualization of elpd</h4>
+<ul>
+<li>Flexible LNRace vs FG</li>
+</ul>
+<pre class="r"><code>df_sim_train &lt;- ungroup(df_sim_train) %&gt;%
+  mutate(diff_elpd_LNRF_FG =  loo$LNRace_fl$pointwise[,&quot;elpd_loo&quot;] -  loo$FG $pointwise[,&quot;elpd_loo&quot;])
+
+
+ggplot(df_sim_train,
+       aes(x = rt, y = diff_elpd_LNRF_FG)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp + emphasis) +
+  geom_hline(yintercept = 0, linetype = &quot;dashed&quot;)</code></pre>
+<p><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-62-1.png" width="672" /></p>
+<ul>
+<li>Flexible LNRace vs Theory-agnostic Log</li>
+</ul>
+<pre class="r"><code>df_sim_train &lt;- ungroup(df_sim_train) %&gt;%
+  mutate(diff_elpd_LNRF_AL =  loo$LNRace_fl$pointwise[,&quot;elpd_loo&quot;] -  loo$agnosticLog $pointwise[,&quot;elpd_loo&quot;])
+
+
+ggplot(df_sim_train,
+       aes(x = rt, y = diff_elpd_LNRF_AL)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp + emphasis) +
+  geom_hline(yintercept = 0, linetype = &quot;dashed&quot;)</code></pre>
+<p><img src="/case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-63-1.png" width="672" /></p>
+</div>
+</div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>In the context of both Bayes Factor analysis and Cross-Validation using the log-score rule, we notice the following:</p>
+<ul>
+<li>It is not always the case that a model which aligns more closely with the underlying truth will exhibit superior predictive capabilities. This shows how the best model in terms of predictions is not necessarily the one that is most faithful to the actual generative process.</li>
+<li>Models that are designed to be flexible and not bound to any specific theoretical framework may deliver the most accurate predictions, despite potentially lacking resemblance to the actual process that generates the data.</li>
+</ul>
+<p>Specific to Bayes Factor:</p>
+<ul>
+<li>When comparing cognitive models that have significantly different underlying generative processes but are capable of closely mimicking the observed data (albeit for varied reasons), the outcome of such comparisons can be highly dependent on the priors. This suggests a strong influence of the initial assumptions on the comparative analysis of models.</li>
+<li>The process of selecting a model that appears to closely match the process generating the observed data can also be heavily influenced by the choice of priors, although this is not always the case.</li>
+</ul>
+<p>Specific to Cross-Validation:</p>
+<p>Cross-Validation remains inconclusive unless there is a demonstrable improvement in prediction quality. This stance is maintained irrespective of the proximity of a model to the true generative process, showing how CV prioritizes predictive performance over theoretical fidelity to the generative mechanism.</p>
+<hr />
+<p>I used R <span class="citation">(Version 4.5.0; <a href="#ref-R-base">R Core Team 2024</a>)</span> and the R-packages <em>bayesplot</em> <span class="citation">(Version 1.12.0; <a href="#ref-R-bayesplot">Gabry et al. 2019</a>)</span>, <em>bridgesampling</em> <span class="citation">(Version 1.1.5; <a href="#ref-R-bridgesampling">Gronau, Singmann, and Wagenmakers 2020</a>)</span>, <em>ggplot2</em> <span class="citation">(Version 3.5.2; <a href="#ref-R-ggplot2">Wickham 2016</a>)</span>, <em>latex2exp</em> <span class="citation">(Version 0.9.6; <a href="#ref-R-latex2exp">Meschiari 2022</a>)</span>, <em>loo</em> <span class="citation">(Version 2.8.0; <a href="#ref-R-loo_a">Vehtari, Gelman, and Gabry 2017</a>; <a href="#ref-R-loo_b">Yao et al. 2017</a>)</span>, <em>posterior</em> <span class="citation">(Version 1.6.1; <a href="#ref-R-posterior">Vehtari et al. 2021</a>)</span>, <em>rstan</em> <span class="citation">(Version 2.36.0.9000; <a href="#ref-R-rstan">Stan Development Team 2023a</a>)</span>, <em>rtdists</em> <span class="citation">(Version 0.11.5; <a href="#ref-R-rtdists">Singmann et al. 2022</a>)</span>, <em>StanHeaders</em> <span class="citation">(Version 2.36.0.9000; <a href="#ref-R-StanHeaders">Stan Development Team 2020</a>)</span> and <em>tidytable</em> <span class="citation">(Version 0.11.2; <a href="#ref-R-tidytable">Fairbanks 2023</a>)</span> for all our analyses.</p>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="ref-brownSimplestCompleteModel2008" class="csl-entry">
+Brown, Scott D., and Andrew Heathcote. 2008. <span>“The Simplest Complete Model of Choice Response Time: <span>Linear</span> Ballistic Accumulation.”</span> <em>Cognitive Psychology</em> 57 (3): 153–78. <a href="https://doi.org/10.1016/j.cogpsych.2007.12.002">https://doi.org/10.1016/j.cogpsych.2007.12.002</a>.
+</div>
+<div id="ref-R-tidytable" class="csl-entry">
+Fairbanks, Mark. 2023. <em>Tidytable: Tidy Interface to ’Data.table’</em>. <a href="https://CRAN.R-project.org/package=tidytable">https://CRAN.R-project.org/package=tidytable</a>.
+</div>
+<div id="ref-R-bayesplot" class="csl-entry">
+Gabry, Jonah, Daniel Simpson, Aki Vehtari, Michael Betancourt, and Andrew Gelman. 2019. <span>“Visualization in Bayesian Workflow.”</span> <em>J. R. Stat. Soc. A</em> 182: 389–402. <a href="https://doi.org/10.1111/rssa.12378">https://doi.org/10.1111/rssa.12378</a>.
+</div>
+<div id="ref-R-bridgesampling" class="csl-entry">
+Gronau, Quentin F., Henrik Singmann, and Eric-Jan Wagenmakers. 2020. <span>“<span class="nocase">bridgesampling</span>: An <span>R</span> Package for Estimating Normalizing Constants.”</span> <em>Journal of Statistical Software</em> 92 (10): 1–29. <a href="https://doi.org/10.18637/jss.v092.i10">https://doi.org/10.18637/jss.v092.i10</a>.
+</div>
+<div id="ref-HeathcoteLove2012" class="csl-entry">
+Heathcote, Andrew, and Jonathon Love. 2012. <span>“Linear Deterministic Accumulator Models of Simple Choice.”</span> <em>Frontiers in Psychology</em> 3: 292. <a href="https://doi.org/10.3389/fpsyg.2012.00292">https://doi.org/10.3389/fpsyg.2012.00292</a>.
+</div>
+<div id="ref-R-latex2exp" class="csl-entry">
+Meschiari, Stefano. 2022. <em>Latex2exp: Use LaTeX Expressions in Plots</em>. <a href="https://CRAN.R-project.org/package=latex2exp">https://CRAN.R-project.org/package=latex2exp</a>.
+</div>
+<div id="ref-Nicenboim2024Bayesian" class="csl-entry">
+Nicenboim, Bruno, D. Schad, and S. Vasishth. 2024. <span>“An Introduction to Bayesian Data Analysis for Cognitive Science.”</span>
+</div>
+<div id="ref-Ollman1966" class="csl-entry">
+Ollman, Robert. 1966. <span>“Fast Guesses in Choice Reaction Time.”</span> <em>Psychonomic Science</em> 6 (4): 155–56. https://doi.org/<a href="https://doi.org/10.3758/BF03328004">https://doi.org/10.3758/BF03328004</a>.
+</div>
+<div id="ref-R-base" class="csl-entry">
+R Core Team. 2024. <em>R: A Language and Environment for Statistical Computing</em>. Vienna, Austria: R Foundation for Statistical Computing. <a href="https://www.R-project.org/">https://www.R-project.org/</a>.
+</div>
+<div id="ref-RouderEtAl2015" class="csl-entry">
+Rouder, Jeffrey N., Jordan M. Province, Richard D. Morey, Pablo Gomez, and Andrew Heathcote. 2015. <span>“The Lognormal Race: <span>A</span> Cognitive-Process Model of Choice and Latency with Desirable Psychometric Properties.”</span> <em>Psychometrika</em> 80 (2): 491–513. <a href="https://doi.org/10.1007/s11336-013-9396-3">https://doi.org/10.1007/s11336-013-9396-3</a>.
+</div>
+<div id="ref-R-rtdists" class="csl-entry">
+Singmann, Henrik, Scott Brown, Matthew Gretton, and Andrew Heathcote. 2022. <em>Rtdists: Response Time Distributions</em>. <a href="https://CRAN.R-project.org/package=rtdists">https://CRAN.R-project.org/package=rtdists</a>.
+</div>
+<div id="ref-R-StanHeaders" class="csl-entry">
+Stan Development Team. 2020. <span>“<span>StanHeaders</span>: Headers for the <span>R</span> Interface to <span>Stan</span>.”</span> <a href="https://mc-stan.org/">https://mc-stan.org/</a>.
+</div>
+<div id="ref-R-rstan" class="csl-entry">
+———. 2023a. <span>“<span>RStan</span>: The <span>R</span> Interface to <span>Stan</span>.”</span> <a href="https://mc-stan.org/">https://mc-stan.org/</a>.
+</div>
+<div id="ref-Stan2023" class="csl-entry">
+———. 2023b. <span>“Stan Modeling Language Users Guide and Reference Manual, Version 2.32.”</span> <a href="https://mc-stan.org/docs/2_32/reference-manual/index.html;%20https://mc-stan.org/docs/2_32/stan-users-guide/index.html">https://mc-stan.org/docs/2_32/reference-manual/index.html; https://mc-stan.org/docs/2_32/stan-users-guide/index.html</a>.
+</div>
+<div id="ref-Terry2015" class="csl-entry">
+Terry, Andrew, A. A. J. Marley, Avinash Barnwal, E.-J. Wagenmakers, Andrew Heathcote, and Scott D. Brown. 2015. <span>“Generalising the Drift Rate Distribution for Linear Ballistic Accumulators.”</span> <em>Journal of Mathematical Psychology</em> 68-69 (October): 49–58. <a href="https://doi.org/10.1016/j.jmp.2015.09.002">https://doi.org/10.1016/j.jmp.2015.09.002</a>.
+</div>
+<div id="ref-R-loo_a" class="csl-entry">
+Vehtari, Aki, Andrew Gelman, and Jonah Gabry. 2017. <span>“Practical Bayesian Model Evaluation Using Leave-One-Out Cross-Validation and WAIC.”</span> <em>Statistics and Computing</em> 27: 1413–32. <a href="https://doi.org/10.1007/s11222-016-9696-4">https://doi.org/10.1007/s11222-016-9696-4</a>.
+</div>
+<div id="ref-R-posterior" class="csl-entry">
+Vehtari, Aki, Andrew Gelman, Daniel Simpson, Bob Carpenter, and Paul-Christian Bürkner. 2021. <span>“Rank-Normalization, Folding, and Localization: An Improved Rhat for Assessing Convergence of MCMC (with Discussion).”</span> <em>Bayesian Analysis</em>.
+</div>
+<div id="ref-R-ggplot2" class="csl-entry">
+Wickham, Hadley. 2016. <em>Ggplot2: Elegant Graphics for Data Analysis</em>. Springer-Verlag New York. <a href="https://ggplot2.tidyverse.org">https://ggplot2.tidyverse.org</a>.
+</div>
+<div id="ref-R-loo_b" class="csl-entry">
+Yao, Yuling, Aki Vehtari, Daniel Simpson, and Andrew Gelman. 2017. <span>“Using Stacking to Average Bayesian Predictive Distributions.”</span> <em>Bayesian Analysis</em>. <a href="https://doi.org/10.1214/17-BA1091">https://doi.org/10.1214/17-BA1091</a>.
+</div>
+</div>
+</div>

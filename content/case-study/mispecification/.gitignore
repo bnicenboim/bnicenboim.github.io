@@ -2,3 +2,7 @@ lm_speed_1.RDS
 lm_speed_2.RDS
 loo_speed_1.RDS
 loo_speed_2.RDS
+*.RDS$
+*.rds$
+.RDS
+.rds

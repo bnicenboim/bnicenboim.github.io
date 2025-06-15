@@ -6,10 +6,1374 @@
     <description>Recent content in Case-studies on Bruno Nicenboim</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 13 Jun 2025 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 14 Jun 2025 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/case-study/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Case study: Mispecified models of reaction times and choice</title>
+      <link>/case-study/mispecification/mispecified/</link>
+      <pubDate>Sat, 14 Jun 2025 00:00:00 +0000</pubDate>
+      
+      <guid>/case-study/mispecification/mispecified/</guid><description>
+
+
+&lt;pre class=&#34;r fold-hide&#34;&gt;&lt;code&gt;papaja::r_refs(&amp;quot;r-references.bib&amp;quot;)
+
+## Global options
+options(max.print = &amp;quot;75&amp;quot;,
+        width = 80,
+        tibble.width = 80)
+options(scipen = 1, digits = 2)
+knitr::opts_chunk$set(echo = TRUE,
+                    cache = TRUE,
+                    prompt = FALSE,
+                    cache.lazy = FALSE,
+                    tidy = FALSE,
+                    comment = NA,
+                    message = FALSE,
+                    warning = TRUE)
+knitr::opts_knit$set(width = 80)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;# Packages in use
+library(rtdists)
+library(tidytable) # faster replacement of dplyr
+library(ggplot2)
+library(latex2exp) # for math symbols in ggplots
+library(rstan)
+library(bayesplot)
+library(posterior)
+library(bridgesampling)
+library(loo)
+options(mc.cores = parallel::detectCores())
+source(&amp;quot;aux.R&amp;quot;)
+# Plots
+bayesplot_theme_set(theme_light())
+theme_set(theme_light())
+theme_update(plot.title = element_text(hjust = 0.5))
+options(ggplot2.continuous.colour = scale_color_viridis_c)
+options(ggplot2.continuous.fill = scale_fill_viridis_c)
+options(ggplot2.discrete.colour = scale_color_viridis_d)
+options(ggplot2.discrete.fill = scale_fill_viridis_d)
+color_scheme_set(&amp;quot;viridis&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To illustrate the effect of mispecified models in model comparison, I will use simulated response times and choice data. These data could be from an experiment representing either a motion detection task, where participants decide the direction of moving dots, or a lexical decision task, which involves determining whether letter strings are real words or nonsensical sequences.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;TL;DR;&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;For both BF and CV:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;A model that is closer to the truth is not necessarily the one with the best predictions.&lt;/li&gt;
+&lt;li&gt;A flexible theory-agnostic model might yield the best predictions even if it doesn’t resemble the generative process of the data.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For BF:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The comparison of (cognitive) models that entail very different generative processes but can mimic the data well (for different reasons) is strongly prior dependent.&lt;/li&gt;
+&lt;li&gt;Even the selection of a model that relatively closely resembles the data generative process and has a better fit to the data can be (but not always) also strongly prior dependent.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For CV:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Unless there is a clear gain in predictions, CV will be undecided. This is regardless of how close a model is to the true generative process and how good the fit is.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div id=&#34;true-data-generating-process-with-the-linear-ballistic-accumulator-model&#34; class=&#34;section level1&#34;&gt;
+&lt;h1&gt;True data generating process with the Linear Ballistic Accumulator Model&lt;/h1&gt;
+&lt;p&gt;I’m going to assume that the true generative model for this simulated experiment is a Linear Ballistic Accumulator model &lt;span class=&#34;citation&#34;&gt;(LBA: &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-brownSimplestCompleteModel2008&#34;&gt;Brown and Heathcote 2008&lt;/a&gt;)&lt;/span&gt; with a Gamma distribution for the accumulation rates &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-Terry2015&#34;&gt;Terry et al. 2015&lt;/a&gt;)&lt;/span&gt;. The LBA model conceptualizes decision-making as a race among several accumulators, each gathering evidence for a different decision option. The first accumulator to reach a predetermined threshold dictates the decision.&lt;/p&gt;
+&lt;div class=&#34;figure&#34;&gt;&lt;span style=&#34;display:block;&#34; id=&#34;fig:drawing&#34;&gt;&lt;/span&gt;
+&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/drawing-1.png&#34; alt=&#34;The figure depicts the parameters for one linear ballistic accumulator.&#34; width=&#34;672&#34; /&gt;
+&lt;p class=&#34;caption&#34;&gt;
+Figure 1: The figure depicts the parameters for one linear ballistic accumulator.
+&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;The key parameters of the model are the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;span class=&#34;math inline&#34;&gt;\(v_i\)&lt;/span&gt;: The rate of evidence accumulation (drift rate) for choice &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;. This parameter represents how quickly evidence supporting choice &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt; is gathered.&lt;/li&gt;
+&lt;li&gt;&lt;span class=&#34;math inline&#34;&gt;\(p_i\)&lt;/span&gt;: The starting point of evidence accumulation for choice &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;. This parameter accounts for any initial bias or prior evidence in favor of choice &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;span class=&#34;math inline&#34;&gt;\(t\)&lt;/span&gt;: Time since the start of the decision process.&lt;/li&gt;
+&lt;li&gt;&lt;span class=&#34;math inline&#34;&gt;\(b_i\)&lt;/span&gt;: The evidence threshold that must be reached for decision &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt; to be made. Once the accumulated evidence &lt;span class=&#34;math inline&#34;&gt;\(d_i(t)\)&lt;/span&gt; for any choice &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt; exceeds &lt;span class=&#34;math inline&#34;&gt;\(b_i\)&lt;/span&gt;, a decision is made in favor of that choice.&lt;/li&gt;
+&lt;li&gt;&lt;span class=&#34;math inline&#34;&gt;\(D_i(t)\)&lt;/span&gt;: The amount of evidence accumulated for choice &lt;span class=&#34;math inline&#34;&gt;\(i\)&lt;/span&gt; at time &lt;span class=&#34;math inline&#34;&gt;\(t\)&lt;/span&gt;, defined as &lt;span class=&#34;math inline&#34;&gt;\(D_i(t) = v_i \cdot t + p_i\)&lt;/span&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The LBA model assumes that the rates of evidence accumulation (&lt;span class=&#34;math inline&#34;&gt;\(v_i\)&lt;/span&gt;) for different choices are independent and can vary between trials. The model also allows for variability in the starting points (&lt;span class=&#34;math inline&#34;&gt;\(p_i\)&lt;/span&gt;), reflecting differences in initial bias or predisposition towards certain choices.&lt;/p&gt;
+&lt;div id=&#34;true-values-for-the-parameters&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;True values for the Parameters&lt;/h2&gt;
+&lt;p&gt;Below, I define the true values for the model’s parameters under four distinct conditions.&lt;/p&gt;
+&lt;pre class=&#34;r fold-hide&#34;&gt;&lt;code&gt;df_pars &amp;lt;- tribble(
+  ~difficulty,    ~emphasis,   ~A,   ~b, ~scale_v1, ~shape_v1, ~scale_v2, ~shape_v2, ~t0,
+   &amp;quot;easy&amp;quot;,         &amp;quot;accuracy&amp;quot;,  .5,   5.1,   5,       6,         12,       1,         .1,
+   &amp;quot;hard&amp;quot;,         &amp;quot;accuracy&amp;quot;,  .5,   5.1,  4.2,      6,         12,       1,         .1,
+   &amp;quot;easy&amp;quot;,         &amp;quot;speed&amp;quot;,    3.9,   4.1,   5,       6,         12,       1,         .1,
+   &amp;quot;hard&amp;quot;,         &amp;quot;speed&amp;quot;,    3.9,   4.1,  4.2,      6,         12,       1,         .1
+)
+df_pars&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# A tidytable: 4 × 9
+  difficulty emphasis     A     b scale_v1 shape_v1 scale_v2 shape_v2    t0
+  &amp;lt;chr&amp;gt;      &amp;lt;chr&amp;gt;    &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;
+1 easy       accuracy   0.5   5.1      5          6       12        1   0.1
+2 hard       accuracy   0.5   5.1      4.2        6       12        1   0.1
+3 easy       speed      3.9   4.1      5          6       12        1   0.1
+4 hard       speed      3.9   4.1      4.2        6       12        1   0.1&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;simulated-data&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Simulated data&lt;/h2&gt;
+&lt;p&gt;I generate data from a LBA with Gamma likelihood using the &lt;code&gt;rtdists&lt;/code&gt; package. The differences in emphasis do not alter the parameters that relate to the speed or noise in the accumulation process. Instead, they affect the parameters that control the distance that needs to be accumulated. This is achieved by increasing the likelihood that the initial position (&lt;span class=&#34;math inline&#34;&gt;\(p\)&lt;/span&gt;) is near the threshold (by increasing &lt;span class=&#34;math inline&#34;&gt;\(A\)&lt;/span&gt;) and by decreasing the distance to the threshold (&lt;span class=&#34;math inline&#34;&gt;\(b\)&lt;/span&gt;). In datasets like this, the emphasis on accuracy could be the result of instructions from the experimenter or the intrinsic motivation of the participant.&lt;/p&gt;
+&lt;pre class=&#34;r fold-hide&#34;&gt;&lt;code&gt;set.seed(123)
+N_cond &amp;lt;- 400
+df_sim &amp;lt;- df_pars |&amp;gt;
+  pmap_df(function(A,b,t0, scale_v1, scale_v2, shape_v1, shape_v2, difficulty, emphasis, ...) {
+    rLBA(N_cond, A = A, b = b, t0 = t0,
+         scale_v = c(scale_v1, scale_v2),
+         shape_v = c(shape_v1, shape_v2),
+         distribution = &amp;quot;gamma&amp;quot; ) |&amp;gt;
+      mutate(rt = rt * 1000, # to ms
+             difficulty = difficulty,
+             emphasis = emphasis)
+  }) |&amp;gt; mutate(diff = ifelse(difficulty == &amp;quot;hard&amp;quot;,1,-1),
+               emph = ifelse(emphasis ==&amp;quot;speed&amp;quot;,1,-1),
+               resp = ifelse(response ==1, &amp;quot;correct&amp;quot;,&amp;quot;incorrect&amp;quot;),
+               acc= ifelse(response ==1, 1, 0))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The simulated data mimic several patterns observed in real-world data, including (i) a predominance of correct over incorrect responses, (ii) a positive skew in response times, (iii) the standard deviation of response times increasing alongside the mean, and (iv) an increase in difficulty resulting in both more incorrect responses and prolonged response times. Additionally, it reflects a speed-accuracy trade-off, where faster decisions tend to be less accurate and slower decisions are more accurate. When speed is emphasized, response times for errors are shorter compared to when accuracy is emphasized, attributable to the shorter distance to the decision threshold.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;df_sim |&amp;gt; summarize(correct = mean(response==1),
+                    rt_correct = mean(rt[response==1]),
+                    sd_correct = sd(rt[response==1]),
+                    rt_incorrect = mean(rt[response==2]),
+                    sd_incorrect = sd(rt[response==2]),
+                    .by = c(&amp;quot;emphasis&amp;quot;,&amp;quot;difficulty&amp;quot;))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# A tidytable: 4 × 7
+  emphasis difficulty correct rt_correct sd_correct rt_incorrect sd_incorrect
+  &amp;lt;chr&amp;gt;    &amp;lt;chr&amp;gt;        &amp;lt;dbl&amp;gt;      &amp;lt;dbl&amp;gt;      &amp;lt;dbl&amp;gt;        &amp;lt;dbl&amp;gt;        &amp;lt;dbl&amp;gt;
+1 accuracy easy         0.89        281.       79.0         305.        112. 
+2 accuracy hard         0.848       311.       95.0         323.        145. 
+3 speed    easy         0.805       179.       61.2         164.         47.4
+4 speed    hard         0.78        184.       58.2         171.         50.3&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;ggplot(df_sim, aes(x = rt, y = resp)) + 
+  geom_violin(draw_quantiles = c(.025,.5,.975), scale = &amp;quot;count&amp;quot;, alpha = .5) +
+  geom_jitter(alpha = .2, width = 0, height = .25) +
+  facet_grid(emphasis ~ difficulty) +
+  xlab(&amp;quot;Response time [ms]&amp;quot;) +
+  ylab(&amp;quot;Accuracy&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-5-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;case-1.-speed-emphasis&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Case 1. Speed emphasis&lt;/h2&gt;
+&lt;p&gt;Next, I investigate what would happen if all the data obtained is from a participant who emphazises speed.&lt;/p&gt;
+&lt;pre class=&#34;r fold-hide&#34;&gt;&lt;code&gt;set.seed(123)
+df_sim_speed &amp;lt;- df_sim |&amp;gt;
+  filter(emphasis == &amp;quot;speed&amp;quot;) |&amp;gt;
+  group_by(difficulty) |&amp;gt;
+  mutate(train = rbinom(n(), 1, .9))
+df_sim_speed_train &amp;lt;-  df_sim_speed |&amp;gt;
+  filter(train == 1)
+dsim_speed_list &amp;lt;- list(N = nrow(df_sim_speed_train),
+                  rt =df_sim_speed_train$rt,
+                  response = df_sim_speed_train$response,
+                  K = 1,
+                  X = model.matrix(~ 0 + diff, df_sim_speed_train),
+                  only_prior = 0)
+
+fits_speed &amp;lt;- list()&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;case-1.a.-log-normal-race-model-vs.-theory-agnostic-models&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Case 1.a. Log-Normal race model vs. theory-agnostic models&lt;/h3&gt;
+&lt;p&gt;I start with three models under consideration:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;1. Log-Normal Race (LNR) model&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Similarly to the LBA, the LNR model describes the decision-making process as a race between several accumulators, each representing a different decision alternative &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-HeathcoteLove2012&#34;&gt;Heathcote and Love 2012&lt;/a&gt;; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-RouderEtAl2015&#34;&gt;Rouder et al. 2015&lt;/a&gt;)&lt;/span&gt;. The time it takes for each accumulator to reach a decision threshold is assumed to follow a log-normal distribution. Unlike the LBA, there is no moving starting point, and all the accumulators start from the same initial point. Furthermore, the threshold and accumulation rate cannot be disentangled: a manipulation that affects the rate or the decision threshold will affect the location of the distribution in the same way &lt;span class=&#34;citation&#34;&gt;(also see &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-RouderEtAl2015&#34;&gt;Rouder et al. 2015&lt;/a&gt;)&lt;/span&gt;. Another important observation is that the decision time (&lt;span class=&#34;math inline&#34;&gt;\(T\)&lt;/span&gt;) won’t have a log-normal distribution when the distance to the threshold is not log-normally distributed or constant.&lt;/p&gt;
+&lt;p&gt;Following &lt;span class=&#34;citation&#34;&gt;Rouder et al. (&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-RouderEtAl2015&#34;&gt;2015&lt;/a&gt;)&lt;/span&gt;, we assume that the noise parameter is the same for each accumulator, since this means that contrasts between finishing time distributions are captured completely by contrasts of the locations of the log-normal distributions.&lt;/p&gt;
+&lt;!-- In a race of accumulators model, the assumption is that the time $T$ taken for each accumulator $i$ of evidence to reach the threshold at distance $D$ is simply defined by --&gt;
+&lt;!-- \begin{equation} --&gt;
+&lt;!-- t_i = d_i/v_i --&gt;
+&lt;!-- \end{equation} --&gt;
+&lt;!-- where the denominator vV$ is the rate (velocity, sometimes also called  drift rate) of  evidence accumulation. --&gt;
+&lt;!-- The log-normal race model assumes that the  rate in each trial is sampled from a log-normal distribution: --&gt;
+&lt;!-- \begin{equation} --&gt;
+&lt;!-- V_i \sim \mathit{LogNormal}(\mu_vi, \sigma_vi) --&gt;
+&lt;!-- \end{equation} --&gt;
+&lt;!-- The observed reaction time corresponds to the sum of a non decision time $T_{0}$ --&gt;
+&lt;!-- and the decision time which is the shortest time taken for an accumulator. The choice made corresponds to the accumulator that reach the threshold faster. --&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+\mu_1 &amp;amp;= \alpha_1 \cdot \text{diff}_n \cdot \beta_1\\
+\mu_2 &amp;amp;= \alpha_2 \cdot \text{diff}_n \cdot \beta_2
+\end{aligned}\]&lt;/span&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+(rt_n; \text{response}_n ) \sim \text{LNR}(\{\mu_1;\mu_2\}, \sigma, T_0)
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;with &lt;span class=&#34;math inline&#34;&gt;\(\text{diff}\)&lt;/span&gt; sum coded to &lt;span class=&#34;math inline&#34;&gt;\(-1\)&lt;/span&gt; for easy and &lt;span class=&#34;math inline&#34;&gt;\(1\)&lt;/span&gt; for hard.&lt;/p&gt;
+&lt;p&gt;For this model, I set the following (very weak and not that good) priors:&lt;/p&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+\alpha &amp;amp;\sim \text{Normal}(0, 100) \\
+\beta &amp;amp;\sim \text{Normal}(0, 10) \\
+\sigma &amp;amp;\sim \text{Normal}_+(0, 100) \\
+T_{0} &amp;amp;\sim \text{Normal}(150, 100) \quad \text{with } T_0 &amp;gt; \min(rt)
+\end{aligned}\]&lt;/span&gt;
+&lt;p&gt;This is implemented in Stan &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-Stan2023&#34;&gt;Stan Development Team 2023b&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma) +
+        lognormal_lccdf(T | mu[2], sigma);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma) +
+        lognormal_lccdf(T | mu[1], sigma);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma);
+    real rt2 = lognormal_rng(mu[2], sigma);
+    array[2] real out;
+    if(rt1 &amp;lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&amp;lt;lower = 1&amp;gt; N;
+  int&amp;lt;lower = 1&amp;gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[2] real alpha;
+  array[2] vector[K] beta;
+  real&amp;lt;lower = 0&amp;gt; sigma;
+  real&amp;lt;lower = 0, upper = min(rt)&amp;gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                       {alpha[1] + X[n] * beta[1],
+                                        alpha[2] + X[n] * beta[2]},
+                                       sigma);
+    }
+}
+model {
+  target += normal_lpdf(alpha | 0, 100);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 10);
+  target += normal_lpdf(sigma | 0, 100)
+    - normal_lccdf(0 | 0, 100);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             sigma);
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fits_speed$LNRace &amp;lt;- stan(&amp;quot;./LogNormalRace_badpriors.stan&amp;quot;,
+                          data = dsim_speed_list,
+                          warmup = 1000,
+                          iter = 10000)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;print_model(fits_speed$LNRace)   &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# A tibble: 6 × 7
+  variable      mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &amp;lt;chr&amp;gt;        &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
+1 alpha[1]   4.4      4.3     4.5     1.0   18019.   19575.
+2 alpha[2]   5.1      5.0     5.2     1.0   32999.   24096.
+3 beta[1,1]  0.046   -0.017   0.11    1.0   33745.   23947.
+4 beta[2,1] -0.00022 -0.085   0.084   1.0   31334.   22407.
+5 sigma      0.82     0.73    0.91    1.0   16692.   18267.
+6 T_nd      94.      88.     99.      1.0   15933.   17341.&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;2. Theory-agnostic model&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;This model simultaneously addresses response time and binary choice data without any commitment to any theory. It incorporates predictors to explain variability in both outcomes, treating response times as normally distributed and choices as following a Bernoulli distribution.&lt;/p&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+rt &amp;amp;\sim \text{Normal}(\alpha + \text{diff} \cdot \beta_1, \sigma)\\
+acc &amp;amp;\sim \text{Bernoulli}(logit(\text{prob}) + \text{diff} \cdot \beta_2)
+\end{aligned}\]&lt;/span&gt;
+&lt;p&gt;I define the following regularizing priors.&lt;/p&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+\alpha &amp;amp;\sim \text{Normal}(500, 50) \\
+\text{prob} &amp;amp;\sim \text{Beta}(900, 100) \\
+\beta_1 &amp;amp;\sim \text{Normal}(0, 50) \\
+\beta_2 &amp;amp;\sim \text{Normal}(0, 0.5) \\
+\sigma &amp;amp;\sim \text{Normal}_+(100, 100)
+\end{aligned}\]&lt;/span&gt;
+&lt;p&gt;This is implemented in Stan &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-Stan2023&#34;&gt;Stan Development Team 2023b&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;data {
+  int&amp;lt;lower = 1&amp;gt; N;
+  int&amp;lt;lower = 1&amp;gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+transformed data {
+  array[N] int acc;
+  for(n in 1:N)
+    if(response[n] == 1)
+      acc[n] = 1;
+    else
+      acc[n] = 0;
+}
+parameters {
+  real alpha;
+  real&amp;lt;lower=0, upper=1&amp;gt; prob;
+  array[2] vector[K] beta;
+  real&amp;lt;lower = 0&amp;gt; sigma;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = normal_lpdf(rt[n] | alpha + X[n] * beta[1], sigma) +
+        bernoulli_logit_lpmf(acc[n] | logit(prob) + X[n] * beta[2]);
+    }
+}
+model {
+  target += normal_lpdf(alpha | 500, 50);
+  target += beta_lpdf(prob | 900, 100);
+  
+  target += normal_lpdf(beta[1] | 0, 50);
+  target += normal_lpdf(beta[2] | 0, .5);
+  target += normal_lpdf(sigma | 100, 100)
+    - normal_lccdf(0 | 100, 100);
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    int pacc = bernoulli_logit_rng(logit(prob) + X[n] * beta[2]);
+    if(pacc==1)
+      pred_response[n] = 1;
+    else
+      pred_response[n] = 2;
+    
+    pred_rt[n] = normal_rng(alpha + X[n] * beta[1], sigma);
+    }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fits_speed$agnostic &amp;lt;- stan(&amp;quot;./Agnostic.stan&amp;quot;, 
+                            data = dsim_speed_list,
+                            warmup = 1000,
+                            iter = 10000)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;print_model(fits_speed$agnostic) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# A tibble: 5 × 7
+  variable    mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &amp;lt;chr&amp;gt;      &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
+1 alpha     180.   176.    184.     1.0   45771.   29305.
+2 prob        0.85   0.83    0.87   1.0   42409.   28075.
+3 beta[1,1]   2.1   -2.2     6.4    1.0   46537.   29313.
+4 beta[2,1]  -0.10  -0.30    0.10   1.0   45803.   29146.
+5 sigma      59.    56.     62.     1.0   41886.   27427.&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;3. Theory-agnostic model with Log-likelihood&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;This model is similar to the previous one, but treats response times as shifted log-normally distributed.&lt;/p&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+(rt - T_{\text{shift}}) &amp;amp;\sim \text{LogNormal}(\alpha + \text{diff} \cdot \beta_1, \sigma)\\
+acc &amp;amp;\sim \text{Bernoulli}(logit(\text{prob}) + \text{diff} \cdot \beta_2)
+\end{aligned}\]&lt;/span&gt;
+&lt;p&gt;I define the following very weak priors.&lt;/p&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+\alpha &amp;amp;\sim \text{Normal}(0, 100) \\
+\text{prob} &amp;amp;\sim \text{Beta}(1, 1) \\
+\beta_1 &amp;amp;\sim \text{Normal}(0, 10) \\
+\beta_2 &amp;amp;\sim \text{Normal}(0, 10) \\
+\sigma &amp;amp;\sim \text{Normal}_+(0, 100) \\
+T_{\text{shift}} &amp;amp;\sim \text{Normal}_+(150, 100) \quad \text{with }  T_{\text{shift}} &amp;gt; min(rt)
+\end{aligned}\]&lt;/span&gt;
+&lt;p&gt;This is implemented in Stan &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-Stan2023&#34;&gt;Stan Development Team 2023b&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;data {
+  int&amp;lt;lower = 1&amp;gt; N;
+  int&amp;lt;lower = 1&amp;gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+transformed data {
+  array[N] int acc;
+  for(n in 1:N)
+    if(response[n] == 1)
+      acc[n] = 1;
+    else
+      acc[n] = 0;
+}
+parameters {
+  real alpha;
+  real&amp;lt;lower=0, upper=1&amp;gt; prob;
+  array[2] vector[K] beta;
+  real&amp;lt;lower = 0&amp;gt; sigma;
+  real&amp;lt;lower = 0, upper = min(rt)&amp;gt; T_shift;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormal_lpdf(rt[n] - T_shift | alpha + X[n] * beta[1], sigma) +
+        bernoulli_logit_lpmf(acc[n] | logit(prob) + X[n] * beta[2]);
+    }
+}
+model {
+  target += beta_lpdf(prob | 1, 1);
+  target += normal_lpdf(alpha | 0, 100);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 10);
+  target += normal_lpdf(sigma | 0, 100)
+    - normal_lccdf(0 | 0, 100);
+  target += normal_lpdf(T_shift | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    int pacc = bernoulli_logit_rng(logit(prob) + X[n] * beta[2]);
+    if(pacc==1)
+      pred_response[n] = 1;
+    else
+      pred_response[n] = 2;
+    
+    pred_rt[n] = lognormal_rng(alpha + X[n] * beta[1], sigma) + T_shift;
+    }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fits_speed$agnosticLog &amp;lt;- stan(&amp;quot;./AgnosticLog.stan&amp;quot;,
+                               data = dsim_speed_list,
+                               warmup = 1000,
+                               iter = 10000)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;print_model(fits_speed$agnosticLog)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# A tibble: 6 × 7
+  variable    mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &amp;lt;chr&amp;gt;      &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
+1 alpha      4.3    4.2     4.4     1.0   14197.   17094.
+2 prob       0.79   0.75    0.81    1.0   33289.   24355.
+3 beta[1,1]  0.031 -0.016   0.078   1.0   32152.   22840.
+4 beta[2,1] -0.075 -0.25    0.10    1.0   32800.   23617.
+5 sigma      0.63   0.56    0.71    1.0   14817.   17980.
+6 T_shift   89.    81.     95.      1.0   13848.   16188.&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;relationship-between-the-models-and-true-generating-process&#34; class=&#34;section level4&#34;&gt;
+&lt;h4&gt;Relationship between the models and true generating process&lt;/h4&gt;
+&lt;p&gt;The LNR model is the closest to the true generating process, but the priors are relatively ill-defined, much weaker than what we actually know. The theory-agnostic models are very flexible, with the second one allowing for a closer fit to the positively skewed response time.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;posterior-predictive-checks&#34; class=&#34;section level4&#34;&gt;
+&lt;h4&gt;Posterior predictive checks&lt;/h4&gt;
+&lt;p&gt;Posterior predictive checks for the general shape of the distribution of RTs show that no fit is perfect. However, the fit to the proportion of predicted correct vs incorrect responses (area of the violin plots) seems to be approximately fine.&lt;/p&gt;
+&lt;!-- ```{r} --&gt;
+&lt;!-- dens_speed &lt;- map2(fits_speed, names(fits_speed), --&gt;
+&lt;!--                    ~ ppc_dens_overlay_grouped(df_sim_speed_train$rt, --&gt;
+&lt;!--                                               yrep = extract(.x,pars = &#34;pred_rt&#34;)[[1]][1:200,, drop = FALSE], --&gt;
+&lt;!--                                               group = df_sim_speed_train$difficulty) + --&gt;
+&lt;!--                      ggtitle(.y)) --&gt;
+&lt;!-- walk(dens_speed, ~ plot(.x)) --&gt;
+&lt;!-- ``` --&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;violins &amp;lt;- map2(fits_speed, names(fits_speed), ~ violin_plot(df_sim_speed_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/violin-acc-1.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/violin-acc-2.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/violin-acc-3.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;!-- Quantile probability plot showing   0.1, 0.3, 0.5, 0.7, and 0.9 response times quantiles plotted against  proportion of incorrect responses (left) and proportion of correct responses (right). Word frequency are grouped according to the two difficulty condtions. --&gt;
+&lt;!-- ```{r} --&gt;
+&lt;!-- qpf_speed &lt;- map2(fits_speed, names(fits_speed) ~ --&gt;
+&lt;!--                                do_qpf(.x, --&gt;
+&lt;!--                                       df_sim_speed_train, --&gt;
+&lt;!--                                       cond = difficulty)) --&gt;
+&lt;!-- walk(qpf_speed, ~ plot(.x + ggtitle(names(fits_speed)))) --&gt;
+&lt;!-- ``` --&gt;
+&lt;/div&gt;
+&lt;div id=&#34;model-comparison&#34; class=&#34;section level4&#34;&gt;
+&lt;h4&gt;Model comparison&lt;/h4&gt;
+&lt;p&gt;I implement model comparison with Bayes Factor (BF) using bridge sampling as well as with PSIS-LOO CV approximation using the log-score rule (&lt;span class=&#34;math inline&#34;&gt;\(\widehat{elpd}\)&lt;/span&gt;). When the model comparison is reported, the first model is the best model and it’s used as reference for the next models.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;lm_speed &amp;lt;- map(fits_speed, ~ bridge_sampler(.x))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_speed &amp;lt;- map(fits_speed, ~ loo(.x))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_speed) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                 BF logBF
+agnosticLog 1.0e+00     0
+LNRace      1.5e+14    33
+agnostic    1.0e+82   189&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo_speed)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;            elpd_diff se_diff
+agnosticLog    0.0       0.0 
+LNRace       -28.2       5.3 
+agnostic    -175.8      28.3 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Both BF and &lt;span class=&#34;math inline&#34;&gt;\(\widehat{elpdf}\)&lt;/span&gt;-CV agree that the best model is the theory-agnostic with a log-normal likelihood. &lt;strong&gt;This shows that the model that is closer to the truth is not necessarily the one with the best predictions. A flexible theory-agnostic model might yield the best predictions even if it doesn’t resemble the generative process. Crucially, this is true for both BF and CV.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;We add another cognitive model under consideration.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;case-1.b-another-competitor-fast-guess-model&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Case 1.b Another competitor: Fast guess model&lt;/h3&gt;
+&lt;p&gt;Ollman’s &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-Ollman1966&#34;&gt;1966&lt;/a&gt;)&lt;/span&gt; fast-guess model assumes that the behavior in this task (and in any other choice task) is governed by two distinct cognitive processes: (i) a guessing mode, and (ii) a task-engaged mode. In the guessing mode, responses are fast and accuracy is at chance level. In the task-engaged mode, responses are slower and accuracy approaches 100%. This means that intermediate values of response times and accuracy can only be achieved by mixing responses from the two modes. Further assumptions of this model are that response times depend on the difficulty of the choice, and that the probability of being on one of the two states depend on the speed incentives during the instructions.&lt;/p&gt;
+&lt;p&gt;To simplify matters, I follow the implementation of &lt;span class=&#34;citation&#34;&gt;Nicenboim, Schad, and Vasishth (&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-Nicenboim2024Bayesian&#34;&gt;2024&lt;/a&gt;)&lt;/span&gt;, I ignore the possibility that the accuracy of the choice is also affected by the difficulty of the choice. Also, I ignore the possibility that subjects might be biased to one specific response in the guessing mode.&lt;/p&gt;
+&lt;p&gt;The fast-guess model makes the assumption that during a task, a single subject would behave in these two ways: They would be engaged in the task a proportion of the trials and would guess on the rest of the trials. This means that for a single subject, there is an underlying probability of being engaged in the task, &lt;span class=&#34;math inline&#34;&gt;\(p_{task}\)&lt;/span&gt;, that determines whether they are actually choosing (&lt;span class=&#34;math inline&#34;&gt;\(z=1\)&lt;/span&gt;) or guessing (&lt;span class=&#34;math inline&#34;&gt;\(z=0\)&lt;/span&gt;):&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+z_n \sim \mathit{Bernoulli}(p_{task})
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;The value of the parameter &lt;span class=&#34;math inline&#34;&gt;\(z\)&lt;/span&gt; in every trial determines the behavior of the subject. This means that the distribution that we observe is a mixture of the two distributions presented before:&lt;/p&gt;
+&lt;p&gt;&lt;span class=&#34;math display&#34;&gt;\[\begin{equation}
+rt_n \sim
+\begin{cases}
+\mathit{LogNormal}(\alpha + \beta \cdot diff_n, \sigma), &amp;amp; \text{ if } z_n =1 \\
+\mathit{LogNormal}(\gamma, \sigma_2), &amp;amp; \text{ if } z_n=0
+\end{cases}
+
+\end{equation}\]&lt;/span&gt;
+&lt;span class=&#34;math display&#34; id=&#34;eq:dismix3&#34;&gt;\[\begin{equation}
+acc_n \sim
+\begin{cases}
+\mathit{Bernoulli}(p_{correct}), &amp;amp; \text{ if } z_n =1 \\
+\mathit{Bernoulli}(0.5), &amp;amp; \text{ if } z_n=0
+\end{cases}
+\tag{1}
+\end{equation}\]&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;I use the following priors&lt;/p&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+\alpha &amp;amp;\sim \mathit{Normal}(6, 1)\\
+\beta &amp;amp;\sim \mathit{Normal}(0, .1)\\
+\sigma &amp;amp;\sim \mathit{Normal}_+(.5, .2)\\
+\gamma &amp;amp;\sim \mathit{Normal}(6, 1), \text{for } \gamma &amp;lt; \alpha \\
+\sigma_2 &amp;amp;\sim \mathit{Normal}_+(.5, .2)\\
+p_{task} &amp;amp;\sim \mathit{Beta}(8, 2)
+\end{aligned}\]&lt;/span&gt;
+&lt;p&gt;&lt;strong&gt;Crucially, this model should capture the pattern of fast errors, but because of the wrong reasons!&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;This is implemented in Stan &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-Stan2023&#34;&gt;Stan Development Team 2023b&lt;/a&gt;)&lt;/span&gt;.&lt;/p&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;data {
+  int&amp;lt;lower = 1&amp;gt; N;
+  int&amp;lt;lower = 1&amp;gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+transformed data {
+  array[N] int acc;
+  for(n in 1:N)
+    if(response[n] == 1)
+      acc[n] = 1;
+    else
+      acc[n] = 0;
+}
+parameters {
+  real alpha;
+  vector[K] beta;
+  real&amp;lt;lower = 0&amp;gt; sigma;
+  real&amp;lt;upper = alpha&amp;gt; gamma;
+  real&amp;lt;lower = 0&amp;gt; sigma2;
+  real&amp;lt;lower = 0, upper = 1&amp;gt; p_correct;
+  real&amp;lt;lower = 0, upper = 1&amp;gt; p_task;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N)
+      log_lik[n] = log_sum_exp(log(p_task) +
+                            lognormal_lpdf(rt[n] | alpha +  X[n] * beta, sigma) +
+                            bernoulli_lpmf(acc[n] | p_correct),
+                            log1m(p_task) +
+                            lognormal_lpdf(rt[n] | gamma, sigma2) +
+                            bernoulli_lpmf(acc[n] | .5));
+
+}
+model {
+  target += normal_lpdf(alpha | 6, 1);
+  target += normal_lpdf(beta | 0, .3);
+  target += normal_lpdf(sigma | .5, .2)
+    - normal_lccdf(0 | .5, .2);
+  target += normal_lpdf(gamma | 6, 1) -
+    normal_lcdf(alpha | 6, 1);
+  target += normal_lpdf(sigma2 | .5, .2)
+    - normal_lccdf(0 | .5, .2);
+  target += beta_lpdf(p_correct | 995, 5);
+  target += beta_lpdf(p_task | 8, 2);
+  if(only_prior != 1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    int ontask = bernoulli_rng(p_task);
+    if(ontask == 1){
+      pred_response[n] = bernoulli_rng(p_correct) == 1 ? 1 : 2;
+      pred_rt[n] = lognormal_rng(alpha + X[n] * beta, sigma);
+    } else {
+      pred_response[n] = bernoulli_rng(.5) == 1 ? 1 : 2;
+      pred_rt[n] = lognormal_rng(gamma, sigma2);
+
+    }
+  }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fits_speed$FG &amp;lt;- stan(&amp;quot;./FastGuess.stan&amp;quot;,  
+                      data = dsim_speed_list,
+                      warmup = 1000,
+                      iter = 10000)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;print_model(fits_speed$FG)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# A tibble: 7 × 7
+  variable   mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &amp;lt;chr&amp;gt;     &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
+1 alpha     5.2    5.2     5.2     1.0   20792.   22252.
+2 beta[1]   0.017 -0.017   0.050   1.0   40853.   27096.
+3 sigma     0.31   0.29    0.33    1.0   37401.   27191.
+4 gamma     5.1    5.0     5.1     1.0   27563.   24863.
+5 sigma2    0.24   0.22    0.27    1.0   33117.   27203.
+6 p_correct 0.99   0.99    1.0     1.0   35452.   22009.
+7 p_task    0.57   0.50    0.63    1.0   33932.   28178.&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;model-comparison-1&#34; class=&#34;section level4&#34;&gt;
+&lt;h4&gt;Model comparison&lt;/h4&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;lm_speed$FG &amp;lt;- bridge_sampler(fits_speed$FG)
+loo_speed$FG &amp;lt;- loo(fits_speed$FG)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_speed) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                 BF logBF
+agnosticLog 1.0e+00     0
+FG          5.5e+09    22
+LNRace      1.5e+14    33
+agnostic    1.0e+82   189&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo_speed)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;            elpd_diff se_diff
+agnosticLog    0.0       0.0 
+LNRace       -28.2       5.3 
+FG           -31.9       8.3 
+agnostic    -175.8      28.3 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Both BF and &lt;span class=&#34;math inline&#34;&gt;\(\hat{elpdf}\)&lt;/span&gt; agree that the best model is the theory-agnostic with a log-normal likelihood. What if we only considering the cognitive models?&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_speed[!startsWith(names(lm_speed),&amp;quot;agnostic&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;          BF logBF
+FG         1     0
+LNRace 27227    10&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo_speed[!startsWith(names(lm_speed),&amp;quot;agnostic&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;       elpd_diff se_diff
+LNRace  0.0       0.0   
+FG     -3.6      11.3   &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;BF shows a clear advantage for the Fast Guess model. This is a bit unsettling because the Fast Guess model is clearly different from the true generating process. &lt;span class=&#34;math inline&#34;&gt;\(\hat{elpdf}\)&lt;/span&gt;-CV cannot distinguish between the models.&lt;/p&gt;
+&lt;p&gt;But the LogNormal race model had terrible priors, what if they are more realistic?&lt;/p&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+\alpha &amp;amp;\sim \text{Normal}(5.2, 1) \\
+\beta &amp;amp;\sim \text{Normal}(0, .2) \\
+\sigma &amp;amp;\sim \text{Normal}_+(0.5, 0.25) \\
+T_{0} &amp;amp;\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)}
+\end{aligned}\]&lt;/span&gt;
+&lt;p&gt;This is implemented in Stan &lt;span class=&#34;citation&#34;&gt;(&lt;a href=&#34;/case-study/mispecification/mispecified/#ref-Stan2023&#34;&gt;Stan Development Team 2023b&lt;/a&gt;)&lt;/span&gt; and the model comparison is repeated.&lt;/p&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma) +
+        lognormal_lccdf(T | mu[2], sigma);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma) +
+        lognormal_lccdf(T | mu[1], sigma);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma);
+    real rt2 = lognormal_rng(mu[2], sigma);
+    array[2] real out;
+    if(rt1 &amp;lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&amp;lt;lower = 1&amp;gt; N;
+  int&amp;lt;lower = 1&amp;gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[2] real alpha;
+  array[2] vector[K] beta;
+  real&amp;lt;lower = 0&amp;gt; sigma;
+  real&amp;lt;lower = 0, upper = min(rt)&amp;gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                       {alpha[1] + X[n] * beta[1],
+                                        alpha[2] + X[n] * beta[2]},
+                                       sigma);
+    }
+}
+model {
+  target += normal_lpdf(alpha | 5.2, 1);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 0.2);
+  target += normal_lpdf(sigma | 0.5, 0.25)
+    - normal_lccdf(0 | 0.5, .25);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             sigma);
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;lm_speed$LNRace_reg_priors &amp;lt;- bridge_sampler(fits_speed$LNRace_reg_priors)
+loo_speed$LNRace_reg_priors &amp;lt;- loo(fits_speed$LNRace_reg_priors)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_speed) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                       BF logBF
+agnosticLog       1.0e+00     0
+LNRace_reg_priors 4.6e+06    15
+FG                5.5e+09    22
+LNRace            1.5e+14    33
+agnostic          1.0e+82   189&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo_speed) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                  elpd_diff se_diff
+agnosticLog          0.0       0.0 
+LNRace_reg_priors  -28.2       5.3 
+LNRace             -28.2       5.3 
+FG                 -31.9       8.3 
+agnostic          -175.8      28.3 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The best model is still the theory-agnostic flexible model with a log-normal likelihood.&lt;/p&gt;
+&lt;p&gt;Considering only the cognitive models, we see the differences between BF and &lt;span class=&#34;math inline&#34;&gt;\(\hat{elpd}\)&lt;/span&gt;:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_speed[!startsWith(names(lm_speed),&amp;quot;agnostic&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                        BF logBF
+LNRace_reg_priors        1   0.0
+FG                    1197   7.1
+LNRace            32586467  17.3&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo_speed[!startsWith(names(lm_speed),&amp;quot;agnostic&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                  elpd_diff se_diff
+LNRace_reg_priors  0.0       0.0   
+LNRace             0.0       0.3   
+FG                -3.7      11.1   &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;With better priors, the LNR model is prefered according to the BF. This shows that the comparison of (cognitive) models that entail very different generative but can mimic the data well (for different reasons) can be very strongly prior dependent. In contrast, &lt;span class=&#34;math inline&#34;&gt;\(\hat{elpd}\)&lt;/span&gt;-CV is less enthusiastic in selecting a model.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;case-1.c-yet-another-competitor-a-more-flexible-implementation-of-the-lnr-model&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Case 1.c Yet another competitor: A more flexible implementation of the LNR model&lt;/h3&gt;
+&lt;p&gt;A more flexible implementation of the Log Normal race model relaxes the assumption that the noise parameter is the same for all the accumulators. This supposed to allow it to capture more flexible patterns in the data.&lt;/p&gt;
+&lt;p&gt;I implement it with the following likelihood:&lt;/p&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+\mu_1 &amp;amp;= \alpha_1 \cdot diff_n \cdot \beta_1\\
+\mu_2 &amp;amp;= \alpha_2 \cdot diff_n \cdot \beta_2\\
+\mu_3 &amp;amp;= \alpha_3 \cdot diff_n \cdot \beta_3\\
+\mu_4 &amp;amp;= \alpha_4 \cdot diff_n \cdot \beta_4\\
+(rt_n; response_n ) &amp;amp;\sim \text{LNR}(\{\mu_1;\mu_2\}, \{\exp(mu_3); \exp(mu_4)\}, T_0)
+\end{aligned}\]&lt;/span&gt;
+&lt;p&gt;We try two flavors,&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;with very uninformative priors&lt;/li&gt;
+&lt;/ul&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+\alpha_{1;2} &amp;amp;\sim \text{Normal}(0, 100) \\
+\alpha_{3;4} &amp;amp;\sim \text{Normal}(0, 2) \\
+\beta &amp;amp;\sim \text{Normal}(0, 10) \\
+T_{0} &amp;amp;\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)}
+\end{aligned}\]&lt;/span&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           array[] real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma[1]) +
+        lognormal_lccdf(T | mu[2], sigma[2]);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma[1]) +
+        lognormal_lccdf(T | mu[1], sigma[2]);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          array[] real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma[1]);
+    real rt2 = lognormal_rng(mu[2], sigma[2]);
+    array[2] real out;
+    if(rt1 &amp;lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&amp;lt;lower = 1&amp;gt; N;
+  int&amp;lt;lower = 1&amp;gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[4] real alpha;
+  array[4] vector[K] beta;
+  real&amp;lt;lower = 0, upper = min(rt)&amp;gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                        {alpha[1] + X[n] * beta[1],
+                                         alpha[2] + X[n] * beta[2]},
+                                       {exp(alpha[3] + X[n] * beta[3]),
+                                        exp(alpha[4] + X[n] * beta[4])});
+    }
+}
+model {
+  target += normal_lpdf(alpha[1:2] | 0, 100);
+  target += normal_lpdf(alpha[3:4] | 0, 2);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, 10);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             {exp(alpha[3] + X[n] * beta[3]),
+                              exp(alpha[4] + X[n] * beta[4])});
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;ul&gt;
+&lt;li&gt;and with regularizing priors.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;span class=&#34;math display&#34;&gt;\[\begin{aligned}
+\alpha_{1;2} &amp;amp;\sim \text{Normal}(5.2, 1) \\
+\alpha_{3;4} &amp;amp;\sim \text{Normal}(\log(0.5), 1) \\
+\beta &amp;amp;\sim \text{Normal}(0, .2) \\
+T_{0} &amp;amp;\sim \text{Normal}(150, 100) \quad \text{with a minimum value of min(rt)}
+\end{aligned}\]&lt;/span&gt;
+&lt;pre class=&#34;stan&#34;&gt;&lt;code&gt;functions{
+  real lognormalrace2_lpdf(real rt, int response,
+                           real T_nd,
+                           array[] real mu,
+                           array[] real sigma){
+    real T = rt - T_nd;
+    real lp = 0;
+    if(response==1)
+      lp += lognormal_lpdf(T | mu[1], sigma[1]) +
+        lognormal_lccdf(T | mu[2], sigma[2]);
+    else
+      lp += lognormal_lpdf(T | mu[2], sigma[1]) +
+        lognormal_lccdf(T | mu[1], sigma[2]);
+    return lp;
+  }
+  array[] real  lognormalrace2_rng(real T_nd,
+                          array[] real mu,
+                          array[] real sigma){
+    real rt1 = lognormal_rng(mu[1], sigma[1]);
+    real rt2 = lognormal_rng(mu[2], sigma[2]);
+    array[2] real out;
+    if(rt1 &amp;lt; rt2)
+      out = {rt1 + T_nd, 1.0};
+    else
+      out = {rt2 + T_nd, 2.0};
+    return out;
+      }
+}
+data {
+  int&amp;lt;lower = 1&amp;gt; N;
+  int&amp;lt;lower = 1&amp;gt; K;
+  matrix[N, K] X;
+  vector[N] rt; //ms
+  array[N] int response;
+  int only_prior;
+}
+parameters {
+  array[4] real alpha;
+  array[4] vector[K] beta;
+  real&amp;lt;lower = 0, upper = min(rt)&amp;gt; T_nd;
+}
+transformed parameters{
+  array[N] real log_lik;
+  if(only_prior != 1)
+    for(n in 1:N){
+      log_lik[n] = lognormalrace2_lpdf(rt[n]| response[n],
+                                       T_nd,
+                                        {alpha[1] + X[n] * beta[1],
+                                         alpha[2] + X[n] * beta[2]},
+                                       {exp(alpha[3] + X[n] * beta[3]),
+                                        exp(alpha[4] + X[n] * beta[4])});
+    }
+}
+model {
+  target += normal_lpdf(alpha[1:2] | 5.2, 1);
+  target += normal_lpdf(alpha[3:4] | log(0.5), 1);
+  for(k in 1:K) target += normal_lpdf(beta[k] | 0, .2);
+  target += normal_lpdf(T_nd | 150, 100)
+    - log_diff_exp(normal_lcdf(min(rt) | 150, 100),
+                   normal_lcdf(0 | 150, 100));
+  if(only_prior!=1)
+    target += sum(log_lik);
+}
+generated quantities {
+  array[N] real pred_rt;
+  array[N] int pred_response;
+  for(n in 1:N){
+    array[2] real out;
+    out = lognormalrace2_rng(T_nd,
+                             {alpha[1] + X[n] * beta[1],
+                              alpha[2] + X[n] * beta[2]},
+                             {exp(alpha[3] + X[n] * beta[3]),
+                              exp(alpha[4] + X[n] * beta[4])});
+    pred_rt[n] = out[1];
+    pred_response[n] = to_int(out[2]);
+    }
+}&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;posterior-predictive-checks-1&#34; class=&#34;section level4&#34;&gt;
+&lt;h4&gt;Posterior predictive checks&lt;/h4&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fit_plot &amp;lt;- fits_speed[!endsWith(names(fits_speed),&amp;quot;reg_priors&amp;quot;)]
+violins &amp;lt;- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_speed_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-1.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-2.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-3.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-4.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-38-5.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;dens_speed &amp;lt;- map2(
+  fit_plot, 
+  names(fit_plot), ~ ppc_dens_overlay_grouped(df_sim_speed_train$rt,
+                                           yrep = extract(.x,pars = &amp;quot;pred_rt&amp;quot;)[[1]][1:200,, drop = FALSE],
+                                           group = df_sim_speed_train$difficulty) +
+
+  coord_cartesian(xlim= c(0, 1500)) + ggtitle(.y))
+walk(dens_speed, ~ plot(.x ))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-1.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-2.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-3.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-4.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-39-5.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;!-- ```{r, message = FALSE} --&gt;
+&lt;!-- qpf_speed &lt;- map(fit_plot, ~ do_qpf(.x, df_sim_speed_train, cond = difficulty) + --&gt;
+&lt;!--                  coord_cartesian(ylim= c(100, 500))) --&gt;
+&lt;!-- walk(qpf_speed, ~ plot(.x + ggtitle(names(fit_plot)))) --&gt;
+&lt;!-- ``` --&gt;
+&lt;/div&gt;
+&lt;div id=&#34;model-comparison-2&#34; class=&#34;section level4&#34;&gt;
+&lt;h4&gt;Model comparison&lt;/h4&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_speed)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                          BF logBF
+LNRace_fl_reg_priors 1.0e+00   0.0
+agnosticLog          3.6e+02   5.9
+LNRace_fl            1.2e+06  14.0
+LNRace_reg_priors    1.6e+09  21.2
+FG                   2.0e+12  28.3
+LNRace               5.3e+16  38.5
+agnostic             3.6e+84 194.7&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_speed[c(&amp;quot;LNRace_fl_reg_priors&amp;quot;,&amp;quot;agnosticLog&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                      BF logBF
+LNRace_fl_reg_priors   1   0.0
+agnosticLog          359   5.9&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_speed[c(&amp;quot;LNRace_fl&amp;quot;,&amp;quot;agnosticLog&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;              BF logBF
+agnosticLog    1   0.0
+LNRace_fl   3237   8.1&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo_speed)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                     elpd_diff se_diff
+agnosticLog             0.0       0.0 
+LNRace_fl_reg_priors   -2.3       4.5 
+LNRace_fl              -2.4       4.5 
+LNRace_reg_priors     -28.2       5.3 
+LNRace                -28.2       5.3 
+FG                    -31.9       8.3 
+agnostic             -175.8      28.3 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Only with good priors, the flexible version of the LNR model is the best model according the Bayes Factor. CV cannot really distinguish betwen them.&lt;/p&gt;
+&lt;p&gt;Considering only the cognitive models, there is slightly more agreement between the model comparison methods. The flexible version of the LNR model is the superior model for both methods.&lt;/p&gt;
+&lt;p&gt;This shows that even the selection of a model that relatively closely resembles the data generative process can be strongly prior dependent for the BF.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_speed[!startsWith(names(lm_speed),&amp;quot;agnostic&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                          BF logBF
+LNRace_fl_reg_priors 1.0e+00     0
+LNRace_fl            1.2e+06    14
+LNRace_reg_priors    1.6e+09    21
+FG                   2.0e+12    28
+LNRace               5.3e+16    39&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo_speed[!startsWith(names(lm_speed),&amp;quot;agnostic&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                     elpd_diff se_diff
+LNRace_fl_reg_priors   0.0       0.0  
+LNRace_fl             -0.1       0.1  
+LNRace_reg_priors    -25.9       5.8  
+LNRace               -25.9       5.7  
+FG                   -29.6       8.2  &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div id=&#34;visualization-of-elpd-fast-guess-vs-flexible-lnr&#34; class=&#34;section level4&#34;&gt;
+&lt;h4&gt;Visualization of elpd: Fast Guess vs Flexible LNR&lt;/h4&gt;
+&lt;p&gt;The plots show the difference in pointwise predictive accuracy of the Flexible LNR vs Fast Guess models. A more positive value indicates an advantage for the Flexible LNR.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;df_sim_speed_train &amp;lt;- ungroup(df_sim_speed_train) %&amp;gt;%
+  mutate(diff_elpd_LNRF_FG =  loo_speed$LNRace_fl$pointwise[,&amp;quot;elpd_loo&amp;quot;] -  loo_speed$FG $pointwise[,&amp;quot;elpd_loo&amp;quot;],
+         diff_elpd_LNRF_AL =  loo_speed$LNRace_fl$pointwise[,&amp;quot;elpd_loo&amp;quot;] -  loo_speed$FG$pointwise[,&amp;quot;elpd_loo&amp;quot;])
+
+
+ggplot(df_sim_speed_train,
+       aes(x = rt, y = diff_elpd_LNRF_FG)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp) +
+  geom_hline(yintercept = 0, linetype = &amp;quot;dashed&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-45-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;case-2.-accuracy-emphasis&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Case 2. Accuracy emphasis&lt;/h2&gt;
+&lt;p&gt;I fit again all the models for a subset of the data where accuracy is emphasized.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;set.seed(123)
+df_sim_acc &amp;lt;- df_sim |&amp;gt;
+  filter(emphasis ==&amp;quot;accuracy&amp;quot;) |&amp;gt;
+  group_by(difficulty) |&amp;gt;
+  mutate(train = rbinom(n(),1,.9))
+df_sim_acc_train &amp;lt;-  df_sim_acc |&amp;gt;
+  filter(train==1)
+dsim_acc_list &amp;lt;- list(N = nrow(df_sim_acc_train),
+                      rt =df_sim_acc_train$rt,
+                      response = df_sim_acc_train$response,
+                      K = 1,
+                      X = model.matrix(~ 0 + diff, df_sim_acc_train),
+                      only_prior = 0)
+
+fits_acc &amp;lt;- list()
+fits_acc$LNRace &amp;lt;- stan(&amp;quot;./LogNormalRace_badpriors.stan&amp;quot;,
+                        data = dsim_acc_list,
+                        warmup = 1000,
+                        iter = 10000)
+
+fits_acc$LNRace_reg_priors &amp;lt;- stan(&amp;quot;./LogNormalRace.stan&amp;quot;,
+                                   data = dsim_acc_list,
+                                   warmup = 1000,
+                                   iter = 10000)
+
+fits_acc$agnostic &amp;lt;- stan(&amp;quot;./Agnostic.stan&amp;quot;,
+                          data = dsim_acc_list,
+                          warmup = 1000,
+                          iter = 10000)
+
+fits_acc$agnosticLog &amp;lt;- stan(&amp;quot;./AgnosticLog.stan&amp;quot;,
+                             data = dsim_acc_list,
+                             warmup = 1000,
+                             iter = 10000)
+
+fits_acc$FG &amp;lt;- stan(&amp;quot;./FastGuess.stan&amp;quot;,
+                    data = dsim_acc_list,
+                    warmup = 1000,
+                    iter = 10000)
+
+fits_acc$LNRace_fl &amp;lt;- stan(&amp;quot;./LogNormalRace_fl_badpriors.stan&amp;quot;,
+                           data = dsim_acc_list,
+                           control = list(adapt_delta = .9,
+                                          max_treedepth = 12),
+                           warmup = 1000,
+                           iter = 10000)
+
+fits_acc$LNRace_fl_reg_priors &amp;lt;- stan(&amp;quot;./LogNormalRace_fl.stan&amp;quot;,
+                                      data = dsim_acc_list,
+                                      control = list(adapt_delta = .9,
+                                                     max_treedepth = 12),
+                                      warmup = 1000,
+                                      iter = 10000)&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;posterior-predictive-check&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Posterior predictive check&lt;/h3&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fit_plot &amp;lt;- fits_acc[!endsWith(names(fits_acc),&amp;quot;reg_priors&amp;quot;)]
+
+violins &amp;lt;- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_acc_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-1.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-2.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-3.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-4.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-47-5.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;model-comparison-3&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Model comparison&lt;/h3&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;lm_acc &amp;lt;- map(fits_acc, ~ bridge_sampler(.x))
+loo_acc&amp;lt;- map(fits_acc, ~ loo(.x))&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_acc) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                          BF logBF
+agnosticLog          1.0e+00     0
+FG                   8.2e+05    14
+LNRace_reg_priors    2.2e+06    15
+LNRace_fl_reg_priors 5.0e+06    15
+LNRace_fl            6.9e+12    30
+LNRace               1.4e+14    33
+agnostic             2.5e+73   169&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo_acc)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                     elpd_diff se_diff
+agnosticLog             0.0       0.0 
+FG                    -23.2       7.7 
+LNRace_fl_reg_priors  -25.0       7.2 
+LNRace_fl             -25.1       7.2 
+LNRace                -28.0       8.2 
+LNRace_reg_priors     -28.0       8.2 
+agnostic             -181.7      42.1 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;As before, the most flexible theory-agnostic model is selected by both methods. What if we only considering the cognitive models?&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm_acc[!startsWith(names(lm_acc),&amp;quot;agnostic&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                          BF logBF
+FG                   1.0e+00  0.00
+LNRace_reg_priors    2.7e+00  0.98
+LNRace_fl_reg_priors 6.1e+00  1.81
+LNRace_fl            8.4e+06 15.95
+LNRace               1.7e+08 18.96&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo_acc[!startsWith(names(lm_acc),&amp;quot;agnostic&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                     elpd_diff se_diff
+FG                    0.0       0.0   
+LNRace_fl_reg_priors -1.8      11.0   
+LNRace_fl            -1.9      11.0   
+LNRace               -4.8      11.5   
+LNRace_reg_priors    -4.8      11.5   &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Here, the Fast Guess model, which shouldn’t even be able to capture the long errors, is the one selected as the best model. The summary of the posterior of the model below shows that this is achieved because the location of the errors is just a bit faster than non-error, and has a much larger scale parameter:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;print_model(fits_acc$FG)   &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;# A tibble: 7 × 7
+  variable   mean `2.5%` `97.5%`  rhat ess_bulk ess_tail
+  &amp;lt;chr&amp;gt;     &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
+1 alpha     5.7    5.6     5.7     1.0   42748.   26049.
+2 beta[1]   0.051  0.029   0.074   1.0   45729.   27276.
+3 sigma     0.23   0.21    0.25    1.0   33397.   26122.
+4 gamma     5.6    5.6     5.7     1.0   49136.   29303.
+5 sigma2    0.37   0.32    0.42    1.0   34566.   25136.
+6 p_correct 0.99   0.99    1.0     1.0   36978.   23317.
+7 p_task    0.75   0.70    0.79    1.0   39981.   26841.&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;case-3.-considering-both-speed-and-accuracy-emphasis&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Case 3. Considering both speed and accuracy emphasis&lt;/h2&gt;
+&lt;p&gt;Now we consider the data with both speed and accuracy emphasis and all the models are fit again.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;set.seed(123)
+
+df_sim &amp;lt;- df_sim |&amp;gt;
+  group_by(difficulty) |&amp;gt;
+  mutate(train = rbinom(n(),1,.9))
+df_sim_train &amp;lt;-  df_sim |&amp;gt;
+  filter(train==1)
+
+dsim_list &amp;lt;- list(N = nrow(df_sim_train),
+                  rt =df_sim_train$rt,
+                  response = df_sim_train$response,
+                  K = 2,
+                  X = model.matrix(~ 0 + diff + emph , df_sim_train),
+                  only_prior = 0)
+
+fits &amp;lt;- list()
+fits$LNRace &amp;lt;- stan(&amp;quot;./LogNormalRace_badpriors.stan&amp;quot;,
+                    data = dsim_list,
+                    warmup = 1000,
+                    iter = 10000)
+
+fits$LNRace_reg_priors &amp;lt;- stan(&amp;quot;./LogNormalRace.stan&amp;quot;,
+                               data = dsim_list,
+                               warmup = 1000,
+                               iter = 10000)
+ 
+fits$agnostic &amp;lt;- stan(&amp;quot;./Agnostic.stan&amp;quot;,
+                      data = dsim_list,
+                      warmup = 1000,
+                      iter = 10000)
+
+fits$agnosticLog &amp;lt;- stan(&amp;quot;./AgnosticLog.stan&amp;quot;,
+                         data = dsim_list,
+                         warmup = 1000,
+                         iter = 10000)
+
+fits$FG &amp;lt;- stan(&amp;quot;./FastGuess.stan&amp;quot;,
+                data = dsim_list,
+                warmup = 1000,
+                iter = 10000)
+
+fits$LNRace_fl &amp;lt;- stan(&amp;quot;./LogNormalRace_fl_badpriors.stan&amp;quot;,
+                       data = dsim_list,
+                       warmup = 1000,
+                       iter = 10000,
+                       control = list(adapt_delta = .9,
+                                      max_treedepth = 12))
+fits$LNRace_fl_reg_priors &amp;lt;- stan(&amp;quot;./LogNormalRace_fl.stan&amp;quot;,
+                                  data = dsim_list,
+                                  warmup = 1000,
+                                  iter = 10000,
+                                  control = list(adapt_delta = .9,
+                                                 max_treedepth = 12))&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;posterior-predictive-check-1&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Posterior predictive check&lt;/h3&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;fit_plot &amp;lt;- fits[!endsWith(names(fits),&amp;quot;reg_priors&amp;quot;)]
+violins &amp;lt;- map2(fit_plot, names(fit_plot), ~ violin_plot(df_sim_train, .x)  + ggtitle(.y) )
+
+walk(violins, ~ plot(.x))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-1.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-2.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-3.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-4.png&#34; width=&#34;672&#34; /&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-55-5.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;div id=&#34;model-comparison-4&#34; class=&#34;section level3&#34;&gt;
+&lt;h3&gt;Model comparison&lt;/h3&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;lm &amp;lt;- map(fits, ~ bridge_sampler(.x))
+loo&amp;lt;- map(fits, ~ loo(.x))&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The result of the comparison of the original models (no flexible LogNormal Race model) is similar to the speed emphasis comparison. A theory-agnostic model makes the better predictions.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm[!startsWith(names(lm),&amp;quot;LNRace_fl&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                        BF logBF
+agnosticLog        1.0e+00     0
+LNRace_reg_priors  1.1e+23    53
+LNRace             2.6e+34    79
+FG                 2.0e+39    91
+agnostic          1.3e+166   382&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo[!startsWith(names(loo),&amp;quot;LNRace_fl&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                  elpd_diff se_diff
+agnosticLog          0.0       0.0 
+LNRace_reg_priors  -73.2       8.4 
+LNRace             -73.3       8.4 
+FG                 -94.0      14.4 
+agnostic          -393.4      67.1 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The model closer to the true generative process makes the better predictions according to the BF.&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm) &lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                           BF logBF
+LNRace_fl_reg_priors  1.0e+00     0
+LNRace_fl             8.0e+09    23
+agnosticLog           1.8e+14    33
+LNRace_reg_priors     1.9e+37    86
+LNRace                4.7e+48   112
+FG                    3.7e+53   123
+agnostic             2.3e+180   415&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;loo_compare(loo)&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                     elpd_diff se_diff
+LNRace_fl               0.0       0.0 
+LNRace_fl_reg_priors   -0.1       0.3 
+agnosticLog           -19.7      13.5 
+LNRace_reg_priors     -92.9      14.9 
+LNRace                -93.0      14.9 
+FG                   -113.7      18.8 
+agnostic             -413.1      63.6 &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Interestingly, now the prior dependency is less strong, even without regularing priors the model with a generative process closer to the truth is the best model:&lt;/p&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;bf_compare(lm[!endsWith(names(lm),&amp;quot;reg_priors&amp;quot;)])&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;                  BF logBF
+LNRace_fl    1.0e+00     0
+agnosticLog  2.3e+04    10
+LNRace       5.9e+38    89
+FG           4.6e+43   101
+agnostic    2.9e+170   392&lt;/code&gt;&lt;/pre&gt;
+&lt;div id=&#34;visualization-of-elpd&#34; class=&#34;section level4&#34;&gt;
+&lt;h4&gt;Visualization of elpd&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;Flexible LNRace vs FG&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;df_sim_train &amp;lt;- ungroup(df_sim_train) %&amp;gt;%
+  mutate(diff_elpd_LNRF_FG =  loo$LNRace_fl$pointwise[,&amp;quot;elpd_loo&amp;quot;] -  loo$FG $pointwise[,&amp;quot;elpd_loo&amp;quot;])
+
+
+ggplot(df_sim_train,
+       aes(x = rt, y = diff_elpd_LNRF_FG)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp + emphasis) +
+  geom_hline(yintercept = 0, linetype = &amp;quot;dashed&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-62-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Flexible LNRace vs Theory-agnostic Log&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;df_sim_train &amp;lt;- ungroup(df_sim_train) %&amp;gt;%
+  mutate(diff_elpd_LNRF_AL =  loo$LNRace_fl$pointwise[,&amp;quot;elpd_loo&amp;quot;] -  loo$agnosticLog $pointwise[,&amp;quot;elpd_loo&amp;quot;])
+
+
+ggplot(df_sim_train,
+       aes(x = rt, y = diff_elpd_LNRF_AL)) +
+  geom_jitter(alpha = .5, width = 0, height = .1 ) +
+  facet_grid(difficulty ~ resp + emphasis) +
+  geom_hline(yintercept = 0, linetype = &amp;quot;dashed&amp;quot;)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;img src=&#34;/case-study/mispecification/mispecified//case-study/mispecification/mispecified_files/figure-html/unnamed-chunk-63-1.png&#34; width=&#34;672&#34; /&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;conclusion&#34; class=&#34;section level2&#34;&gt;
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;In the context of both Bayes Factor analysis and Cross-Validation using the log-score rule, we notice the following:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;It is not always the case that a model which aligns more closely with the underlying truth will exhibit superior predictive capabilities. This shows how the best model in terms of predictions is not necessarily the one that is most faithful to the actual generative process.&lt;/li&gt;
+&lt;li&gt;Models that are designed to be flexible and not bound to any specific theoretical framework may deliver the most accurate predictions, despite potentially lacking resemblance to the actual process that generates the data.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Specific to Bayes Factor:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;When comparing cognitive models that have significantly different underlying generative processes but are capable of closely mimicking the observed data (albeit for varied reasons), the outcome of such comparisons can be highly dependent on the priors. This suggests a strong influence of the initial assumptions on the comparative analysis of models.&lt;/li&gt;
+&lt;li&gt;The process of selecting a model that appears to closely match the process generating the observed data can also be heavily influenced by the choice of priors, although this is not always the case.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Specific to Cross-Validation:&lt;/p&gt;
+&lt;p&gt;Cross-Validation remains inconclusive unless there is a demonstrable improvement in prediction quality. This stance is maintained irrespective of the proximity of a model to the true generative process, showing how CV prioritizes predictive performance over theoretical fidelity to the generative mechanism.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;p&gt;I used R &lt;span class=&#34;citation&#34;&gt;(Version 4.5.0; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-base&#34;&gt;R Core Team 2024&lt;/a&gt;)&lt;/span&gt; and the R-packages &lt;em&gt;bayesplot&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.12.0; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-bayesplot&#34;&gt;Gabry et al. 2019&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;bridgesampling&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.1.5; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-bridgesampling&#34;&gt;Gronau, Singmann, and Wagenmakers 2020&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;ggplot2&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 3.5.2; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-ggplot2&#34;&gt;Wickham 2016&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;latex2exp&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 0.9.6; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-latex2exp&#34;&gt;Meschiari 2022&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;loo&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 2.8.0; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-loo_a&#34;&gt;Vehtari, Gelman, and Gabry 2017&lt;/a&gt;; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-loo_b&#34;&gt;Yao et al. 2017&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;posterior&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 1.6.1; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-posterior&#34;&gt;Vehtari et al. 2021&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;rstan&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 2.36.0.9000; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-rstan&#34;&gt;Stan Development Team 2023a&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;rtdists&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 0.11.5; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-rtdists&#34;&gt;Singmann et al. 2022&lt;/a&gt;)&lt;/span&gt;, &lt;em&gt;StanHeaders&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 2.36.0.9000; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-StanHeaders&#34;&gt;Stan Development Team 2020&lt;/a&gt;)&lt;/span&gt; and &lt;em&gt;tidytable&lt;/em&gt; &lt;span class=&#34;citation&#34;&gt;(Version 0.11.2; &lt;a href=&#34;/case-study/mispecification/mispecified/#ref-R-tidytable&#34;&gt;Fairbanks 2023&lt;/a&gt;)&lt;/span&gt; for all our analyses.&lt;/p&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;div id=&#34;references&#34; class=&#34;section level1 unnumbered&#34;&gt;
+&lt;h1&gt;References&lt;/h1&gt;
+&lt;div id=&#34;refs&#34; class=&#34;references csl-bib-body hanging-indent&#34; entry-spacing=&#34;0&#34;&gt;
+&lt;div id=&#34;ref-brownSimplestCompleteModel2008&#34; class=&#34;csl-entry&#34;&gt;
+Brown, Scott D., and Andrew Heathcote. 2008. &lt;span&gt;“The Simplest Complete Model of Choice Response Time: &lt;span&gt;Linear&lt;/span&gt; Ballistic Accumulation.”&lt;/span&gt; &lt;em&gt;Cognitive Psychology&lt;/em&gt; 57 (3): 153–78. &lt;a href=&#34;https://doi.org/10.1016/j.cogpsych.2007.12.002&#34;&gt;https://doi.org/10.1016/j.cogpsych.2007.12.002&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-tidytable&#34; class=&#34;csl-entry&#34;&gt;
+Fairbanks, Mark. 2023. &lt;em&gt;Tidytable: Tidy Interface to ’Data.table’&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=tidytable&#34;&gt;https://CRAN.R-project.org/package=tidytable&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-bayesplot&#34; class=&#34;csl-entry&#34;&gt;
+Gabry, Jonah, Daniel Simpson, Aki Vehtari, Michael Betancourt, and Andrew Gelman. 2019. &lt;span&gt;“Visualization in Bayesian Workflow.”&lt;/span&gt; &lt;em&gt;J. R. Stat. Soc. A&lt;/em&gt; 182: 389–402. &lt;a href=&#34;https://doi.org/10.1111/rssa.12378&#34;&gt;https://doi.org/10.1111/rssa.12378&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-bridgesampling&#34; class=&#34;csl-entry&#34;&gt;
+Gronau, Quentin F., Henrik Singmann, and Eric-Jan Wagenmakers. 2020. &lt;span&gt;“&lt;span class=&#34;nocase&#34;&gt;bridgesampling&lt;/span&gt;: An &lt;span&gt;R&lt;/span&gt; Package for Estimating Normalizing Constants.”&lt;/span&gt; &lt;em&gt;Journal of Statistical Software&lt;/em&gt; 92 (10): 1–29. &lt;a href=&#34;https://doi.org/10.18637/jss.v092.i10&#34;&gt;https://doi.org/10.18637/jss.v092.i10&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-HeathcoteLove2012&#34; class=&#34;csl-entry&#34;&gt;
+Heathcote, Andrew, and Jonathon Love. 2012. &lt;span&gt;“Linear Deterministic Accumulator Models of Simple Choice.”&lt;/span&gt; &lt;em&gt;Frontiers in Psychology&lt;/em&gt; 3: 292. &lt;a href=&#34;https://doi.org/10.3389/fpsyg.2012.00292&#34;&gt;https://doi.org/10.3389/fpsyg.2012.00292&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-latex2exp&#34; class=&#34;csl-entry&#34;&gt;
+Meschiari, Stefano. 2022. &lt;em&gt;Latex2exp: Use LaTeX Expressions in Plots&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=latex2exp&#34;&gt;https://CRAN.R-project.org/package=latex2exp&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Nicenboim2024Bayesian&#34; class=&#34;csl-entry&#34;&gt;
+Nicenboim, Bruno, D. Schad, and S. Vasishth. 2024. &lt;span&gt;“An Introduction to Bayesian Data Analysis for Cognitive Science.”&lt;/span&gt;
+&lt;/div&gt;
+&lt;div id=&#34;ref-Ollman1966&#34; class=&#34;csl-entry&#34;&gt;
+Ollman, Robert. 1966. &lt;span&gt;“Fast Guesses in Choice Reaction Time.”&lt;/span&gt; &lt;em&gt;Psychonomic Science&lt;/em&gt; 6 (4): 155–56. https://doi.org/&lt;a href=&#34;https://doi.org/10.3758/BF03328004&#34;&gt;https://doi.org/10.3758/BF03328004&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-base&#34; class=&#34;csl-entry&#34;&gt;
+R Core Team. 2024. &lt;em&gt;R: A Language and Environment for Statistical Computing&lt;/em&gt;. Vienna, Austria: R Foundation for Statistical Computing. &lt;a href=&#34;https://www.R-project.org/&#34;&gt;https://www.R-project.org/&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-RouderEtAl2015&#34; class=&#34;csl-entry&#34;&gt;
+Rouder, Jeffrey N., Jordan M. Province, Richard D. Morey, Pablo Gomez, and Andrew Heathcote. 2015. &lt;span&gt;“The Lognormal Race: &lt;span&gt;A&lt;/span&gt; Cognitive-Process Model of Choice and Latency with Desirable Psychometric Properties.”&lt;/span&gt; &lt;em&gt;Psychometrika&lt;/em&gt; 80 (2): 491–513. &lt;a href=&#34;https://doi.org/10.1007/s11336-013-9396-3&#34;&gt;https://doi.org/10.1007/s11336-013-9396-3&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-rtdists&#34; class=&#34;csl-entry&#34;&gt;
+Singmann, Henrik, Scott Brown, Matthew Gretton, and Andrew Heathcote. 2022. &lt;em&gt;Rtdists: Response Time Distributions&lt;/em&gt;. &lt;a href=&#34;https://CRAN.R-project.org/package=rtdists&#34;&gt;https://CRAN.R-project.org/package=rtdists&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-StanHeaders&#34; class=&#34;csl-entry&#34;&gt;
+Stan Development Team. 2020. &lt;span&gt;“&lt;span&gt;StanHeaders&lt;/span&gt;: Headers for the &lt;span&gt;R&lt;/span&gt; Interface to &lt;span&gt;Stan&lt;/span&gt;.”&lt;/span&gt; &lt;a href=&#34;https://mc-stan.org/&#34;&gt;https://mc-stan.org/&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-rstan&#34; class=&#34;csl-entry&#34;&gt;
+———. 2023a. &lt;span&gt;“&lt;span&gt;RStan&lt;/span&gt;: The &lt;span&gt;R&lt;/span&gt; Interface to &lt;span&gt;Stan&lt;/span&gt;.”&lt;/span&gt; &lt;a href=&#34;https://mc-stan.org/&#34;&gt;https://mc-stan.org/&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Stan2023&#34; class=&#34;csl-entry&#34;&gt;
+———. 2023b. &lt;span&gt;“Stan Modeling Language Users Guide and Reference Manual, Version 2.32.”&lt;/span&gt; &lt;a href=&#34;https://mc-stan.org/docs/2_32/reference-manual/index.html;%20https://mc-stan.org/docs/2_32/stan-users-guide/index.html&#34;&gt;https://mc-stan.org/docs/2_32/reference-manual/index.html; https://mc-stan.org/docs/2_32/stan-users-guide/index.html&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-Terry2015&#34; class=&#34;csl-entry&#34;&gt;
+Terry, Andrew, A. A. J. Marley, Avinash Barnwal, E.-J. Wagenmakers, Andrew Heathcote, and Scott D. Brown. 2015. &lt;span&gt;“Generalising the Drift Rate Distribution for Linear Ballistic Accumulators.”&lt;/span&gt; &lt;em&gt;Journal of Mathematical Psychology&lt;/em&gt; 68-69 (October): 49–58. &lt;a href=&#34;https://doi.org/10.1016/j.jmp.2015.09.002&#34;&gt;https://doi.org/10.1016/j.jmp.2015.09.002&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-loo_a&#34; class=&#34;csl-entry&#34;&gt;
+Vehtari, Aki, Andrew Gelman, and Jonah Gabry. 2017. &lt;span&gt;“Practical Bayesian Model Evaluation Using Leave-One-Out Cross-Validation and WAIC.”&lt;/span&gt; &lt;em&gt;Statistics and Computing&lt;/em&gt; 27: 1413–32. &lt;a href=&#34;https://doi.org/10.1007/s11222-016-9696-4&#34;&gt;https://doi.org/10.1007/s11222-016-9696-4&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-posterior&#34; class=&#34;csl-entry&#34;&gt;
+Vehtari, Aki, Andrew Gelman, Daniel Simpson, Bob Carpenter, and Paul-Christian Bürkner. 2021. &lt;span&gt;“Rank-Normalization, Folding, and Localization: An Improved Rhat for Assessing Convergence of MCMC (with Discussion).”&lt;/span&gt; &lt;em&gt;Bayesian Analysis&lt;/em&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-ggplot2&#34; class=&#34;csl-entry&#34;&gt;
+Wickham, Hadley. 2016. &lt;em&gt;Ggplot2: Elegant Graphics for Data Analysis&lt;/em&gt;. Springer-Verlag New York. &lt;a href=&#34;https://ggplot2.tidyverse.org&#34;&gt;https://ggplot2.tidyverse.org&lt;/a&gt;.
+&lt;/div&gt;
+&lt;div id=&#34;ref-R-loo_b&#34; class=&#34;csl-entry&#34;&gt;
+Yao, Yuling, Aki Vehtari, Daniel Simpson, and Andrew Gelman. 2017. &lt;span&gt;“Using Stacking to Average Bayesian Predictive Distributions.”&lt;/span&gt; &lt;em&gt;Bayesian Analysis&lt;/em&gt;. &lt;a href=&#34;https://doi.org/10.1214/17-BA1091&#34;&gt;https://doi.org/10.1214/17-BA1091&lt;/a&gt;.
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+</description>
+    </item>
     
     <item>
       <title>Case study: Mixture modeling of nasalization in Basque</title>
@@ -930,6 +2294,1812 @@ Wickham, Hadley, Winston Chang, Lionel Henry, Thomas Lin Pedersen, Kohske Takaha
 &lt;/ol&gt;
 &lt;/div&gt;
 </description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>/case-study/mispecification/test_files/libs/revealjs/plugin/notes/speaker-view/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/case-study/mispecification/test_files/libs/revealjs/plugin/notes/speaker-view/</guid><description>
+&lt;html lang=&#34;en&#34;&gt;
+	&lt;head&gt;
+		&lt;meta charset=&#34;utf-8&#34;&gt;
+
+		&lt;title&gt;reveal.js - Speaker View&lt;/title&gt;
+
+		&lt;style&gt;
+			body {
+				font-family: Helvetica;
+				font-size: 18px;
+			}
+
+			#current-slide,
+			#upcoming-slide,
+			#speaker-controls {
+				padding: 6px;
+				box-sizing: border-box;
+				-moz-box-sizing: border-box;
+			}
+
+			#current-slide iframe,
+			#upcoming-slide iframe {
+				width: 100%;
+				height: 100%;
+				border: 1px solid #ddd;
+			}
+
+			#current-slide .label,
+			#upcoming-slide .label {
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				z-index: 2;
+			}
+
+			#connection-status {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				z-index: 20;
+				padding: 30% 20% 20% 20%;
+				font-size: 18px;
+				color: #222;
+				background: #fff;
+				text-align: center;
+				box-sizing: border-box;
+				line-height: 1.4;
+			}
+
+			.overlay-element {
+				height: 34px;
+				line-height: 34px;
+				padding: 0 10px;
+				text-shadow: none;
+				background: rgba( 220, 220, 220, 0.8 );
+				color: #222;
+				font-size: 14px;
+			}
+
+			.overlay-element.interactive:hover {
+				background: rgba( 220, 220, 220, 1 );
+			}
+
+			#current-slide {
+				position: absolute;
+				width: 60%;
+				height: 100%;
+				top: 0;
+				left: 0;
+				padding-right: 0;
+			}
+
+			#upcoming-slide {
+				position: absolute;
+				width: 40%;
+				height: 40%;
+				right: 0;
+				top: 0;
+			}
+
+			/* Speaker controls */
+			#speaker-controls {
+				position: absolute;
+				top: 40%;
+				right: 0;
+				width: 40%;
+				height: 60%;
+				overflow: auto;
+				font-size: 18px;
+			}
+
+				.speaker-controls-time.hidden,
+				.speaker-controls-notes.hidden {
+					display: none;
+				}
+
+				.speaker-controls-time .label,
+				.speaker-controls-pace .label,
+				.speaker-controls-notes .label {
+					text-transform: uppercase;
+					font-weight: normal;
+					font-size: 0.66em;
+					color: #666;
+					margin: 0;
+				}
+
+				.speaker-controls-time, .speaker-controls-pace {
+					border-bottom: 1px solid rgba( 200, 200, 200, 0.5 );
+					margin-bottom: 10px;
+					padding: 10px 16px;
+					padding-bottom: 20px;
+					cursor: pointer;
+				}
+
+				.speaker-controls-time .reset-button {
+					opacity: 0;
+					float: right;
+					color: #666;
+					text-decoration: none;
+				}
+				.speaker-controls-time:hover .reset-button {
+					opacity: 1;
+				}
+
+				.speaker-controls-time .timer,
+				.speaker-controls-time .clock {
+					width: 50%;
+				}
+
+				.speaker-controls-time .timer,
+				.speaker-controls-time .clock,
+				.speaker-controls-time .pacing .hours-value,
+				.speaker-controls-time .pacing .minutes-value,
+				.speaker-controls-time .pacing .seconds-value {
+					font-size: 1.9em;
+				}
+
+				.speaker-controls-time .timer {
+					float: left;
+				}
+
+				.speaker-controls-time .clock {
+					float: right;
+					text-align: right;
+				}
+
+				.speaker-controls-time span.mute {
+					opacity: 0.3;
+				}
+
+				.speaker-controls-time .pacing-title {
+					margin-top: 5px;
+				}
+
+				.speaker-controls-time .pacing.ahead {
+					color: blue;
+				}
+
+				.speaker-controls-time .pacing.on-track {
+					color: green;
+				}
+
+				.speaker-controls-time .pacing.behind {
+					color: red;
+				}
+
+				.speaker-controls-notes {
+					padding: 10px 16px;
+				}
+
+				.speaker-controls-notes .value {
+					margin-top: 5px;
+					line-height: 1.4;
+					font-size: 1.2em;
+				}
+
+			/* Layout selector */
+			#speaker-layout {
+				position: absolute;
+				top: 10px;
+				right: 10px;
+				color: #222;
+				z-index: 10;
+			}
+				#speaker-layout select {
+					position: absolute;
+					width: 100%;
+					height: 100%;
+					top: 0;
+					left: 0;
+					border: 0;
+					box-shadow: 0;
+					cursor: pointer;
+					opacity: 0;
+
+					font-size: 1em;
+					background-color: transparent;
+
+					-moz-appearance: none;
+					-webkit-appearance: none;
+					-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+				}
+
+				#speaker-layout select:focus {
+					outline: none;
+					box-shadow: none;
+				}
+
+			.clear {
+				clear: both;
+			}
+
+			/* Speaker layout: Wide */
+			body[data-speaker-layout=&#34;wide&#34;] #current-slide,
+			body[data-speaker-layout=&#34;wide&#34;] #upcoming-slide {
+				width: 50%;
+				height: 45%;
+				padding: 6px;
+			}
+
+			body[data-speaker-layout=&#34;wide&#34;] #current-slide {
+				top: 0;
+				left: 0;
+			}
+
+			body[data-speaker-layout=&#34;wide&#34;] #upcoming-slide {
+				top: 0;
+				left: 50%;
+			}
+
+			body[data-speaker-layout=&#34;wide&#34;] #speaker-controls {
+				top: 45%;
+				left: 0;
+				width: 100%;
+				height: 50%;
+				font-size: 1.25em;
+			}
+
+			/* Speaker layout: Tall */
+			body[data-speaker-layout=&#34;tall&#34;] #current-slide,
+			body[data-speaker-layout=&#34;tall&#34;] #upcoming-slide {
+				width: 45%;
+				height: 50%;
+				padding: 6px;
+			}
+
+			body[data-speaker-layout=&#34;tall&#34;] #current-slide {
+				top: 0;
+				left: 0;
+			}
+
+			body[data-speaker-layout=&#34;tall&#34;] #upcoming-slide {
+				top: 50%;
+				left: 0;
+			}
+
+			body[data-speaker-layout=&#34;tall&#34;] #speaker-controls {
+				padding-top: 40px;
+				top: 0;
+				left: 45%;
+				width: 55%;
+				height: 100%;
+				font-size: 1.25em;
+			}
+
+			/* Speaker layout: Notes only */
+			body[data-speaker-layout=&#34;notes-only&#34;] #current-slide,
+			body[data-speaker-layout=&#34;notes-only&#34;] #upcoming-slide {
+				display: none;
+			}
+
+			body[data-speaker-layout=&#34;notes-only&#34;] #speaker-controls {
+				padding-top: 40px;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				font-size: 1.25em;
+			}
+
+			@media screen and (max-width: 1080px) {
+				body[data-speaker-layout=&#34;default&#34;] #speaker-controls {
+					font-size: 16px;
+				}
+			}
+
+			@media screen and (max-width: 900px) {
+				body[data-speaker-layout=&#34;default&#34;] #speaker-controls {
+					font-size: 14px;
+				}
+			}
+
+			@media screen and (max-width: 800px) {
+				body[data-speaker-layout=&#34;default&#34;] #speaker-controls {
+					font-size: 12px;
+				}
+			}
+
+		&lt;/style&gt;
+	&lt;/head&gt;
+
+	&lt;body&gt;
+
+		&lt;div id=&#34;connection-status&#34;&gt;Loading speaker view...&lt;/div&gt;
+
+		&lt;div id=&#34;current-slide&#34;&gt;&lt;/div&gt;
+		&lt;div id=&#34;upcoming-slide&#34;&gt;&lt;span class=&#34;overlay-element label&#34;&gt;Upcoming&lt;/span&gt;&lt;/div&gt;
+		&lt;div id=&#34;speaker-controls&#34;&gt;
+			&lt;div class=&#34;speaker-controls-time&#34;&gt;
+				&lt;h4 class=&#34;label&#34;&gt;Time &lt;span class=&#34;reset-button&#34;&gt;Click to Reset&lt;/span&gt;&lt;/h4&gt;
+				&lt;div class=&#34;clock&#34;&gt;
+					&lt;span class=&#34;clock-value&#34;&gt;0:00 AM&lt;/span&gt;
+				&lt;/div&gt;
+				&lt;div class=&#34;timer&#34;&gt;
+					&lt;span class=&#34;hours-value&#34;&gt;00&lt;/span&gt;&lt;span class=&#34;minutes-value&#34;&gt;:00&lt;/span&gt;&lt;span class=&#34;seconds-value&#34;&gt;:00&lt;/span&gt;
+				&lt;/div&gt;
+				&lt;div class=&#34;clear&#34;&gt;&lt;/div&gt;
+
+				&lt;h4 class=&#34;label pacing-title&#34; style=&#34;display: none&#34;&gt;Pacing – Time to finish current slide&lt;/h4&gt;
+				&lt;div class=&#34;pacing&#34; style=&#34;display: none&#34;&gt;
+					&lt;span class=&#34;hours-value&#34;&gt;00&lt;/span&gt;&lt;span class=&#34;minutes-value&#34;&gt;:00&lt;/span&gt;&lt;span class=&#34;seconds-value&#34;&gt;:00&lt;/span&gt;
+				&lt;/div&gt;
+			&lt;/div&gt;
+
+			&lt;div class=&#34;speaker-controls-notes hidden&#34;&gt;
+				&lt;h4 class=&#34;label&#34;&gt;Notes&lt;/h4&gt;
+				&lt;div class=&#34;value&#34;&gt;&lt;/div&gt;
+			&lt;/div&gt;
+		&lt;/div&gt;
+		&lt;div id=&#34;speaker-layout&#34; class=&#34;overlay-element interactive&#34;&gt;
+			&lt;span class=&#34;speaker-layout-label&#34;&gt;&lt;/span&gt;
+			&lt;select class=&#34;speaker-layout-dropdown&#34;&gt;&lt;/select&gt;
+		&lt;/div&gt;
+
+		&lt;script&gt;
+
+			(function() {
+
+				var notes,
+					notesValue,
+					currentState,
+					currentSlide,
+					upcomingSlide,
+					layoutLabel,
+					layoutDropdown,
+					pendingCalls = {},
+					lastRevealApiCallId = 0,
+					connected = false
+
+				var connectionStatus = document.querySelector( &#39;#connection-status&#39; );
+
+				var SPEAKER_LAYOUTS = {
+					&#39;default&#39;: &#39;Default&#39;,
+					&#39;wide&#39;: &#39;Wide&#39;,
+					&#39;tall&#39;: &#39;Tall&#39;,
+					&#39;notes-only&#39;: &#39;Notes only&#39;
+				};
+
+				setupLayout();
+
+				let openerOrigin;
+
+				try {
+					openerOrigin = window.opener.location.origin;
+				}
+				catch ( error ) { console.warn( error ) }
+
+				// In order to prevent XSS, the speaker view will only run if its
+				// opener has the same origin as itself
+				if( window.location.origin !== openerOrigin ) {
+					connectionStatus.innerHTML = &#39;Cross origin error.&lt;br&gt;The speaker window can only be opened from the same origin.&#39;;
+					return;
+				}
+
+				var connectionTimeout = setTimeout( function() {
+					connectionStatus.innerHTML = &#39;Error connecting to main window.&lt;br&gt;Please try closing and reopening the speaker view.&#39;;
+				}, 5000 );
+
+				window.addEventListener( &#39;message&#39;, function( event ) {
+
+					// Validate the origin of all messages to avoid parsing messages
+					// that aren&#39;t meant for us. Ignore when running off file:// so
+					// that the speaker view continues to work without a web server.
+					if( window.location.origin !== event.origin &amp;&amp; window.location.origin !== &#39;file://&#39; ) {
+						return
+					}
+
+					clearTimeout( connectionTimeout );
+					connectionStatus.style.display = &#39;none&#39;;
+
+					var data = JSON.parse( event.data );
+
+					// The overview mode is only useful to the reveal.js instance
+					// where navigation occurs so we don&#39;t sync it
+					if( data.state ) delete data.state.overview;
+
+					// Messages sent by the notes plugin inside of the main window
+					if( data &amp;&amp; data.namespace === &#39;reveal-notes&#39; ) {
+						if( data.type === &#39;connect&#39; ) {
+							handleConnectMessage( data );
+						}
+						else if( data.type === &#39;state&#39; ) {
+							handleStateMessage( data );
+						}
+						else if( data.type === &#39;return&#39; ) {
+							pendingCalls[data.callId](data.result);
+							delete pendingCalls[data.callId];
+						}
+					}
+					// Messages sent by the reveal.js inside of the current slide preview
+					else if( data &amp;&amp; data.namespace === &#39;reveal&#39; ) {
+						if( /ready/.test( data.eventName ) ) {
+							// Send a message back to notify that the handshake is complete
+							window.opener.postMessage( JSON.stringify({ namespace: &#39;reveal-notes&#39;, type: &#39;connected&#39;} ), &#39;*&#39; );
+						}
+						else if( /slidechanged|fragmentshown|fragmenthidden|paused|resumed/.test( data.eventName ) &amp;&amp; currentState !== JSON.stringify( data.state ) ) {
+
+							dispatchStateToMainWindow( data.state );
+
+						}
+					}
+
+				} );
+
+				/**
+				 * Updates the presentation in the main window to match the state
+				 * of the presentation in the notes window.
+				 */
+				const dispatchStateToMainWindow = debounce(( state ) =&gt; {
+					window.opener.postMessage( JSON.stringify({ method: &#39;setState&#39;, args: [ state ]} ), &#39;*&#39; );
+				}, 500);
+
+				/**
+				 * Asynchronously calls the Reveal.js API of the main frame.
+				 */
+				function callRevealApi( methodName, methodArguments, callback ) {
+
+					var callId = ++lastRevealApiCallId;
+					pendingCalls[callId] = callback;
+					window.opener.postMessage( JSON.stringify( {
+						namespace: &#39;reveal-notes&#39;,
+						type: &#39;call&#39;,
+						callId: callId,
+						methodName: methodName,
+						arguments: methodArguments
+					} ), &#39;*&#39; );
+
+				}
+
+				/**
+				 * Called when the main window is trying to establish a
+				 * connection.
+				 */
+				function handleConnectMessage( data ) {
+
+					if( connected === false ) {
+						connected = true;
+
+						setupIframes( data );
+						setupKeyboard();
+						setupNotes();
+						setupTimer();
+						setupHeartbeat();
+					}
+
+				}
+
+				/**
+				 * Called when the main window sends an updated state.
+				 */
+				function handleStateMessage( data ) {
+
+					// Store the most recently set state to avoid circular loops
+					// applying the same state
+					currentState = JSON.stringify( data.state );
+
+					// No need for updating the notes in case of fragment changes
+					if ( data.notes ) {
+						notes.classList.remove( &#39;hidden&#39; );
+						notesValue.style.whiteSpace = data.whitespace;
+						if( data.markdown ) {
+							notesValue.innerHTML = marked( data.notes );
+						}
+						else {
+							notesValue.innerHTML = data.notes;
+						}
+					}
+					else {
+						notes.classList.add( &#39;hidden&#39; );
+					}
+
+					// Update the note slides
+					currentSlide.contentWindow.postMessage( JSON.stringify({ method: &#39;setState&#39;, args: [ data.state ] }), &#39;*&#39; );
+					upcomingSlide.contentWindow.postMessage( JSON.stringify({ method: &#39;setState&#39;, args: [ data.state ] }), &#39;*&#39; );
+					upcomingSlide.contentWindow.postMessage( JSON.stringify({ method: &#39;next&#39; }), &#39;*&#39; );
+
+				}
+
+				// Limit to max one state update per X ms
+				handleStateMessage = debounce( handleStateMessage, 200 );
+
+				/**
+				 * Forward keyboard events to the current slide window.
+				 * This enables keyboard events to work even if focus
+				 * isn&#39;t set on the current slide iframe.
+				 *
+				 * Block F5 default handling, it reloads and disconnects
+				 * the speaker notes window.
+				 */
+				function setupKeyboard() {
+
+					document.addEventListener( &#39;keydown&#39;, function( event ) {
+						if( event.keyCode === 116 || ( event.metaKey &amp;&amp; event.keyCode === 82 ) ) {
+							event.preventDefault();
+							return false;
+						}
+						currentSlide.contentWindow.postMessage( JSON.stringify({ method: &#39;triggerKey&#39;, args: [ event.keyCode ] }), &#39;*&#39; );
+					} );
+
+				}
+
+				/**
+				 * Creates the preview iframes.
+				 */
+				function setupIframes( data ) {
+
+					var params = [
+						&#39;receiver&#39;,
+						&#39;progress=false&#39;,
+						&#39;history=false&#39;,
+						&#39;transition=none&#39;,
+						&#39;autoSlide=0&#39;,
+						&#39;backgroundTransition=none&#39;
+					].join( &#39;&amp;&#39; );
+
+					var urlSeparator = /\?/.test(data.url) ? &#39;&amp;&#39; : &#39;?&#39;;
+					var hash = &#39;#/&#39; + data.state.indexh + &#39;/&#39; + data.state.indexv;
+					var currentURL = data.url + urlSeparator + params + &#39;&amp;scrollActivationWidth=false&amp;postMessageEvents=true&#39; + hash;
+					var upcomingURL = data.url + urlSeparator + params + &#39;&amp;scrollActivationWidth=false&amp;controls=false&#39; + hash;
+
+					currentSlide = document.createElement( &#39;iframe&#39; );
+					currentSlide.setAttribute( &#39;width&#39;, 1280 );
+					currentSlide.setAttribute( &#39;height&#39;, 1024 );
+					currentSlide.setAttribute( &#39;src&#39;, currentURL );
+					document.querySelector( &#39;#current-slide&#39; ).appendChild( currentSlide );
+
+					upcomingSlide = document.createElement( &#39;iframe&#39; );
+					upcomingSlide.setAttribute( &#39;width&#39;, 640 );
+					upcomingSlide.setAttribute( &#39;height&#39;, 512 );
+					upcomingSlide.setAttribute( &#39;src&#39;, upcomingURL );
+					document.querySelector( &#39;#upcoming-slide&#39; ).appendChild( upcomingSlide );
+
+				}
+
+				/**
+				 * Setup the notes UI.
+				 */
+				function setupNotes() {
+
+					notes = document.querySelector( &#39;.speaker-controls-notes&#39; );
+					notesValue = document.querySelector( &#39;.speaker-controls-notes .value&#39; );
+
+				}
+
+				/**
+				 * We send out a heartbeat at all times to ensure we can
+				 * reconnect with the main presentation window after reloads.
+				 */
+				function setupHeartbeat() {
+
+					setInterval( () =&gt; {
+						window.opener.postMessage( JSON.stringify({ namespace: &#39;reveal-notes&#39;, type: &#39;heartbeat&#39;} ), &#39;*&#39; );
+					}, 1000 );
+
+				}
+
+				function getTimings( callback ) {
+
+					callRevealApi( &#39;getSlidesAttributes&#39;, [], function ( slideAttributes ) {
+						callRevealApi( &#39;getConfig&#39;, [], function ( config ) {
+							var totalTime = config.totalTime;
+							var minTimePerSlide = config.minimumTimePerSlide || 0;
+							var defaultTiming = config.defaultTiming;
+							if ((defaultTiming == null) &amp;&amp; (totalTime == null)) {
+								callback(null);
+								return;
+							}
+							// Setting totalTime overrides defaultTiming
+							if (totalTime) {
+								defaultTiming = 0;
+							}
+							var timings = [];
+							for ( var i in slideAttributes ) {
+								var slide = slideAttributes[ i ];
+								var timing = defaultTiming;
+								if( slide.hasOwnProperty( &#39;data-timing&#39; )) {
+									var t = slide[ &#39;data-timing&#39; ];
+									timing = parseInt(t);
+									if( isNaN(timing) ) {
+										console.warn(&#34;Could not parse timing &#39;&#34; + t + &#34;&#39; of slide &#34; + i + &#34;; using default of &#34; + defaultTiming);
+										timing = defaultTiming;
+									}
+								}
+								timings.push(timing);
+							}
+							if ( totalTime ) {
+								// After we&#39;ve allocated time to individual slides, we summarize it and
+								// subtract it from the total time
+								var remainingTime = totalTime - timings.reduce( function(a, b) { return a + b; }, 0 );
+								// The remaining time is divided by the number of slides that have 0 seconds
+								// allocated at the moment, giving the average time-per-slide on the remaining slides
+								var remainingSlides = (timings.filter( function(x) { return x == 0 }) ).length
+								var timePerSlide = Math.round( remainingTime / remainingSlides, 0 )
+								// And now we replace every zero-value timing with that average
+								timings = timings.map( function(x) { return (x==0 ? timePerSlide : x) } );
+							}
+							var slidesUnderMinimum = timings.filter( function(x) { return (x &lt; minTimePerSlide) } ).length
+							if ( slidesUnderMinimum ) {
+								message = &#34;The pacing time for &#34; + slidesUnderMinimum + &#34; slide(s) is under the configured minimum of &#34; + minTimePerSlide + &#34; seconds. Check the data-timing attribute on individual slides, or consider increasing the totalTime or minimumTimePerSlide configuration options (or removing some slides).&#34;;
+								alert(message);
+							}
+							callback( timings );
+						} );
+					} );
+
+				}
+
+				/**
+				 * Return the number of seconds allocated for presenting
+				 * all slides up to and including this one.
+				 */
+				function getTimeAllocated( timings, callback ) {
+
+					callRevealApi( &#39;getSlidePastCount&#39;, [], function ( currentSlide ) {
+						var allocated = 0;
+						for (var i in timings.slice(0, currentSlide + 1)) {
+							allocated += timings[i];
+						}
+						callback( allocated );
+					} );
+
+				}
+
+				/**
+				 * Create the timer and clock and start updating them
+				 * at an interval.
+				 */
+				function setupTimer() {
+
+					var start = new Date(),
+					timeEl = document.querySelector( &#39;.speaker-controls-time&#39; ),
+					clockEl = timeEl.querySelector( &#39;.clock-value&#39; ),
+					hoursEl = timeEl.querySelector( &#39;.hours-value&#39; ),
+					minutesEl = timeEl.querySelector( &#39;.minutes-value&#39; ),
+					secondsEl = timeEl.querySelector( &#39;.seconds-value&#39; ),
+					pacingTitleEl = timeEl.querySelector( &#39;.pacing-title&#39; ),
+					pacingEl = timeEl.querySelector( &#39;.pacing&#39; ),
+					pacingHoursEl = pacingEl.querySelector( &#39;.hours-value&#39; ),
+					pacingMinutesEl = pacingEl.querySelector( &#39;.minutes-value&#39; ),
+					pacingSecondsEl = pacingEl.querySelector( &#39;.seconds-value&#39; );
+
+					var timings = null;
+					getTimings( function ( _timings ) {
+
+						timings = _timings;
+						if (_timings !== null) {
+							pacingTitleEl.style.removeProperty(&#39;display&#39;);
+							pacingEl.style.removeProperty(&#39;display&#39;);
+						}
+
+						// Update once directly
+						_updateTimer();
+
+						// Then update every second
+						setInterval( _updateTimer, 1000 );
+
+					} );
+
+
+					function _resetTimer() {
+
+						if (timings == null) {
+							start = new Date();
+							_updateTimer();
+						}
+						else {
+							// Reset timer to beginning of current slide
+							getTimeAllocated( timings, function ( slideEndTimingSeconds ) {
+								var slideEndTiming = slideEndTimingSeconds * 1000;
+								callRevealApi( &#39;getSlidePastCount&#39;, [], function ( currentSlide ) {
+									var currentSlideTiming = timings[currentSlide] * 1000;
+									var previousSlidesTiming = slideEndTiming - currentSlideTiming;
+									var now = new Date();
+									start = new Date(now.getTime() - previousSlidesTiming);
+									_updateTimer();
+								} );
+							} );
+						}
+
+					}
+
+					timeEl.addEventListener( &#39;click&#39;, function() {
+						_resetTimer();
+						return false;
+					} );
+
+					function _displayTime( hrEl, minEl, secEl, time) {
+
+						var sign = Math.sign(time) == -1 ? &#34;-&#34; : &#34;&#34;;
+						time = Math.abs(Math.round(time / 1000));
+						var seconds = time % 60;
+						var minutes = Math.floor( time / 60 ) % 60 ;
+						var hours = Math.floor( time / ( 60 * 60 )) ;
+						hrEl.innerHTML = sign + zeroPadInteger( hours );
+						if (hours == 0) {
+							hrEl.classList.add( &#39;mute&#39; );
+						}
+						else {
+							hrEl.classList.remove( &#39;mute&#39; );
+						}
+						minEl.innerHTML = &#39;:&#39; + zeroPadInteger( minutes );
+						if (hours == 0 &amp;&amp; minutes == 0) {
+							minEl.classList.add( &#39;mute&#39; );
+						}
+						else {
+							minEl.classList.remove( &#39;mute&#39; );
+						}
+						secEl.innerHTML = &#39;:&#39; + zeroPadInteger( seconds );
+					}
+
+					function _updateTimer() {
+
+						var diff, hours, minutes, seconds,
+						now = new Date();
+
+						diff = now.getTime() - start.getTime();
+
+						clockEl.innerHTML = now.toLocaleTimeString( &#39;en-US&#39;, { hour12: true, hour: &#39;2-digit&#39;, minute:&#39;2-digit&#39; } );
+						_displayTime( hoursEl, minutesEl, secondsEl, diff );
+						if (timings !== null) {
+							_updatePacing(diff);
+						}
+
+					}
+
+					function _updatePacing(diff) {
+
+						getTimeAllocated( timings, function ( slideEndTimingSeconds ) {
+							var slideEndTiming = slideEndTimingSeconds * 1000;
+
+							callRevealApi( &#39;getSlidePastCount&#39;, [], function ( currentSlide ) {
+								var currentSlideTiming = timings[currentSlide] * 1000;
+								var timeLeftCurrentSlide = slideEndTiming - diff;
+								if (timeLeftCurrentSlide &lt; 0) {
+									pacingEl.className = &#39;pacing behind&#39;;
+								}
+								else if (timeLeftCurrentSlide &lt; currentSlideTiming) {
+									pacingEl.className = &#39;pacing on-track&#39;;
+								}
+								else {
+									pacingEl.className = &#39;pacing ahead&#39;;
+								}
+								_displayTime( pacingHoursEl, pacingMinutesEl, pacingSecondsEl, timeLeftCurrentSlide );
+							} );
+						} );
+					}
+
+				}
+
+				/**
+				 * Sets up the speaker view layout and layout selector.
+				 */
+				function setupLayout() {
+
+					layoutDropdown = document.querySelector( &#39;.speaker-layout-dropdown&#39; );
+					layoutLabel = document.querySelector( &#39;.speaker-layout-label&#39; );
+
+					// Render the list of available layouts
+					for( var id in SPEAKER_LAYOUTS ) {
+						var option = document.createElement( &#39;option&#39; );
+						option.setAttribute( &#39;value&#39;, id );
+						option.textContent = SPEAKER_LAYOUTS[ id ];
+						layoutDropdown.appendChild( option );
+					}
+
+					// Monitor the dropdown for changes
+					layoutDropdown.addEventListener( &#39;change&#39;, function( event ) {
+
+						setLayout( layoutDropdown.value );
+
+					}, false );
+
+					// Restore any currently persisted layout
+					setLayout( getLayout() );
+
+				}
+
+				/**
+				 * Sets a new speaker view layout. The layout is persisted
+				 * in local storage.
+				 */
+				function setLayout( value ) {
+
+					var title = SPEAKER_LAYOUTS[ value ];
+
+					layoutLabel.innerHTML = &#39;Layout&#39; + ( title ? ( &#39;: &#39; + title ) : &#39;&#39; );
+					layoutDropdown.value = value;
+
+					document.body.setAttribute( &#39;data-speaker-layout&#39;, value );
+
+					// Persist locally
+					if( supportsLocalStorage() ) {
+						window.localStorage.setItem( &#39;reveal-speaker-layout&#39;, value );
+					}
+
+				}
+
+				/**
+				 * Returns the ID of the most recently set speaker layout
+				 * or our default layout if none has been set.
+				 */
+				function getLayout() {
+
+					if( supportsLocalStorage() ) {
+						var layout = window.localStorage.getItem( &#39;reveal-speaker-layout&#39; );
+						if( layout ) {
+							return layout;
+						}
+					}
+
+					// Default to the first record in the layouts hash
+					for( var id in SPEAKER_LAYOUTS ) {
+						return id;
+					}
+
+				}
+
+				function supportsLocalStorage() {
+
+					try {
+						localStorage.setItem(&#39;test&#39;, &#39;test&#39;);
+						localStorage.removeItem(&#39;test&#39;);
+						return true;
+					}
+					catch( e ) {
+						return false;
+					}
+
+				}
+
+				function zeroPadInteger( num ) {
+
+					var str = &#39;00&#39; + parseInt( num );
+					return str.substring( str.length - 2 );
+
+				}
+
+				/**
+				 * Limits the frequency at which a function can be called.
+				 */
+				function debounce( fn, ms ) {
+
+					var lastTime = 0,
+						timeout;
+
+					return function() {
+
+						var args = arguments;
+						var context = this;
+
+						clearTimeout( timeout );
+
+						var timeSinceLastCall = Date.now() - lastTime;
+						if( timeSinceLastCall &gt; ms ) {
+							fn.apply( context, args );
+							lastTime = Date.now();
+						}
+						else {
+							timeout = setTimeout( function() {
+								fn.apply( context, args );
+								lastTime = Date.now();
+							}, ms - timeSinceLastCall );
+						}
+
+					}
+
+				}
+
+			})();
+
+		&lt;/script&gt;
+	&lt;/body&gt;
+&lt;/html&gt;</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>/case-study/mispecification/wrongmodels_files/libs/revealjs/plugin/notes/speaker-view/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/case-study/mispecification/wrongmodels_files/libs/revealjs/plugin/notes/speaker-view/</guid><description>
+&lt;html lang=&#34;en&#34;&gt;
+	&lt;head&gt;
+		&lt;meta charset=&#34;utf-8&#34;&gt;
+
+		&lt;title&gt;reveal.js - Speaker View&lt;/title&gt;
+
+		&lt;style&gt;
+			body {
+				font-family: Helvetica;
+				font-size: 18px;
+			}
+
+			#current-slide,
+			#upcoming-slide,
+			#speaker-controls {
+				padding: 6px;
+				box-sizing: border-box;
+				-moz-box-sizing: border-box;
+			}
+
+			#current-slide iframe,
+			#upcoming-slide iframe {
+				width: 100%;
+				height: 100%;
+				border: 1px solid #ddd;
+			}
+
+			#current-slide .label,
+			#upcoming-slide .label {
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				z-index: 2;
+			}
+
+			#connection-status {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				z-index: 20;
+				padding: 30% 20% 20% 20%;
+				font-size: 18px;
+				color: #222;
+				background: #fff;
+				text-align: center;
+				box-sizing: border-box;
+				line-height: 1.4;
+			}
+
+			.overlay-element {
+				height: 34px;
+				line-height: 34px;
+				padding: 0 10px;
+				text-shadow: none;
+				background: rgba( 220, 220, 220, 0.8 );
+				color: #222;
+				font-size: 14px;
+			}
+
+			.overlay-element.interactive:hover {
+				background: rgba( 220, 220, 220, 1 );
+			}
+
+			#current-slide {
+				position: absolute;
+				width: 60%;
+				height: 100%;
+				top: 0;
+				left: 0;
+				padding-right: 0;
+			}
+
+			#upcoming-slide {
+				position: absolute;
+				width: 40%;
+				height: 40%;
+				right: 0;
+				top: 0;
+			}
+
+			/* Speaker controls */
+			#speaker-controls {
+				position: absolute;
+				top: 40%;
+				right: 0;
+				width: 40%;
+				height: 60%;
+				overflow: auto;
+				font-size: 18px;
+			}
+
+				.speaker-controls-time.hidden,
+				.speaker-controls-notes.hidden {
+					display: none;
+				}
+
+				.speaker-controls-time .label,
+				.speaker-controls-pace .label,
+				.speaker-controls-notes .label {
+					text-transform: uppercase;
+					font-weight: normal;
+					font-size: 0.66em;
+					color: #666;
+					margin: 0;
+				}
+
+				.speaker-controls-time, .speaker-controls-pace {
+					border-bottom: 1px solid rgba( 200, 200, 200, 0.5 );
+					margin-bottom: 10px;
+					padding: 10px 16px;
+					padding-bottom: 20px;
+					cursor: pointer;
+				}
+
+				.speaker-controls-time .reset-button {
+					opacity: 0;
+					float: right;
+					color: #666;
+					text-decoration: none;
+				}
+				.speaker-controls-time:hover .reset-button {
+					opacity: 1;
+				}
+
+				.speaker-controls-time .timer,
+				.speaker-controls-time .clock {
+					width: 50%;
+				}
+
+				.speaker-controls-time .timer,
+				.speaker-controls-time .clock,
+				.speaker-controls-time .pacing .hours-value,
+				.speaker-controls-time .pacing .minutes-value,
+				.speaker-controls-time .pacing .seconds-value {
+					font-size: 1.9em;
+				}
+
+				.speaker-controls-time .timer {
+					float: left;
+				}
+
+				.speaker-controls-time .clock {
+					float: right;
+					text-align: right;
+				}
+
+				.speaker-controls-time span.mute {
+					opacity: 0.3;
+				}
+
+				.speaker-controls-time .pacing-title {
+					margin-top: 5px;
+				}
+
+				.speaker-controls-time .pacing.ahead {
+					color: blue;
+				}
+
+				.speaker-controls-time .pacing.on-track {
+					color: green;
+				}
+
+				.speaker-controls-time .pacing.behind {
+					color: red;
+				}
+
+				.speaker-controls-notes {
+					padding: 10px 16px;
+				}
+
+				.speaker-controls-notes .value {
+					margin-top: 5px;
+					line-height: 1.4;
+					font-size: 1.2em;
+				}
+
+			/* Layout selector */
+			#speaker-layout {
+				position: absolute;
+				top: 10px;
+				right: 10px;
+				color: #222;
+				z-index: 10;
+			}
+				#speaker-layout select {
+					position: absolute;
+					width: 100%;
+					height: 100%;
+					top: 0;
+					left: 0;
+					border: 0;
+					box-shadow: 0;
+					cursor: pointer;
+					opacity: 0;
+
+					font-size: 1em;
+					background-color: transparent;
+
+					-moz-appearance: none;
+					-webkit-appearance: none;
+					-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+				}
+
+				#speaker-layout select:focus {
+					outline: none;
+					box-shadow: none;
+				}
+
+			.clear {
+				clear: both;
+			}
+
+			/* Speaker layout: Wide */
+			body[data-speaker-layout=&#34;wide&#34;] #current-slide,
+			body[data-speaker-layout=&#34;wide&#34;] #upcoming-slide {
+				width: 50%;
+				height: 45%;
+				padding: 6px;
+			}
+
+			body[data-speaker-layout=&#34;wide&#34;] #current-slide {
+				top: 0;
+				left: 0;
+			}
+
+			body[data-speaker-layout=&#34;wide&#34;] #upcoming-slide {
+				top: 0;
+				left: 50%;
+			}
+
+			body[data-speaker-layout=&#34;wide&#34;] #speaker-controls {
+				top: 45%;
+				left: 0;
+				width: 100%;
+				height: 50%;
+				font-size: 1.25em;
+			}
+
+			/* Speaker layout: Tall */
+			body[data-speaker-layout=&#34;tall&#34;] #current-slide,
+			body[data-speaker-layout=&#34;tall&#34;] #upcoming-slide {
+				width: 45%;
+				height: 50%;
+				padding: 6px;
+			}
+
+			body[data-speaker-layout=&#34;tall&#34;] #current-slide {
+				top: 0;
+				left: 0;
+			}
+
+			body[data-speaker-layout=&#34;tall&#34;] #upcoming-slide {
+				top: 50%;
+				left: 0;
+			}
+
+			body[data-speaker-layout=&#34;tall&#34;] #speaker-controls {
+				padding-top: 40px;
+				top: 0;
+				left: 45%;
+				width: 55%;
+				height: 100%;
+				font-size: 1.25em;
+			}
+
+			/* Speaker layout: Notes only */
+			body[data-speaker-layout=&#34;notes-only&#34;] #current-slide,
+			body[data-speaker-layout=&#34;notes-only&#34;] #upcoming-slide {
+				display: none;
+			}
+
+			body[data-speaker-layout=&#34;notes-only&#34;] #speaker-controls {
+				padding-top: 40px;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				font-size: 1.25em;
+			}
+
+			@media screen and (max-width: 1080px) {
+				body[data-speaker-layout=&#34;default&#34;] #speaker-controls {
+					font-size: 16px;
+				}
+			}
+
+			@media screen and (max-width: 900px) {
+				body[data-speaker-layout=&#34;default&#34;] #speaker-controls {
+					font-size: 14px;
+				}
+			}
+
+			@media screen and (max-width: 800px) {
+				body[data-speaker-layout=&#34;default&#34;] #speaker-controls {
+					font-size: 12px;
+				}
+			}
+
+		&lt;/style&gt;
+	&lt;/head&gt;
+
+	&lt;body&gt;
+
+		&lt;div id=&#34;connection-status&#34;&gt;Loading speaker view...&lt;/div&gt;
+
+		&lt;div id=&#34;current-slide&#34;&gt;&lt;/div&gt;
+		&lt;div id=&#34;upcoming-slide&#34;&gt;&lt;span class=&#34;overlay-element label&#34;&gt;Upcoming&lt;/span&gt;&lt;/div&gt;
+		&lt;div id=&#34;speaker-controls&#34;&gt;
+			&lt;div class=&#34;speaker-controls-time&#34;&gt;
+				&lt;h4 class=&#34;label&#34;&gt;Time &lt;span class=&#34;reset-button&#34;&gt;Click to Reset&lt;/span&gt;&lt;/h4&gt;
+				&lt;div class=&#34;clock&#34;&gt;
+					&lt;span class=&#34;clock-value&#34;&gt;0:00 AM&lt;/span&gt;
+				&lt;/div&gt;
+				&lt;div class=&#34;timer&#34;&gt;
+					&lt;span class=&#34;hours-value&#34;&gt;00&lt;/span&gt;&lt;span class=&#34;minutes-value&#34;&gt;:00&lt;/span&gt;&lt;span class=&#34;seconds-value&#34;&gt;:00&lt;/span&gt;
+				&lt;/div&gt;
+				&lt;div class=&#34;clear&#34;&gt;&lt;/div&gt;
+
+				&lt;h4 class=&#34;label pacing-title&#34; style=&#34;display: none&#34;&gt;Pacing – Time to finish current slide&lt;/h4&gt;
+				&lt;div class=&#34;pacing&#34; style=&#34;display: none&#34;&gt;
+					&lt;span class=&#34;hours-value&#34;&gt;00&lt;/span&gt;&lt;span class=&#34;minutes-value&#34;&gt;:00&lt;/span&gt;&lt;span class=&#34;seconds-value&#34;&gt;:00&lt;/span&gt;
+				&lt;/div&gt;
+			&lt;/div&gt;
+
+			&lt;div class=&#34;speaker-controls-notes hidden&#34;&gt;
+				&lt;h4 class=&#34;label&#34;&gt;Notes&lt;/h4&gt;
+				&lt;div class=&#34;value&#34;&gt;&lt;/div&gt;
+			&lt;/div&gt;
+		&lt;/div&gt;
+		&lt;div id=&#34;speaker-layout&#34; class=&#34;overlay-element interactive&#34;&gt;
+			&lt;span class=&#34;speaker-layout-label&#34;&gt;&lt;/span&gt;
+			&lt;select class=&#34;speaker-layout-dropdown&#34;&gt;&lt;/select&gt;
+		&lt;/div&gt;
+
+		&lt;script&gt;
+
+			(function() {
+
+				var notes,
+					notesValue,
+					currentState,
+					currentSlide,
+					upcomingSlide,
+					layoutLabel,
+					layoutDropdown,
+					pendingCalls = {},
+					lastRevealApiCallId = 0,
+					connected = false
+
+				var connectionStatus = document.querySelector( &#39;#connection-status&#39; );
+
+				var SPEAKER_LAYOUTS = {
+					&#39;default&#39;: &#39;Default&#39;,
+					&#39;wide&#39;: &#39;Wide&#39;,
+					&#39;tall&#39;: &#39;Tall&#39;,
+					&#39;notes-only&#39;: &#39;Notes only&#39;
+				};
+
+				setupLayout();
+
+				let openerOrigin;
+
+				try {
+					openerOrigin = window.opener.location.origin;
+				}
+				catch ( error ) { console.warn( error ) }
+
+				// In order to prevent XSS, the speaker view will only run if its
+				// opener has the same origin as itself
+				if( window.location.origin !== openerOrigin ) {
+					connectionStatus.innerHTML = &#39;Cross origin error.&lt;br&gt;The speaker window can only be opened from the same origin.&#39;;
+					return;
+				}
+
+				var connectionTimeout = setTimeout( function() {
+					connectionStatus.innerHTML = &#39;Error connecting to main window.&lt;br&gt;Please try closing and reopening the speaker view.&#39;;
+				}, 5000 );
+
+				window.addEventListener( &#39;message&#39;, function( event ) {
+
+					// Validate the origin of all messages to avoid parsing messages
+					// that aren&#39;t meant for us. Ignore when running off file:// so
+					// that the speaker view continues to work without a web server.
+					if( window.location.origin !== event.origin &amp;&amp; window.location.origin !== &#39;file://&#39; ) {
+						return
+					}
+
+					clearTimeout( connectionTimeout );
+					connectionStatus.style.display = &#39;none&#39;;
+
+					var data = JSON.parse( event.data );
+
+					// The overview mode is only useful to the reveal.js instance
+					// where navigation occurs so we don&#39;t sync it
+					if( data.state ) delete data.state.overview;
+
+					// Messages sent by the notes plugin inside of the main window
+					if( data &amp;&amp; data.namespace === &#39;reveal-notes&#39; ) {
+						if( data.type === &#39;connect&#39; ) {
+							handleConnectMessage( data );
+						}
+						else if( data.type === &#39;state&#39; ) {
+							handleStateMessage( data );
+						}
+						else if( data.type === &#39;return&#39; ) {
+							pendingCalls[data.callId](data.result);
+							delete pendingCalls[data.callId];
+						}
+					}
+					// Messages sent by the reveal.js inside of the current slide preview
+					else if( data &amp;&amp; data.namespace === &#39;reveal&#39; ) {
+						if( /ready/.test( data.eventName ) ) {
+							// Send a message back to notify that the handshake is complete
+							window.opener.postMessage( JSON.stringify({ namespace: &#39;reveal-notes&#39;, type: &#39;connected&#39;} ), &#39;*&#39; );
+						}
+						else if( /slidechanged|fragmentshown|fragmenthidden|paused|resumed/.test( data.eventName ) &amp;&amp; currentState !== JSON.stringify( data.state ) ) {
+
+							dispatchStateToMainWindow( data.state );
+
+						}
+					}
+
+				} );
+
+				/**
+				 * Updates the presentation in the main window to match the state
+				 * of the presentation in the notes window.
+				 */
+				const dispatchStateToMainWindow = debounce(( state ) =&gt; {
+					window.opener.postMessage( JSON.stringify({ method: &#39;setState&#39;, args: [ state ]} ), &#39;*&#39; );
+				}, 500);
+
+				/**
+				 * Asynchronously calls the Reveal.js API of the main frame.
+				 */
+				function callRevealApi( methodName, methodArguments, callback ) {
+
+					var callId = ++lastRevealApiCallId;
+					pendingCalls[callId] = callback;
+					window.opener.postMessage( JSON.stringify( {
+						namespace: &#39;reveal-notes&#39;,
+						type: &#39;call&#39;,
+						callId: callId,
+						methodName: methodName,
+						arguments: methodArguments
+					} ), &#39;*&#39; );
+
+				}
+
+				/**
+				 * Called when the main window is trying to establish a
+				 * connection.
+				 */
+				function handleConnectMessage( data ) {
+
+					if( connected === false ) {
+						connected = true;
+
+						setupIframes( data );
+						setupKeyboard();
+						setupNotes();
+						setupTimer();
+						setupHeartbeat();
+					}
+
+				}
+
+				/**
+				 * Called when the main window sends an updated state.
+				 */
+				function handleStateMessage( data ) {
+
+					// Store the most recently set state to avoid circular loops
+					// applying the same state
+					currentState = JSON.stringify( data.state );
+
+					// No need for updating the notes in case of fragment changes
+					if ( data.notes ) {
+						notes.classList.remove( &#39;hidden&#39; );
+						notesValue.style.whiteSpace = data.whitespace;
+						if( data.markdown ) {
+							notesValue.innerHTML = marked( data.notes );
+						}
+						else {
+							notesValue.innerHTML = data.notes;
+						}
+					}
+					else {
+						notes.classList.add( &#39;hidden&#39; );
+					}
+
+					// Update the note slides
+					currentSlide.contentWindow.postMessage( JSON.stringify({ method: &#39;setState&#39;, args: [ data.state ] }), &#39;*&#39; );
+					upcomingSlide.contentWindow.postMessage( JSON.stringify({ method: &#39;setState&#39;, args: [ data.state ] }), &#39;*&#39; );
+					upcomingSlide.contentWindow.postMessage( JSON.stringify({ method: &#39;next&#39; }), &#39;*&#39; );
+
+				}
+
+				// Limit to max one state update per X ms
+				handleStateMessage = debounce( handleStateMessage, 200 );
+
+				/**
+				 * Forward keyboard events to the current slide window.
+				 * This enables keyboard events to work even if focus
+				 * isn&#39;t set on the current slide iframe.
+				 *
+				 * Block F5 default handling, it reloads and disconnects
+				 * the speaker notes window.
+				 */
+				function setupKeyboard() {
+
+					document.addEventListener( &#39;keydown&#39;, function( event ) {
+						if( event.keyCode === 116 || ( event.metaKey &amp;&amp; event.keyCode === 82 ) ) {
+							event.preventDefault();
+							return false;
+						}
+						currentSlide.contentWindow.postMessage( JSON.stringify({ method: &#39;triggerKey&#39;, args: [ event.keyCode ] }), &#39;*&#39; );
+					} );
+
+				}
+
+				/**
+				 * Creates the preview iframes.
+				 */
+				function setupIframes( data ) {
+
+					var params = [
+						&#39;receiver&#39;,
+						&#39;progress=false&#39;,
+						&#39;history=false&#39;,
+						&#39;transition=none&#39;,
+						&#39;autoSlide=0&#39;,
+						&#39;backgroundTransition=none&#39;
+					].join( &#39;&amp;&#39; );
+
+					var urlSeparator = /\?/.test(data.url) ? &#39;&amp;&#39; : &#39;?&#39;;
+					var hash = &#39;#/&#39; + data.state.indexh + &#39;/&#39; + data.state.indexv;
+					var currentURL = data.url + urlSeparator + params + &#39;&amp;scrollActivationWidth=false&amp;postMessageEvents=true&#39; + hash;
+					var upcomingURL = data.url + urlSeparator + params + &#39;&amp;scrollActivationWidth=false&amp;controls=false&#39; + hash;
+
+					currentSlide = document.createElement( &#39;iframe&#39; );
+					currentSlide.setAttribute( &#39;width&#39;, 1280 );
+					currentSlide.setAttribute( &#39;height&#39;, 1024 );
+					currentSlide.setAttribute( &#39;src&#39;, currentURL );
+					document.querySelector( &#39;#current-slide&#39; ).appendChild( currentSlide );
+
+					upcomingSlide = document.createElement( &#39;iframe&#39; );
+					upcomingSlide.setAttribute( &#39;width&#39;, 640 );
+					upcomingSlide.setAttribute( &#39;height&#39;, 512 );
+					upcomingSlide.setAttribute( &#39;src&#39;, upcomingURL );
+					document.querySelector( &#39;#upcoming-slide&#39; ).appendChild( upcomingSlide );
+
+				}
+
+				/**
+				 * Setup the notes UI.
+				 */
+				function setupNotes() {
+
+					notes = document.querySelector( &#39;.speaker-controls-notes&#39; );
+					notesValue = document.querySelector( &#39;.speaker-controls-notes .value&#39; );
+
+				}
+
+				/**
+				 * We send out a heartbeat at all times to ensure we can
+				 * reconnect with the main presentation window after reloads.
+				 */
+				function setupHeartbeat() {
+
+					setInterval( () =&gt; {
+						window.opener.postMessage( JSON.stringify({ namespace: &#39;reveal-notes&#39;, type: &#39;heartbeat&#39;} ), &#39;*&#39; );
+					}, 1000 );
+
+				}
+
+				function getTimings( callback ) {
+
+					callRevealApi( &#39;getSlidesAttributes&#39;, [], function ( slideAttributes ) {
+						callRevealApi( &#39;getConfig&#39;, [], function ( config ) {
+							var totalTime = config.totalTime;
+							var minTimePerSlide = config.minimumTimePerSlide || 0;
+							var defaultTiming = config.defaultTiming;
+							if ((defaultTiming == null) &amp;&amp; (totalTime == null)) {
+								callback(null);
+								return;
+							}
+							// Setting totalTime overrides defaultTiming
+							if (totalTime) {
+								defaultTiming = 0;
+							}
+							var timings = [];
+							for ( var i in slideAttributes ) {
+								var slide = slideAttributes[ i ];
+								var timing = defaultTiming;
+								if( slide.hasOwnProperty( &#39;data-timing&#39; )) {
+									var t = slide[ &#39;data-timing&#39; ];
+									timing = parseInt(t);
+									if( isNaN(timing) ) {
+										console.warn(&#34;Could not parse timing &#39;&#34; + t + &#34;&#39; of slide &#34; + i + &#34;; using default of &#34; + defaultTiming);
+										timing = defaultTiming;
+									}
+								}
+								timings.push(timing);
+							}
+							if ( totalTime ) {
+								// After we&#39;ve allocated time to individual slides, we summarize it and
+								// subtract it from the total time
+								var remainingTime = totalTime - timings.reduce( function(a, b) { return a + b; }, 0 );
+								// The remaining time is divided by the number of slides that have 0 seconds
+								// allocated at the moment, giving the average time-per-slide on the remaining slides
+								var remainingSlides = (timings.filter( function(x) { return x == 0 }) ).length
+								var timePerSlide = Math.round( remainingTime / remainingSlides, 0 )
+								// And now we replace every zero-value timing with that average
+								timings = timings.map( function(x) { return (x==0 ? timePerSlide : x) } );
+							}
+							var slidesUnderMinimum = timings.filter( function(x) { return (x &lt; minTimePerSlide) } ).length
+							if ( slidesUnderMinimum ) {
+								message = &#34;The pacing time for &#34; + slidesUnderMinimum + &#34; slide(s) is under the configured minimum of &#34; + minTimePerSlide + &#34; seconds. Check the data-timing attribute on individual slides, or consider increasing the totalTime or minimumTimePerSlide configuration options (or removing some slides).&#34;;
+								alert(message);
+							}
+							callback( timings );
+						} );
+					} );
+
+				}
+
+				/**
+				 * Return the number of seconds allocated for presenting
+				 * all slides up to and including this one.
+				 */
+				function getTimeAllocated( timings, callback ) {
+
+					callRevealApi( &#39;getSlidePastCount&#39;, [], function ( currentSlide ) {
+						var allocated = 0;
+						for (var i in timings.slice(0, currentSlide + 1)) {
+							allocated += timings[i];
+						}
+						callback( allocated );
+					} );
+
+				}
+
+				/**
+				 * Create the timer and clock and start updating them
+				 * at an interval.
+				 */
+				function setupTimer() {
+
+					var start = new Date(),
+					timeEl = document.querySelector( &#39;.speaker-controls-time&#39; ),
+					clockEl = timeEl.querySelector( &#39;.clock-value&#39; ),
+					hoursEl = timeEl.querySelector( &#39;.hours-value&#39; ),
+					minutesEl = timeEl.querySelector( &#39;.minutes-value&#39; ),
+					secondsEl = timeEl.querySelector( &#39;.seconds-value&#39; ),
+					pacingTitleEl = timeEl.querySelector( &#39;.pacing-title&#39; ),
+					pacingEl = timeEl.querySelector( &#39;.pacing&#39; ),
+					pacingHoursEl = pacingEl.querySelector( &#39;.hours-value&#39; ),
+					pacingMinutesEl = pacingEl.querySelector( &#39;.minutes-value&#39; ),
+					pacingSecondsEl = pacingEl.querySelector( &#39;.seconds-value&#39; );
+
+					var timings = null;
+					getTimings( function ( _timings ) {
+
+						timings = _timings;
+						if (_timings !== null) {
+							pacingTitleEl.style.removeProperty(&#39;display&#39;);
+							pacingEl.style.removeProperty(&#39;display&#39;);
+						}
+
+						// Update once directly
+						_updateTimer();
+
+						// Then update every second
+						setInterval( _updateTimer, 1000 );
+
+					} );
+
+
+					function _resetTimer() {
+
+						if (timings == null) {
+							start = new Date();
+							_updateTimer();
+						}
+						else {
+							// Reset timer to beginning of current slide
+							getTimeAllocated( timings, function ( slideEndTimingSeconds ) {
+								var slideEndTiming = slideEndTimingSeconds * 1000;
+								callRevealApi( &#39;getSlidePastCount&#39;, [], function ( currentSlide ) {
+									var currentSlideTiming = timings[currentSlide] * 1000;
+									var previousSlidesTiming = slideEndTiming - currentSlideTiming;
+									var now = new Date();
+									start = new Date(now.getTime() - previousSlidesTiming);
+									_updateTimer();
+								} );
+							} );
+						}
+
+					}
+
+					timeEl.addEventListener( &#39;click&#39;, function() {
+						_resetTimer();
+						return false;
+					} );
+
+					function _displayTime( hrEl, minEl, secEl, time) {
+
+						var sign = Math.sign(time) == -1 ? &#34;-&#34; : &#34;&#34;;
+						time = Math.abs(Math.round(time / 1000));
+						var seconds = time % 60;
+						var minutes = Math.floor( time / 60 ) % 60 ;
+						var hours = Math.floor( time / ( 60 * 60 )) ;
+						hrEl.innerHTML = sign + zeroPadInteger( hours );
+						if (hours == 0) {
+							hrEl.classList.add( &#39;mute&#39; );
+						}
+						else {
+							hrEl.classList.remove( &#39;mute&#39; );
+						}
+						minEl.innerHTML = &#39;:&#39; + zeroPadInteger( minutes );
+						if (hours == 0 &amp;&amp; minutes == 0) {
+							minEl.classList.add( &#39;mute&#39; );
+						}
+						else {
+							minEl.classList.remove( &#39;mute&#39; );
+						}
+						secEl.innerHTML = &#39;:&#39; + zeroPadInteger( seconds );
+					}
+
+					function _updateTimer() {
+
+						var diff, hours, minutes, seconds,
+						now = new Date();
+
+						diff = now.getTime() - start.getTime();
+
+						clockEl.innerHTML = now.toLocaleTimeString( &#39;en-US&#39;, { hour12: true, hour: &#39;2-digit&#39;, minute:&#39;2-digit&#39; } );
+						_displayTime( hoursEl, minutesEl, secondsEl, diff );
+						if (timings !== null) {
+							_updatePacing(diff);
+						}
+
+					}
+
+					function _updatePacing(diff) {
+
+						getTimeAllocated( timings, function ( slideEndTimingSeconds ) {
+							var slideEndTiming = slideEndTimingSeconds * 1000;
+
+							callRevealApi( &#39;getSlidePastCount&#39;, [], function ( currentSlide ) {
+								var currentSlideTiming = timings[currentSlide] * 1000;
+								var timeLeftCurrentSlide = slideEndTiming - diff;
+								if (timeLeftCurrentSlide &lt; 0) {
+									pacingEl.className = &#39;pacing behind&#39;;
+								}
+								else if (timeLeftCurrentSlide &lt; currentSlideTiming) {
+									pacingEl.className = &#39;pacing on-track&#39;;
+								}
+								else {
+									pacingEl.className = &#39;pacing ahead&#39;;
+								}
+								_displayTime( pacingHoursEl, pacingMinutesEl, pacingSecondsEl, timeLeftCurrentSlide );
+							} );
+						} );
+					}
+
+				}
+
+				/**
+				 * Sets up the speaker view layout and layout selector.
+				 */
+				function setupLayout() {
+
+					layoutDropdown = document.querySelector( &#39;.speaker-layout-dropdown&#39; );
+					layoutLabel = document.querySelector( &#39;.speaker-layout-label&#39; );
+
+					// Render the list of available layouts
+					for( var id in SPEAKER_LAYOUTS ) {
+						var option = document.createElement( &#39;option&#39; );
+						option.setAttribute( &#39;value&#39;, id );
+						option.textContent = SPEAKER_LAYOUTS[ id ];
+						layoutDropdown.appendChild( option );
+					}
+
+					// Monitor the dropdown for changes
+					layoutDropdown.addEventListener( &#39;change&#39;, function( event ) {
+
+						setLayout( layoutDropdown.value );
+
+					}, false );
+
+					// Restore any currently persisted layout
+					setLayout( getLayout() );
+
+				}
+
+				/**
+				 * Sets a new speaker view layout. The layout is persisted
+				 * in local storage.
+				 */
+				function setLayout( value ) {
+
+					var title = SPEAKER_LAYOUTS[ value ];
+
+					layoutLabel.innerHTML = &#39;Layout&#39; + ( title ? ( &#39;: &#39; + title ) : &#39;&#39; );
+					layoutDropdown.value = value;
+
+					document.body.setAttribute( &#39;data-speaker-layout&#39;, value );
+
+					// Persist locally
+					if( supportsLocalStorage() ) {
+						window.localStorage.setItem( &#39;reveal-speaker-layout&#39;, value );
+					}
+
+				}
+
+				/**
+				 * Returns the ID of the most recently set speaker layout
+				 * or our default layout if none has been set.
+				 */
+				function getLayout() {
+
+					if( supportsLocalStorage() ) {
+						var layout = window.localStorage.getItem( &#39;reveal-speaker-layout&#39; );
+						if( layout ) {
+							return layout;
+						}
+					}
+
+					// Default to the first record in the layouts hash
+					for( var id in SPEAKER_LAYOUTS ) {
+						return id;
+					}
+
+				}
+
+				function supportsLocalStorage() {
+
+					try {
+						localStorage.setItem(&#39;test&#39;, &#39;test&#39;);
+						localStorage.removeItem(&#39;test&#39;);
+						return true;
+					}
+					catch( e ) {
+						return false;
+					}
+
+				}
+
+				function zeroPadInteger( num ) {
+
+					var str = &#39;00&#39; + parseInt( num );
+					return str.substring( str.length - 2 );
+
+				}
+
+				/**
+				 * Limits the frequency at which a function can be called.
+				 */
+				function debounce( fn, ms ) {
+
+					var lastTime = 0,
+						timeout;
+
+					return function() {
+
+						var args = arguments;
+						var context = this;
+
+						clearTimeout( timeout );
+
+						var timeSinceLastCall = Date.now() - lastTime;
+						if( timeSinceLastCall &gt; ms ) {
+							fn.apply( context, args );
+							lastTime = Date.now();
+						}
+						else {
+							timeout = setTimeout( function() {
+								fn.apply( context, args );
+								lastTime = Date.now();
+							}, ms - timeSinceLastCall );
+						}
+
+					}
+
+				}
+
+			})();
+
+		&lt;/script&gt;
+	&lt;/body&gt;
+&lt;/html&gt;</description>
     </item>
     
   </channel>

@@ -6,7 +6,7 @@ bf_compare <- function(l){
   out <- sort(-out)
   model_names <- names(out)
   out <- -out[1] + out[1:length(out)]
-  print(matrix( c(round(exp(out),3), round(out,3)), ncol = 2,
+  print(matrix( c(signif(round(exp(out),2), 3), round(out,1)), ncol = 2,
          dimnames = list(names(out), c("BF", "logBF"))))
   message(paste0("# Reference is ", names(out)[1], "."))
 }
@@ -152,6 +152,25 @@ violin_plot <- function(data, fit, N_sim = 20) {
     facet_grid(emphasis ~ difficulty) +
     xlab("Response time [ms]") +
     ylab("Accuracy")+
-    geom_violin(data = data, aes(x=rt, y=resp), draw_quantiles = c(.025,.5,.975), scale = "count", alpha = 1, inherit.aes = FALSE, fill = NA)
+    geom_violin(data = data, aes(x=rt, y=resp), draw_quantiles = c(.025,.5,.975), scale = "count", alpha = 1, inherit.aes = FALSE, fill = NA) +
+    coord_cartesian(xlim = c(0, 800))
 
+}
+
+
+
+load_or_fit <- function(path, fit_expr) {
+  if (file.exists(path)) {
+    readRDS(path)
+  } else {
+    fit <- eval(substitute(fit_expr))
+    saveRDS(fit, path)
+    fit
+  }
+}
+
+loo_compare <- function(...) {
+  lc <- loo::loo_compare(...)
+  n_se <- lc[,1]/lc[,2]
+  cbind(lc[,1:2],n_se)
 }

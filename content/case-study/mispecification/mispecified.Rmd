@@ -12,7 +12,7 @@ output:
     df_print: paged
     self_contained: false
     output_file: index.html
-bibliography      : ["r-references.bib", "BayesCogSci.bib", "bib.bib"]
+bibliography:  ["r-references.bib", "BayesCogSci.bib", "bib.bib"]
 ---
 
 ```{r setup, class.source = 'fold-hide'}
@@ -532,10 +532,17 @@ fits_speed$LNRace_reg_priors <- stan("./LogNormalRace.stan",
                       warmup = 1000,
                       iter = 10000)
 
+```
+
+```{r, message = FALSE, results = "hide", eval = !file.exists("loo_speed_2b.RDS")}
 lm_speed$LNRace_reg_priors <- bridge_sampler(fits_speed$LNRace_reg_priors)
 loo_speed$LNRace_reg_priors <- loo(fits_speed$LNRace_reg_priors)
 ```
 
+```{r, echo = FALSE, results = "hide", message = FALSE}
+saveread("lm_speed", filename= "lm_speed_2b.RDS")
+saveread("loo_speed", filename= "loo_speed_2b.RDS")
+```
 
 
 ```{r}
@@ -678,7 +685,7 @@ bf_compare(lm_speed)
 bf_compare(lm_speed[c("LNRace_fl_reg_priors","agnosticLog")])
 ```
 
-```{r}
+```{r bfcompareflagn}
 bf_compare(lm_speed[c("LNRace_fl","agnosticLog")])
 ```
 

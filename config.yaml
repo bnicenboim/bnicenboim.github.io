@@ -11,6 +11,8 @@ publishDir: docs
 ignoreFiles:
   - \.Rmd$
   - \.Rmarkdown$
+  - \.rds$
+  - \.RDS$
   - _cache$
   - _draft$
   - \.knit\.md$

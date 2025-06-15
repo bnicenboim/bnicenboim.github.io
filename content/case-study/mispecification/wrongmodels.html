@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="wrongmodels_files/libs/clipboard/clipboard.min.js"></script>
+<script src="wrongmodels_files/libs/quarto-html/tabby.min.js"></script>
+<script src="wrongmodels_files/libs/quarto-html/popper.min.js"></script>
+<script src="wrongmodels_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="wrongmodels_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="wrongmodels_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="wrongmodels_files/libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.31">
+
+  <meta name="author" content="Bruno Nicenboim">
+  <title>All models are wrong, and so is model comparison</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="wrongmodels_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="wrongmodels_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for citations */
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+      margin-bottom: 0em;
+    }
+    .hanging-indent div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }  </style>
+  <link rel="stylesheet" href="wrongmodels_files/libs/revealjs/dist/theme/quarto-f563837468303362081e247dddd440d0.css">
+  <link rel="stylesheet" href="styles.css">
+  <link href="wrongmodels_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="wrongmodels_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="wrongmodels_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="wrongmodels_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+  <script src="wrongmodels_files/libs/kePrint-0.0.1/kePrint.js"></script>
+  <link href="wrongmodels_files/libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" data-background-image="wrong.png" data-background-opacity="0.2" data-background-size="cover" class="quarto-title-block center">
+  <h1 class="title">All models are wrong, and so is model comparison</h1>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Bruno Nicenboim 
+</div>
+        <p class="quarto-title-affiliation">
+            Cognitive Science &amp; AI, Tilburg University
+          </p>
+    </div>
+</div>
+
+</section>
+<section id="outline" class="slide level2">
+<h2>Outline</h2>
+<ul>
+<li>Computational modeling: the what, why, and how</li>
+<li>Case study: What happens to model comparison when our models are misspecified?</li>
+<li>Wrapping up: key takeaways and conclusions</li>
+</ul>
+</section>
+<section id="computational-psycholinguistics-meeting" class="slide level2">
+<h2>Computational Psycholinguistics Meeting</h2>
+<div class="columns">
+<div class="column" style="width:40%;">
+<p><img data-src="cpl.jpg" width="800"></p>
+</div><div class="column" style="width:60%;">
+<p>Dec 18–19, 2025, Utrecht, the Netherlands</p>
+<p>Submit your abstract by June 29, 2025 (AoE)</p>
+</div></div>
+<p>We welcome work on computational models explaining/predicting human language</p>
+<div class="columns">
+<div class="column" style="width:40%;">
+<ul>
+<li>production</li>
+<li>perception</li>
+</ul>
+</div><div class="column" style="width:60%;">
+<ul>
+<li>learning</li>
+<li>processing</li>
+</ul>
+</div></div>
+<p>👉 <a href="https://cpl2025.sites.uu.nl/">https://cpl2025.sites.uu.nl/</a></p>
+</section>
+<section id="what-is-computational-modeling" class="slide level2">
+<h2>What is computational modeling?</h2>
+<ul>
+<li>A formal descriptions of human thought and behavior.</li>
+<li>A mediator between theory and data</li>
+</ul>
+<div class="fragment">
+<div class="smaller">
+<blockquote>
+<p>Computational modeling is the process by which a verbal description is formalized to remove ambiguity […], while also constraining the dimensions a theory can span. In the best of possible worlds, modeling makes us think deeply about what we are going to model (e.g., which phenomenon or capacity), in addition to any data, both before and during the creation of the model and both before and during data collection.</p>
+</blockquote>
+<p>(Guest &amp; Martin, 2022)</p>
+</div>
+</div>
+</section>
+<section id="why-a-computational-model" class="slide level2">
+<h2>Why a computational model?</h2>
+<ul>
+<li>As an alternative to an implicit model:
+<ul>
+<li>in which the assumptions are hidden,</li>
+<li>their internal consistency is untested,</li>
+<li>their logical consequences are unknown,</li>
+<li>and their relation to data is unknown. ]</li>
+</ul></li>
+</ul>
+<p><span class="citation" data-cites="epstein2008model">(<a href="#/references" role="doc-biblioref" onclick="">Epstein 2008</a>)</span></p>
+</section>
+<section>
+<section id="goal-of-model-comparison" class="title-slide slide level1 center" style="text-align: center;">
+<h1>Goal of model comparison</h1>
+
+</section>
+<section class="slide level2">
+
+<div class="columns">
+<div class="column" style="width:50%;">
+<p><img data-src="Plato_s_Allegory_of_the_Cave_Alex_Gendler.gif" width="600"></p>
+</div><div class="column" style="width:50%;">
+<ul>
+<li class="fragment">Which theory is closer to the truth?</li>
+<li class="fragment">The model that best accounts for the data is used as <strong>proxy</strong>.</li>
+<li class="fragment">We implement theories as Bayesian models and compare their predictive power.</li>
+</ul>
+</div></div>
+</section>
+<section id="two-approaches" class="slide level2" data-background-image="comparison.png" data-background-opacity="0.15">
+<h2>Two approaches</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="bayes-factor">Bayes factor</h3>
+<div class="fragment">
+<ul>
+<li>Evaluates data support through “prior” model predictions.</li>
+<li>Strong prior dependence when models differ qualitatively.</li>
+</ul>
+</div>
+</div><div class="column" style="width:50%;">
+<h3 id="bayesian-cross-validation">Bayesian Cross-Validation</h3>
+<div class="fragment">
+<ul>
+<li>Evaluates data support through “posterior” model predictions on held out data.</li>
+<li>Conservative approach; cautious about selecting models.</li>
+</ul>
+</div>
+</div></div>
+<div class="fragment">
+<div class="columns">
+<div class="column" style="width:50%;">
+<ul>
+<li><em>A cruel realist</em>: penalizes models for not having optimal prior information.</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<ul>
+<li><em>A fair judge</em>: ensures fairness by allowing models to perform at their best <span class="citation" data-cites="jaynes2003probability">(<a href="#/references" role="doc-biblioref" onclick="">Jaynes 2003</a>)</span></li>
+</ul>
+</div></div>
+</div>
+</section>
+<section id="tldr" class="slide level2">
+<h2>TL;DR</h2>
+<h3 id="important-considerations-in-model-comparison">Important considerations in model comparison</h3>
+<ul>
+<li class="fragment">Generalization is within observed data range</li>
+<li class="fragment">A predictive model is not necessarily a true model</li>
+<li class="fragment">Quantitative evaluation cannot replace the qualitative understanding of data patterns.</li>
+</ul>
+<p><span class="citation" data-cites="Nicenboim2024Bayesian">(<a href="#/references" role="doc-biblioref" onclick="">Nicenboim, Schad, and Vasishth 2025</a>)</span></p>
+<aside class="notes">
+<ol type="1">
+<li><strong>Generalization within observed data range</strong>:
+<ul>
+<li>Generalization is limited to the range of observed data.</li>
+<li>Superiority of one model in a specific population doesn’t guarantee its superiority in a broader population.<span class="citation" data-cites="VehtariLampinen2002 VehtariOjanen2012 henrich_heine_norenzayan_2010">(<a href="#/references" role="doc-biblioref" onclick="">Vehtari and Lampinen 2002</a>; <a href="#/references" role="doc-biblioref" onclick="">Vehtari and Ojanen 2012</a>; <a href="#/references" role="doc-biblioref" onclick="">Henrich, Heine, and Norenzayan 2010</a>)</span></li>
+<li>Importance of using historical benchmark data for model evaluation.<span class="citation" data-cites="navarroDevilDeepBlue2018 NicenboimPreactivation2019">(<a href="#/references" role="doc-biblioref" onclick="">Navarro 2019</a>; <a href="#/references" role="doc-biblioref" onclick="">Nicenboim, Vasishth, and Rösler 2020</a>)</span></li>
+</ul></li>
+<li><strong>Qualitative understanding</strong>:
+<ul>
+<li>Quantitative evaluation cannot replace the qualitative understanding of data patterns.</li>
+<li>A good fit may contradict substantive knowledge, necessitating model re-evaluation. <span class="citation" data-cites="navarroDevilDeepBlue2018 lisson_2020">(<a href="#/references" role="doc-biblioref" onclick="">Navarro 2019</a>; <a href="#/references" role="doc-biblioref" onclick="">Lissón et al. 2021</a>)</span></li>
+</ul></li>
+<li><strong>A predictive model is not necessarility a true model</strong>:
+<ul>
+<li>BF and CV focus on finding the most useful model for characterizing data.</li>
+<li>No guarantee of selecting the model closest to the truth even with ample data<span class="citation" data-cites="WangGelman2014difficulty navarroDevilDeepBlue2018">(<a href="#/references" role="doc-biblioref" onclick="">Wang and Gelman 2014</a>; <a href="#/references" role="doc-biblioref" onclick="">Navarro 2019</a>)</span>.</li>
+</ul></li>
+</ol>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section></section>
+<section id="case-study-how-do-model-comparison-work-when-our-models-are-mispecified" class="title-slide slide level1 center">
+<h1>Case Study: How do model comparison work when our models are mispecified?</h1>
+
+</section>
+
+<section>
+<section id="and-our-models-are-always-mispecified" class="title-slide slide level1 center">
+<h1>(and our models are always mispecified)</h1>
+
+</section>
+<section id="outline-of-the-case-study" class="slide level2">
+<h2>Outline of the case study</h2>
+<div class="columns">
+<div class="column" style="width:70%;">
+<ul>
+<li class="fragment">Simulate data from a given model under different conditions.
+<ol type="1">
+<li class="fragment">Fit <em>some</em> conditions with models <em>different</em> from the true model (mispecification).</li>
+<li class="fragment">Compare the models with BF and CV.</li>
+<li class="fragment">Repeat.</li>
+</ol></li>
+</ul>
+</div><div class="column" style="width:30%;">
+<div class="fragment">
+<p><img data-src="repeat.gif"></p>
+</div>
+</div></div>
+</section>
+<section id="simulated-task" class="slide level2">
+<h2>Simulated task</h2>
+<!-- (ref:LDT-tikz)  -->
+<div class="center">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-1-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>Lexical decision task (LDT)</em></p>
+</div>
+</section>
+<section id="true-generative-process" class="slide level2">
+<h2>True generative process</h2>
+<div class="columns">
+<div class="column" style="width:75%;">
+<div class="cell" data-out.heigth="50%">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-2-1.png" style="width:90.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:25%;">
+<p>Decision in LDT as a Linear Ballistic Accumulator <span class="citation" data-cites="brownSimplestCompleteModel2008">(LBA: <a href="#/references" role="doc-biblioref" onclick="">Brown and Heathcote 2008</a>)</span> with a Gamma distribution for the rates <span class="citation" data-cites="Terry2015">(<a href="#/references" role="doc-biblioref" onclick="">Terry et al. 2015</a>)</span>.</p>
+</div></div>
+</section>
+<section id="true-values" class="slide level2">
+<h2>True values</h2>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-condensed caption-top" data-quarto-postprocess="true" style="font-size: 29px; margin-left: auto; margin-right: auto;">
+<caption>Parameter values under different conditions</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">difficulty</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">emphasis</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">A</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">b</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">scale_v1</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">shape_v1</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">scale_v2</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">shape_v2</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">t0</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">easy</td>
+<td style="text-align: left;">accuracy</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">5.1</td>
+<td style="text-align: right;">5.0</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">hard</td>
+<td style="text-align: left;">accuracy</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">5.1</td>
+<td style="text-align: right;">4.2</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">easy</td>
+<td style="text-align: left;">speed</td>
+<td style="text-align: right;">3.9</td>
+<td style="text-align: right;">4.1</td>
+<td style="text-align: right;">5.0</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">hard</td>
+<td style="text-align: left;">speed</td>
+<td style="text-align: right;">3.9</td>
+<td style="text-align: right;">4.1</td>
+<td style="text-align: right;">4.2</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.1</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<aside class="notes">
+<p>The differences in emphasis do not alter the parameters that relate to the speed or noise in the accumulation process. They affect the parameters that control the distance that needs to be accumulated: - by increasing the likelihood that the initial position (<span class="math inline">\(p\)</span>) is near the threshold (by increasing <span class="math inline">\(A\)</span>) and - by decreasing the distance to the threshold (<span class="math inline">\(b\)</span>).</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section class="slide level2">
+
+
+<img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-5-1.png" style="width:90.0%" class="r-stretch"><div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-condensed caption-top" data-quarto-postprocess="true" style="font-size: 29px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">emphasis</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">difficulty</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">correct</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">rt_correct</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">sd_correct</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">rt_incorrect</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">sd_incorrect</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">accuracy</td>
+<td style="text-align: left;">easy</td>
+<td style="text-align: right;">0.89</td>
+<td style="text-align: right;">281</td>
+<td style="text-align: right;">79</td>
+<td style="text-align: right;">305</td>
+<td style="text-align: right;">112</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">accuracy</td>
+<td style="text-align: left;">hard</td>
+<td style="text-align: right;">0.85</td>
+<td style="text-align: right;">311</td>
+<td style="text-align: right;">95</td>
+<td style="text-align: right;">323</td>
+<td style="text-align: right;">145</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">speed</td>
+<td style="text-align: left;">easy</td>
+<td style="text-align: right;">0.80</td>
+<td style="text-align: right;">179</td>
+<td style="text-align: right;">61</td>
+<td style="text-align: right;">164</td>
+<td style="text-align: right;">47</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">speed</td>
+<td style="text-align: left;">hard</td>
+<td style="text-align: right;">0.78</td>
+<td style="text-align: right;">184</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">171</td>
+<td style="text-align: right;">50</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<aside class="notes">
+<p>The simulated data mimic several patterns observed in real-world data, including (i) a predominance of correct over incorrect responses, (ii) a positive skew in response times, (iii) the standard deviation of response times increasing alongside the mean, and (iv) an increase in difficulty resulting in both more incorrect responses and prolonged response times. Additionally, it reflects a speed-accuracy trade-off, where faster decisions tend to be less accurate and slower decisions are more accurate. When speed is emphasized, response times for errors are shorter compared to when accuracy is emphasized, attributable to the shorter distance to the decision threshold.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section></section>
+<section>
+<section id="case-1.-modeling-only-fast-answers-speed-emphasis" class="title-slide slide level1 center">
+<h1>Case 1. Modeling only fast answers (Speed emphasis)</h1>
+
+</section>
+<section id="a-models-under-consideration" class="slide level2 smaller">
+<h2>1.a Models under consideration</h2>
+<p><strong>1. Log-Normal Race (LNR) model</strong></p>
+<p>Simple race between accumulators–threshold and drift can’t be disentangled (conceptually similar to LBA)</p>
+<ul>
+<li>&lt;RT, response&gt; <span class="math inline">\(\sim\)</span> LNR</li>
+<li>very weak priors</li>
+</ul>
+<div class="fragment">
+<p><strong>2. Theory-agnostic model with normal likelihood</strong></p>
+<ul>
+<li>RT <span class="math inline">\(\sim\)</span> Normal</li>
+<li>response <span class="math inline">\(\sim\)</span> Bernoulli</li>
+</ul>
+</div>
+<div class="fragment">
+<p><strong>3. Theory-agnostic model with shifted log-normal likelihood</strong></p>
+<ul>
+<li>(RT <span class="math inline">\(-\)</span> shift) <span class="math inline">\(\sim\)</span> LogNormal</li>
+<li>response <span class="math inline">\(\sim\)</span> Bernoulli</li>
+</ul>
+<aside class="notes">
+<p>Next, I investigate what would happen if all the data obtained is from a participant who emphasizes speed.</p>
+<p>The LNR model is the closest to the true generating process, but the priors are relatively ill-defined, much weaker than what we actually know. The theory-agnostic models are very flexible, with the second one allowing for a closer fit to the positively skewed response time.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</div>
+</section>
+<section id="a-ppc" class="slide level2 scrollable">
+<h2>1.a PPC</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/violin-acc-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/violin-acc-2.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/violin-acc-3.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="a-model-comparison" class="slide level2">
+<h2>1.a Model comparison</h2>
+<h4 id="bayes-factor-1">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                 BF logBF
+agnosticLog 1.0e+00     0
+LNRace      1.5e+14    33
+agnostic    1.0e+82   189</code></pre>
+</div>
+</div>
+<h4 id="loo-cv">LOO CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>            elpd_diff se_diff n_se
+agnosticLog         0     0.0  NaN
+LNRace            -28     5.3 -5.4
+agnostic         -176    28.3 -6.2</code></pre>
+</div>
+</div>
+<div class="fragment">
+<p><strong>The most flexible model won!</strong></p>
+</div>
+<aside class="notes">
+<p>Both BF and <span class="math inline">\(\widehat{elpdf}\)</span>-CV agree that the best model is the theory-agnostic with a log-normal likelihood. <strong>This shows that the model that is closer to the truth is not necessarily the one with the best predictions. A flexible theory-agnostic model might yield the best predictions even if it doesn’t resemble the generative process. Crucially, this is true for both BF and CV.</strong></p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="b-another-competitor" class="slide level2">
+<h2>1.b Another competitor</h2>
+<p><strong>4. Ollman’s <span class="citation" data-cites="Ollman1966">(<a href="#/references" role="doc-biblioref" onclick="">1966</a>)</span> fast guess model</strong></p>
+<ul>
+<li>mixture of two processes
+<ul>
+<li>a guessing mode</li>
+<li>a task-engaged mode</li>
+</ul></li>
+<li>captures the speed-accuracy trade-off <strong>because of the wrong reasons</strong></li>
+</ul>
+</section>
+<section id="b-model-comparison" class="slide level2">
+<h2>1.b Model comparison</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="bayes-factor-2">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                 BF logBF
+agnosticLog 1.0e+00     0
+FG          5.5e+09    22
+LNRace      1.5e+14    33
+agnostic    1.0e+82   189</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<h4 id="loo-cv-1">LOO-CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>            elpd_diff se_diff n_se
+agnosticLog         0     0.0  NaN
+LNRace            -28     5.3 -5.4
+FG                -32     8.3 -3.8
+agnostic         -176    28.3 -6.2</code></pre>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<p>The more flexible model is still the winner…</p>
+</div>
+<div class="fragment">
+<h3 id="only-cognitive-models">Only cognitive models</h3>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="bayes-factor-3">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>          BF logBF
+FG         1     0
+LNRace 27200    10</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<h4 id="loo-cv-2">LOO-CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>       elpd_diff se_diff  n_se
+LNRace       0.0       0   NaN
+FG          -3.6      11 -0.32</code></pre>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<ul>
+<li>BF chooses the wrong model. (But the LNR had weak prior.)</li>
+<li>CV is undecided.</li>
+</ul>
+</div>
+<aside class="notes">
+<p>BF shows a clear advantage for the Fast Guess model. This is a bit unsettling because the Fast Guess model is clearly different from the true generating process. <span class="math inline">\(\hat{elpdf}\)</span>-CV cannot distinguish between the models.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</div>
+</section>
+<section id="b-better-priors" class="slide level2">
+<h2>1.b + better priors</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="bayes-factor-4">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                       BF logBF
+agnosticLog       1.0e+00     0
+LNRace_reg_priors 4.6e+06    15
+FG                5.5e+09    22
+LNRace            1.5e+14    33
+agnostic          1.0e+82   189</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<h4 id="loo-cv-3">LOO-CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                  elpd_diff se_diff n_se
+agnosticLog               0     0.0  NaN
+LNRace_reg_priors       -28     5.3 -5.4
+LNRace                  -28     5.3 -5.4
+FG                      -32     8.3 -3.8
+agnostic               -176    28.3 -6.2</code></pre>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<h3 id="only-cognitive-models-1">Only cognitive models</h3>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="bayes-factor-5">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                       BF logBF
+LNRace_reg_priors 1.0e+00   0.0
+FG                1.2e+03   7.1
+LNRace            3.3e+07  17.3</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<h4 id="loo-cv-4">LOO-CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                  elpd_diff se_diff  n_se
+LNRace_reg_priors      0.00    0.00   NaN
+LNRace                -0.04    0.26 -0.15
+FG                    -3.68   11.14 -0.33</code></pre>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<ul>
+<li>Now BF chooses a conceptually more correct model.</li>
+<li>CV is still undecided.</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="case-1.c-yet-another-competitor" class="slide level2">
+<h2>Case 1.c Yet another competitor</h2>
+<ol start="5" type="1">
+<li>A more flexible implementation of the LNR model</li>
+</ol>
+<ul>
+<li>It relaxes the assumption that the noise parameter is the same for all the accumulators.</li>
+</ul>
+<ol type="a">
+<li>with very uninformative priors</li>
+<li>with regularizing priors.</li>
+</ol>
+</section>
+<section id="c-ppc" class="slide level2 scrollable">
+<h2>1.c PPC</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-23-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-23-2.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-23-3.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-23-4.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-23-5.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="c-ppc-1" class="slide level2 scrollable">
+<h2>1.c PPC</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-24-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-24-2.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-24-3.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-24-4.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-24-5.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="c-model-comparison-3" class="slide level2 scrollable">
+<h2>1.c Model comparison 3</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="bayes-factor-6">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                          BF logBF
+LNRace_fl_reg_priors 1.0e+00   0.0
+agnosticLog          3.6e+02   5.9
+LNRace_fl            1.2e+06  14.0
+LNRace_reg_priors    1.6e+09  21.2
+FG                   2.0e+12  28.3
+LNRace               5.3e+16  38.5
+agnostic             3.6e+84 194.7</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<h4 id="loo-cv-5">LOO-CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                     elpd_diff se_diff  n_se
+agnosticLog                0.0     0.0   NaN
+LNRace_fl_reg_priors      -2.3     4.5 -0.51
+LNRace_fl                 -2.4     4.5 -0.53
+LNRace_reg_priors        -28.2     5.2 -5.37
+LNRace                   -28.2     5.2 -5.38
+FG                       -31.9     8.3 -3.84
+agnostic                -175.8    28.3 -6.21</code></pre>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<ul>
+<li>BF chooses the flexible LNR model with good priors.</li>
+<li>CV is still undecided.</li>
+</ul>
+</div>
+<div class="fragment">
+<h3 id="only-cognitive-models-2">Only cognitive models</h3>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="bayes-factor-7">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                          BF logBF
+LNRace_fl_reg_priors 1.0e+00     0
+LNRace_fl            1.2e+06    14
+LNRace_reg_priors    1.6e+09    21
+FG                   2.0e+12    28
+LNRace               5.3e+16    38</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<h4 id="loo-cv-6">LOO-CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                     elpd_diff se_diff  n_se
+LNRace_fl_reg_priors      0.00    0.00   NaN
+LNRace_fl                -0.07    0.08 -0.82
+LNRace_reg_priors       -25.90    5.78 -4.48
+LNRace                  -25.94    5.73 -4.52
+FG                      -29.58    8.22 -3.60</code></pre>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<ul>
+<li>Both methods agree.</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="fast-guess-vs-flexible-lnr" class="slide level2">
+<h2>Fast guess vs Flexible LNR</h2>
+
+<img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-29-1.png" width="960" class="r-stretch"></section></section>
+<section>
+<section id="case-2.-accuracy-emphasis" class="title-slide slide level1 center">
+<h1>Case 2. Accuracy emphasis</h1>
+
+</section>
+<section id="posterior-predictive-check" class="slide level2">
+<h2>2. Posterior predictive check</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-30-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-30-2.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-30-3.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-30-4.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-30-5.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="model-comparison" class="slide level2 scrollable">
+<h2>2. Model comparison</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="bayes-factor-8">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                          BF logBF
+agnosticLog          1.0e+00     0
+FG                   8.2e+05    14
+LNRace_reg_priors    2.2e+06    15
+LNRace_fl_reg_priors 5.0e+06    15
+LNRace_fl            7.0e+12    30
+LNRace               1.4e+14    33
+agnostic             2.5e+73   169</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<h4 id="loo-cv-7">LOO-CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                     elpd_diff se_diff n_se
+agnosticLog                  0     0.0  NaN
+FG                         -23     7.7 -3.0
+LNRace_fl_reg_priors       -25     7.2 -3.5
+LNRace_fl                  -25     7.2 -3.5
+LNRace                     -28     8.2 -3.4
+LNRace_reg_priors          -28     8.2 -3.4
+agnostic                  -182    42.1 -4.3</code></pre>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<ul>
+<li>Both methods select the theory-agnostic model</li>
+</ul>
+</div>
+<div class="fragment">
+<h3 id="only-cognitive-models-3">Only cognitive models</h3>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="bayes-factor-9">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                          BF logBF
+FG                   1.0e+00   0.0
+LNRace_reg_priors    2.7e+00   1.0
+LNRace_fl_reg_priors 6.1e+00   1.8
+LNRace_fl            8.4e+06  15.9
+LNRace               1.7e+08  19.0</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<h4 id="loo-cv-8">LOO-CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                     elpd_diff se_diff  n_se
+FG                         0.0       0   NaN
+LNRace_fl_reg_priors      -1.8      11 -0.16
+LNRace_fl                 -1.9      11 -0.17
+LNRace                    -4.8      12 -0.42
+LNRace_reg_priors         -4.8      11 -0.42</code></pre>
+</div>
+</div>
+</div></div>
+<p>. . .</p>
+<ul>
+<li>Fast Guess model is selected!</li>
+</ul>
+</div>
+</section></section>
+<section>
+<section id="case-3.-considering-both-speed-and-accuracy-emphasis" class="title-slide slide level1 center">
+<h1>Case 3. Considering both speed and accuracy emphasis</h1>
+
+</section>
+<section id="ppc" class="slide level2 scrollable">
+<h2>3. PPC</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-37-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-37-2.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-37-3.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-37-4.png" width="960"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-37-5.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="model-comparison-1" class="slide level2 scrollable">
+<h2>3. Model comparison</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h4 id="bayes-factor-10">Bayes factor</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                           BF logBF
+LNRace_fl_reg_priors  1.0e+00     0
+LNRace_fl             8.0e+09    23
+agnosticLog           1.8e+14    33
+LNRace_reg_priors     1.9e+37    86
+LNRace                4.7e+48   112
+FG                    3.7e+53   123
+agnostic             2.3e+180   415</code></pre>
+</div>
+</div>
+</div><div class="column" style="width:50%;">
+<h4 id="loo-cv-9">LOO-CV</h4>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>                     elpd_diff se_diff  n_se
+LNRace_fl                 0.00    0.00   NaN
+LNRace_fl_reg_priors     -0.06    0.34 -0.18
+agnosticLog             -19.70   13.53 -1.46
+LNRace_reg_priors       -92.93   14.88 -6.24
+LNRace                  -93.01   14.95 -6.22
+FG                     -113.70   18.80 -6.05
+agnostic               -413.11   63.55 -6.50</code></pre>
+</div>
+</div>
+</div></div>
+<div class="fragment">
+<ul>
+<li>BF does select the best model! (but it still selects theory-agnostic as better than some conceptually correct models)</li>
+<li>CV can’t distinguish between the theory agnostic the best model.</li>
+</ul>
+</div>
+</section></section>
+<section>
+<section id="key-takeaways" class="title-slide slide level1 center">
+<h1>Key Takeaways</h1>
+
+</section>
+<section id="dont-mistake-the-map-for-the-territory" class="slide level2">
+<h2>Don’t mistake the map for the territory</h2>
+<div class="columns">
+<div class="column" style="width:30%;">
+<p><img data-src="map.png" width="300"></p>
+<div class="fragment">
+<p>But don’t throw the map away!</p>
+</div>
+</div><div class="column" style="width:70%;">
+<ul>
+<li class="fragment"><p>Generalization stays within observed data</p></li>
+<li class="fragment"><p>Predictive ≠ true model</p></li>
+<li class="fragment"><p>Explanatory models need constraints:</p>
+<ul>
+<li class="fragment">data, theory, and biology/physics</li>
+</ul></li>
+<li class="fragment"><p>Quantitative checks ≠ full understanding</p></li>
+<li class="fragment"><p>Good models make testable, risky predictions</p></li>
+<li class="fragment"><p>Bayes Factors: priors matter (a little or a lot)</p></li>
+<li class="fragment"><p>CV: often inconclusive without clear gains</p></li>
+</ul>
+</div></div>
+<aside class="notes">
+<ul>
+<li><p>Don’t mistake the map for the territory.</p></li>
+<li><p>Generalization happens <em>within</em> the range of observed data.</p></li>
+<li><p>A predictive (flexible) model isn’t necessarily a true model.</p></li>
+<li><p>Explanatory models should be constrained by:</p>
+<ul>
+<li><strong>Data</strong>, including experimental manipulations or diverse ecological observations</li>
+<li><strong>Theory</strong>, since we’re implementing a theoretical framework</li>
+<li><strong>Biological or physical constraints</strong>, when that information is available</li>
+</ul></li>
+<li><p>Quantitative evaluation is important, but it cannot replace a qualitative understanding of data patterns.</p></li>
+<li><p>A good model should make testable, non-trivial predictions (Mehl’s “risky predictions”).</p></li>
+<li><p>For Bayes Factors, priors matter (sometimes a little, sometimes a lot).</p></li>
+<li><p>Cross-validation often remains inconclusive unless there is a clear improvement in predictive performance.</p></li>
+</ul>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="references" class="slide level2 unnumbered smaller scrollable">
+<h2>References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-brownSimplestCompleteModel2008" class="csl-entry" role="listitem">
+Brown, Scott D., and Andrew Heathcote. 2008. <span>“The Simplest Complete Model of Choice Response Time: <span>Linear</span> Ballistic Accumulation.”</span> <em>Cognitive Psychology</em> 57 (3): 153–78. <a href="https://doi.org/10.1016/j.cogpsych.2007.12.002">https://doi.org/10.1016/j.cogpsych.2007.12.002</a>.
+</div>
+<div id="ref-epstein2008model" class="csl-entry" role="listitem">
+Epstein, Joshua M. 2008. <span>“Why Model?”</span> <em>Journal of Artificial Societies and Social Simulation</em> 11 (4): 12. <a href="https://www.jasss.org/11/4/12.html">https://www.jasss.org/11/4/12.html</a>.
+</div>
+<div id="ref-henrich_heine_norenzayan_2010" class="csl-entry" role="listitem">
+Henrich, Joseph, Steven J. Heine, and Ara Norenzayan. 2010. <span>“The Weirdest People in the World?”</span> <em>Behavioral and Brain Sciences</em> 33 (2-3): 61–83. <a href="https://doi.org/10.1017/S0140525X0999152X">https://doi.org/10.1017/S0140525X0999152X</a>.
+</div>
+<div id="ref-jaynes2003probability" class="csl-entry" role="listitem">
+Jaynes, Edwin T. 2003. <em>Probability Theory: <span>T</span>he Logic of Science</em>. Cambridge University Press.
+</div>
+<div id="ref-lisson_2020" class="csl-entry" role="listitem">
+Lissón, Paula, Dorothea Pregla, Bruno Nicenboim, Dario Paape, Mick van het Nederend, Frank Burchert, Nicole Stadie, David Caplan, and Shravan Vasishth. 2021. <span>“A Computational Evaluation of Two Models of Retrieval Processes in Sentence Processing in Aphasia.”</span> <em>Cognitive Science</em> 45: e12956. <a href="https://onlinelibrary.wiley.com/doi/full/10.1111/cogs.12956">https://onlinelibrary.wiley.com/doi/full/10.1111/cogs.12956</a>.
+</div>
+<div id="ref-navarroDevilDeepBlue2018" class="csl-entry" role="listitem">
+Navarro, Danielle J. 2019. <span>“Between the <span>Devil</span> and the <span>Deep Blue Sea</span>: <span>Tensions Between Scientific Judgement</span> and <span>Statistical Model Selection</span>.”</span> <em>Computational Brain &amp; Behavior</em> 2 (1): 28–34. <a href="https://doi.org/10.1007/s42113-018-0019-z">https://doi.org/10.1007/s42113-018-0019-z</a>.
+</div>
+<div id="ref-Nicenboim2024Bayesian" class="csl-entry" role="listitem">
+Nicenboim, Bruno, Daniel J. Schad, and Shravan Vasishth. 2025. <em>Introduction to Bayesian Data Analysis for Cognitive Science</em>. 1st ed. Chapman; Hall/CRC. <a href="https://doi.org/10.1201/9780429342646">https://doi.org/10.1201/9780429342646</a>.
+</div>
+<div id="ref-NicenboimPreactivation2019" class="csl-entry" role="listitem">
+Nicenboim, Bruno, Shravan Vasishth, and Frank Rösler. 2020. <span>“Are Words Pre-Activated Probabilistically During Sentence Comprehension? Evidence from New Data and a <span>B</span>ayesian Random-Effects Meta-Analysis Using Publicly Available Data.”</span> <em>Neuropsychologia</em> 142. <a href="https://doi.org/10.1016/j.neuropsychologia.2020.107427">https://doi.org/10.1016/j.neuropsychologia.2020.107427</a>.
+</div>
+<div id="ref-Ollman1966" class="csl-entry" role="listitem">
+Ollman, Robert. 1966. <span>“Fast Guesses in Choice Reaction Time.”</span> <em>Psychonomic Science</em> 6 (4): 155–56. https://doi.org/<a href="https://doi.org/10.3758/BF03328004">https://doi.org/10.3758/BF03328004</a>.
+</div>
+<div id="ref-Terry2015" class="csl-entry" role="listitem">
+Terry, Andrew, A. A. J. Marley, Avinash Barnwal, E.-J. Wagenmakers, Andrew Heathcote, and Scott D. Brown. 2015. <span>“Generalising the Drift Rate Distribution for Linear Ballistic Accumulators.”</span> <em>Journal of Mathematical Psychology</em> 68-69 (October): 49–58. <a href="https://doi.org/10.1016/j.jmp.2015.09.002">https://doi.org/10.1016/j.jmp.2015.09.002</a>.
+</div>
+<div id="ref-VehtariLampinen2002" class="csl-entry" role="listitem">
+Vehtari, Aki, and Jouko Lampinen. 2002. <span>“Bayesian Model Assessment and Comparison Using Cross-Validation Predictive Densities.”</span> <em>Neural Computation</em> 14 (10): 2439–68. <a href="https://doi.org/10.1162/08997660260293292">https://doi.org/10.1162/08997660260293292</a>.
+</div>
+<div id="ref-VehtariOjanen2012" class="csl-entry" role="listitem">
+Vehtari, Aki, and Janne Ojanen. 2012. <span>“A Survey of <span>Bayes</span>ian Predictive Methods for Model Assessment, Selection and Comparison.”</span> <em>Statistical Surveys</em> 6 (0): 142–228. <a href="https://doi.org/10.1214/12-ss102">https://doi.org/10.1214/12-ss102</a>.
+</div>
+<div id="ref-WangGelman2014difficulty" class="csl-entry" role="listitem">
+Wang, Wei, and Andrew Gelman. 2014. <span>“Difficulty of Selecting Among Multilevel Models Using Predictive Accuracy.”</span> <em>Statistics at Its Interface</em> 7: 1–8.
+</div>
+</div>
+</section>
+<section id="visualization-of-elpd" class="slide level2 unnumbered scrollable">
+<h2>2. Visualization of elpd</h2>
+<ul>
+<li>Flexible LNRace vs FG</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-41-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>Flexible LNRace vs Theory-agnostic Log</li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="wrongmodels_files/figure-revealjs/unnamed-chunk-42-1.png" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+
+</section></section>
+    </div>
+  <div class="quarto-auto-generated-content" style="display: none;">
+<div class="footer footer-default">
+
+</div>
+</div></div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="wrongmodels_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="wrongmodels_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="wrongmodels_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="wrongmodels_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="wrongmodels_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="wrongmodels_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="wrongmodels_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="wrongmodels_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="wrongmodels_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="wrongmodels_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': false,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'jumpToSlide': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.toggleScrollView(event)\"><kbd>r</kbd> Scroll View Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"5\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: 'c/t',
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'none',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 1250,
+
+        height: 700,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
+    <script id="quarto-html-after-body" type="application/javascript">
+      window.document.addEventListener("DOMContentLoaded", function (event) {
+        const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+        tabsets.forEach(function(tabset) {
+          const tabby = new Tabby('#' + tabset.id);
+        });
+        const isCodeAnnotation = (el) => {
+          for (const clz of el.classList) {
+            if (clz.startsWith('code-annotation-')) {                     
+              return true;
+            }
+          }
+          return false;
+        }
+        const onCopySuccess = function(e) {
+          // button target
+          const button = e.trigger;
+          // don't keep focus
+          button.blur();
+          // flash "checked"
+          button.classList.add('code-copy-button-checked');
+          var currentTitle = button.getAttribute("title");
+          button.setAttribute("title", "Copied!");
+          let tooltip;
+          if (window.bootstrap) {
+            button.setAttribute("data-bs-toggle", "tooltip");
+            button.setAttribute("data-bs-placement", "left");
+            button.setAttribute("data-bs-title", "Copied!");
+            tooltip = new bootstrap.Tooltip(button, 
+              { trigger: "manual", 
+                customClass: "code-copy-button-tooltip",
+                offset: [0, -8]});
+            tooltip.show();    
+          }
+          setTimeout(function() {
+            if (tooltip) {
+              tooltip.hide();
+              button.removeAttribute("data-bs-title");
+              button.removeAttribute("data-bs-toggle");
+              button.removeAttribute("data-bs-placement");
+            }
+            button.setAttribute("title", currentTitle);
+            button.classList.remove('code-copy-button-checked');
+          }, 1000);
+          // clear code selection
+          e.clearSelection();
+        }
+        const getTextToCopy = function(trigger) {
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
+            }
+            return codeEl.innerText;
+        }
+        const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+          text: getTextToCopy
+        });
+        clipboard.on('success', onCopySuccess);
+        if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+          const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+            text: getTextToCopy,
+            container: window.document.getElementById('quarto-embedded-source-code-modal')
+          });
+          clipboardModal.on('success', onCopySuccess);
+        }
+          var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+          var mailtoRegex = new RegExp(/^mailto:/);
+            var filterRegex = new RegExp('/' + window.location.host + '/');
+          var isInternal = (href) => {
+              return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+          }
+          // Inspect non-navigation links and adorn them if external
+         var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+          for (var i=0; i<links.length; i++) {
+            const link = links[i];
+            if (!isInternal(link.href)) {
+              // undo the damage that might have been done by quarto-nav.js in the case of
+              // links that we want to consider external
+              if (link.dataset.originalHref !== undefined) {
+                link.href = link.dataset.originalHref;
+              }
+            }
+          }
+        function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+          const config = {
+            allowHTML: true,
+            maxWidth: 500,
+            delay: 100,
+            arrow: false,
+            appendTo: function(el) {
+                return el.closest('section.slide') || el.parentElement;
+            },
+            interactive: true,
+            interactiveBorder: 10,
+            theme: 'light-border',
+            placement: 'bottom-start',
+          };
+          if (contentFn) {
+            config.content = contentFn;
+          }
+          if (onTriggerFn) {
+            config.onTrigger = onTriggerFn;
+          }
+          if (onUntriggerFn) {
+            config.onUntrigger = onUntriggerFn;
+          }
+            config['offset'] = [0,0];
+            config['maxWidth'] = 700;
+          window.tippy(el, config); 
+        }
+        const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+        for (var i=0; i<noterefs.length; i++) {
+          const ref = noterefs[i];
+          tippyHover(ref, function() {
+            // use id or data attribute instead here
+            let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+            try { href = new URL(href).hash; } catch {}
+            const id = href.replace(/^#\/?/, "");
+            const note = window.document.getElementById(id);
+            if (note) {
+              return note.innerHTML;
+            } else {
+              return "";
+            }
+          });
+        }
+        const findCites = (el) => {
+          const parentEl = el.parentElement;
+          if (parentEl) {
+            const cites = parentEl.dataset.cites;
+            if (cites) {
+              return {
+                el,
+                cites: cites.split(' ')
+              };
+            } else {
+              return findCites(el.parentElement)
+            }
+          } else {
+            return undefined;
+          }
+        };
+        var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+        for (var i=0; i<bibliorefs.length; i++) {
+          const ref = bibliorefs[i];
+          const citeInfo = findCites(ref);
+          if (citeInfo) {
+            tippyHover(citeInfo.el, function() {
+              var popup = window.document.createElement('div');
+              citeInfo.cites.forEach(function(cite) {
+                var citeDiv = window.document.createElement('div');
+                citeDiv.classList.add('hanging-indent');
+                citeDiv.classList.add('csl-entry');
+                var biblioDiv = window.document.getElementById('ref-' + cite);
+                if (biblioDiv) {
+                  citeDiv.innerHTML = biblioDiv.innerHTML;
+                }
+                popup.appendChild(citeDiv);
+              });
+              return popup.innerHTML;
+            });
+          }
+        }
+      });
+      </script>
+    
+
+</body></html>
