@@ -16,8 +16,11 @@ website:
         text: Software   
       - href: cv.qmd
         text: CV           
+      - href: blog/index.qmd
+        text: Posts
 format:
   html:
+    code-fold: false
     theme:
       - cosmo
       - brand

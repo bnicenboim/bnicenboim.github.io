@@ -4,12 +4,18 @@ image: "fig/me.jpeg"
 about:
   template: solana
   links:
+    - text: "{{< ai google-scholar >}}"
+      href: https://scholar.google.com/citations?user=v31PY0QAAAAJ&hl=en&oi=ao
+    - text: "{{< ai semantic-scholar >}}"
+      href: https://www.semanticscholar.org/author/Bruno-Nicenboim/3474855   
     - icon: github
       href: https://github.com/bnicenboim/
     - text: "{{< ai orcid >}}"
       href: http://orcid.org/0000-0002-5176-3943
-    - text: "![](icons/osf.svg){height=1em}"
+    - text: "![](icons/osf.svg){height=1em style='vertical-align: -0.125em;'}"
       href: https://osf.io/cmist/#!
+    - icon: linkedin
+      href: https://www.linkedin.com/in/bruno-nicenboim-518763387/
 ---
 
 |          |                                                             |
@@ -40,10 +46,9 @@ I study computational cognitive modeling of psycholinguistic phenomena, with som
 I am also interested in broader aspects of computational modeling:
 
 -   Dubova, M., S. Chandramouli, G. Gigerenzer, P. Grünwald, W. Holmes, T. Lombrozo, M. Marelli, S. Musslick, **B. Nicenboim**, L. N. Ross, et al. (2025). "Is Ockham's razor losing its edge? New perspectives on the principle of model parsimony." In: *Proceedings of the National Academy of Sciences*, 122(5), p. e2401230121. DOI: 10.1073/pnas.2401230121. [\[read\]](https://www.pnas.org/doi/abs/10.1073/pnas.2401230121)
-
+- I was one of the organizers of the first [Computational Psycholinguistics Meeting (2025)](https://cpl2025.sites.uu.nl/):  a new recurring meeting dedicated exclusively to computational psycholinguistics.
 -   I organized the Lorentz Centre "Cognitive Modeling of Complex Behavior" workshop in January 2024, along with [Riccardo Fusaroli](https://fusaroli.weebly.com) and [Marieke van Vugt](https://mkvanvugt.wordpress.com/). This hands-on event focused on collaborative modeling of cognitive phenomena. See [here](https://www.lorentzcenter.nl/cognitive-modeling-of-complex-behavior.html).
-
--   I served as the local chair of the 57th Annual Meeting of the Society for Mathematical Psychology (MathPsych) and the 22nd International Conference on Cognitive Modeling (ICCM) 2024. [(conference link)](https://mathpsych.org/conference/15/).
+<!-- -   I served as the local chair of the 57th Annual Meeting of the Society for Mathematical Psychology (MathPsych) and the 22nd International Conference on Cognitive Modeling (ICCM) 2024. [(conference link)](https://mathpsych.org/conference/15/). -->
 
 ## EEG in Psycholinguistics
 

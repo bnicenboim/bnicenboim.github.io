@@ -1,1 +1,10 @@
 /* css styles */
+/* Make OSF icon grayscale by default, color on hover */
+a:has(img[src*="osf.svg"]) img {
+  filter: grayscale(100%);
+  transition: filter 0.2s ease;
+}
+
+a:has(img[src*="osf.svg"]):hover img {
+  filter: grayscale(0%);
+}

@@ -3,7 +3,7 @@
     "path": "~/dev/bnicenboim/index.qmd",
     "project_path": "index.qmd",
     "type": "quarto_markdown",
-    "hash": "3443034001",
+    "hash": "0",
     "contents": "",
     "dirty": false,
     "created": 1758797675053.0,
@@ -17,15 +17,15 @@
         "docOutlineVisible": "1",
         "rmdVisualCollapsedChunks": "",
         "rmdVisualModeLocation": "3959:3965",
-        "cursorPosition": "80,0",
-        "scrollLine": "78"
+        "cursorPosition": "48,4",
+        "scrollLine": "48"
     },
     "folds": "",
-    "lastKnownWriteTime": 1767677236,
+    "lastKnownWriteTime": 1767693674,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1767677236499,
+    "last_content_update": 1767693674886,
     "read_only": false,
     "read_only_alternatives": []
 }

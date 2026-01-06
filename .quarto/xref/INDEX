@@ -16,5 +16,8 @@
   },
   "cv.qmd": {
     "cv.html": "5092a9ee"
+  },
+  "blog/index.qmd": {
+    "index.html": "7f293335"
   }
 }
