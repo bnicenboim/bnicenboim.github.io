@@ -1,9 +1,10 @@
 project:
   type: website
-  output-dir: docs  # <-- add this
+  output-dir: docs  
 
 website:
   title: "Bruno Nicenboim"
+  site-url: "https://bruno.nicenboim.me"
   navbar:
     left:
       - href: index.qmd
@@ -18,7 +19,10 @@ website:
         text: CV           
       - href: posts/index.qmd
         text: Posts
-
+    right:
+      - icon: rss
+        href: posts/index.xml
+        aria-label: RSS Feed
 
 format:
   html:

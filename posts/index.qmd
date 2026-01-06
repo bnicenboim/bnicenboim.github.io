@@ -7,6 +7,11 @@ listing:
   categories: true
   sort-ui: false
   filter-ui: false
+  feed:
+    title: "Bruno Nicenboim's Blog"
+    description: "Posts about computational cognitive science, Bayesian methods, EEG, and AI."
+    items: 20
+    type: full
 page-layout: full
 title-block-banner: true
 ---
