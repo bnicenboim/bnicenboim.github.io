@@ -1,0 +1,32 @@
+"0","for(y in sort(unique(as.numeric(inproceedings$year)))){
+
+    inproceedings_y <- suppressMessages(inproceedings[list(year=as.character(y))])
+        output(inproceedings_y,withbrackets=TRUE)
+
+}
+"
+"2","G3;Writing 1 Bibtex entries ... g"
+"2","G3;OK
+Results written to file ‘bibs/VasishthEtAl2017Modelling.bib’
+g"
+"1","<p> Vasishth, S., N. Chopin, R. Ryder, and **B. Nicenboim** (2017). &ldquo;Modelling dependency completion in sentence comprehension as a Bayesian hierarchical mixture process: A case study involving Chinese relative clauses&rdquo;. In:  <em>Proceedings of Cognitive Science Conference</em>. London, UK. **[**<a href=""https://arxiv.org/abs/1702.00564v2"">**eprint**</a>**]**  **[**<a href=""bibs/VasishthEtAl2017Modelling.bib"">**bib**</a>**]** </p>"
+"2","G3;Writing 1 Bibtex entries ... g"
+"2","G3;OK
+Results written to file ‘bibs/VasishthEtAl2017Feature.bib’
+g"
+"1","<p> Vasishth, S., L. Jaeger, and **B. Nicenboim** (2017). &ldquo;Feature overwriting as a finite mixture process: Evidence from comprehension data&rdquo;. In:  <em>Proceedings of MathPsych/ICCM Conference</em>. Warwick, UK. **[**<a href=""https://arxiv.org/abs/1703.04081"">**eprint**</a>**]**  **[**<a href=""bibs/VasishthEtAl2017Feature.bib"">**bib**</a>**]** </p>"
+"2","G3;Writing 1 Bibtex entries ... g"
+"2","G3;OK
+Results written to file ‘bibs/NicenboimVasishth2017StanCon.bib’
+g"
+"1","<p> **Nicenboim, B.** and S. Vasishth (2017). &ldquo;Models of Retrieval in Sentence Comprehension&rdquo;. In:  <em>StanCon</em>. (superseeded by 10.1016/j.jml.2017.08.004). Columbia University New York, NY. **[**<a href=""https://youtu.be/DJ0c7Bm5Djk?t=6h18m1s"">**talk**</a>**]**  **[**<a href=""bibs/NicenboimVasishth2017StanCon.bib"">**bib**</a>**]** </p>"
+"2","G3;Writing 1 Bibtex entries ... g"
+"2","G3;OK
+Results written to file ‘bibs/Nicenboim2018StanCon.bib’
+g"
+"1","<p> **Nicenboim, B.** (2018). &ldquo;The implementation of a model of choice: The (truncated) linear ballistic accumulator&rdquo;. In:  <em>StanCon</em>. Aalto University, Helsinki, Finland. DOI: <a href=""https://doi.org/10.5281/zenodo.1465990"">10.5281/zenodo.1465990</a>. **[**<a href=""https://htmlpreview.github.io/?https://github.com/stan-dev/stancon_talks/blob/master/2018-helsinki/Contributed-Talks/nicenboim/LBA_stancon2018.html"">**eprint**</a>**]**  **[**<a href=""https://www.youtube.com/watch?v=wcpjZC9AV84&t=1h44m33s"">**talk**</a>**]**  **[**<a href=""bibs/Nicenboim2018StanCon.bib"">**bib**</a>**]** </p>"
+"2","G3;Writing 1 Bibtex entries ... g"
+"2","G3;OK
+Results written to file ‘bibs/Nicenboim2023ICCM.bib’
+g"
+"1","<p> **Nicenboim, B.** (2023). &ldquo;The CoFI Reader: A Continuous Flow of Information approach to modeling reading&rdquo;. In:  <em>MathPsych/ICCM/EMPG</em>. University of Amsterdam, the Netherlands. **[**<a href=""https://mathpsych.org/presentation/998#/document"">**eprint**</a>**]**  **[**<a href=""bibs/Nicenboim2023ICCM.bib"">**bib**</a>**]** </p>"

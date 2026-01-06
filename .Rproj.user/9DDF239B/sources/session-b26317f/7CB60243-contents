@@ -1,0 +1,360 @@
+---
+title: "CURRICULUM VITAE"
+---
+
+# Contact Information
+
+```{r setup, include=FALSE}
+# remove the year from talks, add months, order by months
+library(knitr)
+library(rmarkdown)
+library(htmltools)
+
+options(htmltools.dir.version = FALSE)
+
+library(RefManageR)
+articles <- ReadBib("papers/articles.bib", check = FALSE)
+inproceedings <- ReadBib("papers/inproceedings.bib", check = FALSE)
+presentations <- ReadBib("papers/others.bib", check = FALSE)
+underreview <- ReadBib("papers/underreview.bib", check = FALSE)
+books <- ReadBib("papers/books.bib", check = FALSE)
+unpublished <- ReadBib("papers/unpublished.bib", check = FALSE)
+
+endcit <- "</cite></p>"
+ 
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+first_year <-  2000
+source("common.R")
+
+
+BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
+           bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE, no.print.fields=c("issn","eprint","url","customa","customb","customc"))
+
+
+sort(articles,sorting="ydnt")
+sort(inproceedings,sorting="ydnt")
+sort(inproceedings,sorting="ydnt")
+sort(presentations,sorting="ydnt")
+sort(underreview,sorting="ydnt")
+sort(books,sorting="ydnt")
+sort(unpublished,sorting="ydnt")
+
+endcit<- "</cite></p>"
+
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+first_year <-  2000
+
+```
+
+|          |                                                             |
+|:---------|-------------------------------------------------------------|
+| Email:   | \[initial\].\[lastname\] \[at\] tilburguniversity.edu       |
+| Office:  | D108, Dante Building, Tilburg University                    |
+| Address: | Department of Computational Cognitive Science,              |
+|          | Cognitive Science and Artificial Intelligence               |
+|          | Tilburg University                                          |
+|          | PO Box 90153                                                |
+|          | 5000 LE Tilburg                                             |
+|          | The Netherlands                                             |
+
+<br/> <br/>
+
+# Education
+
+|  |  |
+|:-------------------|:---------------------------------------------------|
+| 2011--2017 | **PhD in Cognitive Science, University of Potsdam** |
+|  | Topic: Dependency resolution as a retrieval process |
+|  | Supervisors: Prof. Dr. Shravan Vasishth and Prof. Dr. Reinhold Kliegl |
+|  | Grade: *summa cum laude* <br/> <br/> |
+| 2010 | M.A. in Linguistics, Tel Aviv University |
+|  | Topic: Processing Complex NP Islands in Hebrew |
+|  | Supervisors: Prof. Dr. Julia Horvath and Prof. Dr. Tal Siloni |
+|  | Grade: *summa cum laude* <br/> <br/> |
+| 2009 | B.A Double Major, Tel Aviv University |
+|  | Linguistics. Grade: *summa cum laude* |
+|  | Sociology and Anthropology. Grade: very good |
+
+<br/> <br/>
+
+# Academic-related work
+
+|  |  |
+|:-------------------|----------------------------------------------------|
+| 2020-- | **Assistant professor** (tenured) at the department of Cognitive Science and AI of Tilburg University, the Netherlands.<br/> <br/> |
+| 2020-- | Guest researcher at the Department of Linguistics of the University of Potsdam, Germany |
+| 2017--2020 | Postdoctoral Researcher, University of Potsdam. |
+|  | PIs: Shravan Vasishth, Frank Rösler <br/> <br/> |
+| 2016--2017 | Coordinator of the Master in Cognitive Systems, University of Potsdam <br/><br/> |
+| 2009--2009 | Research assistant, Tel Aviv University. Syntax and Lexicon interface. |
+|  | Supervisors: Prof. Dr. Tal Siloni and Prof. Dr. Julia Horvath <br/> <br/> |
+| 2008--2009 | Research assistant, Tel Aviv University. Psycholinguistics. |
+|  | Assistance in experiments using E-prime and CHILDES software. |
+|  | Supervisor: Prof. Dr. Ruth Berman |
+
+<br/> <br/>
+
+# Articles
+
+## Books
+
+```{r books,echo=F,results="asis",cache=F}
+output(books, withbrackets = FALSE) 
+```
+
+## Published or accepted in peer-reviewed journals
+
+```{r articles-cv,echo=FALSE,results="asis",cache=FALSE}
+
+for(y in sort(unique(as.numeric(articles$year)), decreasing  = TRUE)){
+    articles_y <- suppressMessages(articles[list(year=as.character(y))])
+    if(length(articles_y)!=0){    
+   #     cat(paste0("## ",as.character(y),"\n" )) 
+        output(articles_y, withbrackets=FALSE)  
+    }
+}    
+```
+
+<br/> <br/>
+
+## Unpublished/Under review manuscripts
+
+```{r,echo=F,results="asis",cache=F}
+ 
+output(underreview, withbrackets = FALSE) 
+output(unpublished, withbrackets = FALSE) 
+
+
+```
+
+<br/> <br/>
+
+## Short peer-reviewed papers in conferences
+
+```{r,echo=F,results="asis",cache=F}
+
+for(y in sort(unique(as.numeric(inproceedings$year)), decreasing  = TRUE)){
+
+    inproceedings_y <- suppressMessages(inproceedings[list(year=as.character(y))])
+        output(inproceedings_y,withbrackets=FALSE)
+
+}
+```
+
+<br/> <br/>
+
+
+## Contributions to open software
+
+-   `eeguana` (https://bruno.nicenboim.me/eeguana/) An R package for tidy-ish manipulation of EEG data. **Author**
+-   `pangoling` (https://bruno.nicenboim.me/pangoling/) An R package for estimating the log-probabilities of words in a given context using transformer models. **Author**
+-   `loo` (https://cran.r-project.org/web/packages/loo/). Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models. **Contributor**
+-   `MNE` (https://mne.tools/). Open-source Python package for exploring, visualizing, and analyzing human neurophysiological data. **Bug fixing**
+-   `Bayesplot` (https://github.com/stan-dev) R package providing an extensive library of plotting functions for use after fitting Bayesian models. **Bug fixing**
+
+<br/> <br/>
+
+# Abstracts in conferences
+
+```{r,echo=F,results="asis",cache=F}
+confs <- presentations[list(bibtype="inproceedings")]
+for(y in sort(unique(as.numeric(confs$year)), decreasing  = TRUE)){
+
+    confs_y <- suppressMessages(confs[list(year=as.character(y))])
+        output(confs_y,withbrackets=FALSE)
+
+}
+```
+
+<br/> <br/>
+
+# Invited talks
+
+```{r,echo=F,results="asis",cache=F}
+ 
+talksall <- presentations[list(bibtype="misc")]
+
+for(y in sort(unique(as.numeric(talksall$year)), decreasing  = TRUE)){
+
+    talksall_y <- suppressMessages(talksall[list(year=as.character(y))])
+        output(talksall_y,withbrackets=FALSE)
+
+}
+```
+
+<br/> <br/>
+
+# Honors and grants
+
+|  |  |
+|:-------------------|:---------------------------------------------------|
+| 2022 | NWO Starter Grant |
+| 2022 | [NWO Open Competition SGW XS grant](https://www.nwo.nl/en/researchprogrammes/open-competition-ssh/granted-projects) |
+| 2012--2018 | Potsdam Graduate School (PoGS) Travel Grants |
+| 2014 | Kommission für Forschung und wissenschaftlichen Nachwuchs (FNK, University of Potsdam) Travel Grant |
+| 2014 | Potsdam Graduate School (PoGS) PhD Completion Scholarship (5 months) |
+| 2013 | Minerva Fellowship Extension for Doctoral Research (1 year) |
+| 2011 | Minerva Fellowship for Doctoral Research (2 years) |
+| 2009 | Posis Scholarship from the School of Cultural Studies, Tel Aviv University |
+| 2008 | Faculty of Humanities Scholarship for Achievements in M.A. studies, Tel Aviv University |
+| 2006 | Dean's Award for Achievements in Linguistics, Tel Aviv University |
+
+<br/> <br/>
+
+# Teaching experience
+
+## Workshops and summer schools
+
+|  |  |
+|:-------------------|:---------------------------------------------------|
+| 2017-2025 | "Advanced Bayesian methods", |
+|  | Yearly Summer School on Statistical Methods for Linguistics and Psychology (SMLP), |
+|  | University of Potsdam, Germany\vspace{.1cm} |
+| 2020-2021 | "Introduction to computational Bayesian methods using Stan", Physalia courses, |
+|  | Berlin, Germany\vspace{.1cm} |
+| 2020 | "Methods in Advanced Statistics", with Shravan Vasishth |
+|  | 2020 Winter School organized by Netherlands Graduate School in Linguistics (LOT), |
+|  | Tilburg, Netherlands\vspace{.1cm} |
+| 2019 | "Introduction to Bayesian statistics using brms", |
+|  | University of Cologne, Germany\vspace{.1cm} |
+| 2019 | "Introduction to Bayesian statistics using brms", |
+|  | University of Edinburgh, UK\vspace{.1cm} |
+| 2018 | Talk:"Cognitive models of memory processes in sentence comprehension: A case study using Bayesian hierarchical modeling" |
+|  | Masterclass in Bayesian Statistics, Research school, |
+|  | CIRM (Marseille Luminy, France)\vspace{.1cm} |
+| 2017 | "Introduction to Bayesian Modeling using Stan", |
+|  | 13\. Tagung der Fachgruppe Methoden und Evaluation der Deutschen Gesellschaft für Psychologie, |
+|  | Tübingen, Germany\vspace{.1cm} |
+
+## Courses
+
+|  |  |
+|:-------------------|---------------------------------------------------:|
+| 2025-2026 | **Lecturer** in "Research Workshop", BA in Cognitive Science & AI. Tilburg University |
+| 2022-2025 | **Lecturer** in "Bayesian Multilevel Models/Bayesian Modeling for Data Science", Master in Data Science & Society. Tilburg University |
+| 2021-2025 | **Lecturer** in "Bayesian Models of Cognitive Processes", Master in Cognitive Science & AI. Tilburg University |
+| 2020-2021 | **Lecturer** in "Research skill: Programing with R", Data Science & Society. Tilburg University |
+| 2020-2021 | **Lecturer** in "Methodology for Premasters Data Science & Society". Tilburg University |
+| 2015--2017 (Winter) | **Lecturer** in "Advanced Data Analysis". University of Potsdam |
+| 2016 (Summer) | **Lecturer** in "Predictions in Language Processing". University of Potsdam |
+| 2015--2016 (Winter) | **Lecturer** in "Individual Differences in Sentence Processing". University of Potsdam |
+| 2015 (Summer) | **Lecturer** in "Predictions in Language Processing". University of Potsdam |
+| 2008--2010 | **Teaching assistant** in "Syntax Beginners" and "Foundations of Theoretical Linguistics" Tel Aviv University |
+
+<br/> <br/>
+
+<!-- # Supervising -->
+
+<!-- ------------------------  ----------------------------------------------------------------------- -->
+
+<!-- 2019                     Chiara Tschirner (co-supervision with Prof. Dr. Vasishth), Master Thesis.  -->
+
+<!-- 2018                      Eva-Maria Fey (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: "The effect of individual differences and the functional organisation of the human brain in joke comprehension based on left- and right-handedness" -->
+
+<!-- 2016                      Daniel Grünke (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: "Der Zusammenhang zwischen Arbeitsgedächtnis und Satzverarbeitung"  -->
+
+<!-- 2015                      Lisa Münchberger (co-supervision with Prof. Dr. Vasishth), Bachelor Thesis. Topic: "Unflüssigkeiten und Hemmungen in der Sprachverarbeitung im Deutschen"  -->
+
+<!-- ------------------------  ----------------------------------------------------------------------- -->
+
+<br/> <br/>
+
+# Academic-related training
+
+|  |  |
+|:-------------------|:---------------------------------------------------|
+| 2016 | Groningen Spring School on Cognitive Modeling, the Netherlands |
+| 2015--2016 | International Teaching Professionals, University of Potsdam, Germany |
+| 2013 | Autumn School Methods in Language Comprehension, Rovereto (TN), Italy |
+| 2012 | Eye-tracking-while-reading at Laboratory of Integrative Neuroscience, University of Buenos Aires (3 months). Host: Dr. Mariano Sigman |
+
+<br/> <br/>
+
+# Reviewing
+
+|  |  |
+|----|:---|
+| \* | NWO |
+| \* | DFG |
+| \* | Cognitive Psychology |
+| \* | Journal of Experimental Psychology: Learning, Memory, and Cognition |
+| \* | Neuropsychologia |
+| \* | Lingua |
+| \* | Phonological Data and Analysis |
+| \* | Language, Cognition and Neuroscience |
+| \* | Routledge Manuscript |
+| \* | Journal of Memory and Language |
+| \* | Quarterly Journal of Experimental Psychology |
+| \* | Journal of Cognitive Psychology |
+| \* | Journal of Phonetics |
+| \* | CUNY Conference |
+| \* | Quantitative approaches in corpus linguistics and psycholinguistics, Paris, France |
+
+<br/> <br/>
+
+# Languages
+
+|     |                         |
+|-----|:------------------------|
+| \*  | Spanish (Mother tongue) |
+| \*  | English (Fluent)        |
+| \*  | Hebrew (Fluent)         |
+| \*  | German (Advanced)       |
+| \*  | Dutch (Beginner)        |
+
+<br/> <br/>
+
+# Non-academic professional experience
+
+|  |  |
+|:-------------------|----------------------------------------------------|
+| 2009--2011 | QA engineer: NLP Testing at Clearforest. Testing rules and heuristics for identifying semantic entities and relations in English, Spanish and French texts. |
+| 2007--2009 | Content Specialist position at Celebros. Organization, analysis and categorization of data of Spanish and U.S. clients' databases. |
+
+```{=html}
+<!-- 
+    \section*{Summer schools and workshops}
+    \begin{tabular}{L!{\VRule}R}
+ 
+    
+    \end{tabular}
+
+    
+\section*{Languages}
+\begin{tabular}{L!{\VRule}R}
+Spanish & Mother tongue\\
+English & Fluent \\
+Hebrew & Fluent\\
+German & Intermediate (B2)\\
+\end{tabular}
+ 
+\section*{Formal Languages  }
+\begin{tabular}{L!{\VRule}R}
+    R & Advanced\\
+    Python & Advanced\\
+    Groovy (Java)& Advanced\\
+    LateX & Advanced\\
+\end{tabular}
+
+
+
+\section*{Non-academic Professional Experience}
+\begin{tabular}{L!{\VRule}R}
+2009--2011& \textbf{QA engineer} -- NLP Testing at Clearforest. Testing rules and heuristics for identifying semantic entities and relations in English, Spanish and French texts. Programming scripts, writing of QA documentation. \\[2pt]
+
+2007--2009& \textbf{Content Specialist} position at Celebros. Organization, analysis and categorization of data of Spanish and U.S. clients' databases. \\[2pt]
+
+2006--2007  &\textbf{Freelance translation} from English and Hebrew to Spanish. \\[2pt]
+
+2006 &  \textbf{Translation} from English and Hebrew to Spanish for Media Vision Company. Part of the website and manuals http://www.handwallet.com/spanish/ \\[2pt]
+\end{tabular}
+
+\section*{Places of residence}
+ \begin{tabular}{L!{\VRule}R}
+  2011--Now & Germany\\[2pt]
+ 2003--2011 & Israel\\[2pt]
+ 1981--2003 & Argentina\\[2pt]
+ \end{tabular}
+ 
+\end{document} -->
+```

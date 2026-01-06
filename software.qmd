@@ -1,0 +1,21 @@
+---
+title: "Software"
+---
+
+# Author
+
+## [eeguana](https://bruno.nicenboim.me/eeguana/) <a href="http://bruno.nicenboim.me/eeguana/"><img src="http://bruno.nicenboim.me/eeguana/reference/figures/logo.png" align="right" height="139" /></a>
+
+An R package for tidy-ish manipulation of EEG data. It is fully functional, but it's only able to do basic preprocessing. 
+
+
+## [pangoling](https://docs.ropensci.org/pangoling/) <a href="https://docs.ropensci.org//pangoling/"><img src="https://docs.ropensci.org//pangoling/logo.png" align="right" height="139" /></a>
+
+An R package for estimating the log-probabilities of words in a given context using transformer models. The package provides an interface for utilizing pre-trained transformer models (such as GPT-2 or BERT) to obtain word probabilities. These log-probabilities are often utilized as predictors in psycholinguistic studies.
+
+
+# Contributions
+
+-  [loo](https://cran.r-project.org/web/packages/loo/). Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models. **Contributor**
+-  [MNE](https://mne.tools/). Open-source Python package for exploring, visualizing, and analyzing human neurophysiological data. **Bug fixing**
+- [Bayesplot](https://github.com/stan-dev) R package providing an extensive library of plotting functions for use after fitting Bayesian models. **Bug fixing**

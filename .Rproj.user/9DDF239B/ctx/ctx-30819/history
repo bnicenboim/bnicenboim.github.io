@@ -1,0 +1,152 @@
+bibobj
+bibobj <- books
+####
+# Add [bib] with the biblatex
+###
+library(knitr)
+library(rmarkdown)
+library(htmltools)
+options(htmltools.dir.version = FALSE)
+library(RefManageR)
+articles <- ReadBib("papers/articles.bib", check = FALSE)
+inproceedings <- ReadBib("papers/inproceedings.bib", check = FALSE)
+presentations <- ReadBib("papers/others.bib", check = FALSE)
+underreview <- ReadBib("papers/underreview.bib", check = FALSE)
+books <- ReadBib("papers/books.bib", check = FALSE)
+unpublished <- ReadBib("papers/unpublished.bib", check = FALSE)
+BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
+bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE)
+# sort(bib,sorting="ydnt")
+endcit <- "</cite></p>"
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+first_year <-  2000
+source("common.R")
+#dir.create("papers", showWarnings = FALSE)
+# capture.output(print(underreview, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/underreview")
+#
+# capture.output(print(unpublished, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/unpublished.bib")
+#
+# articlesall <- bib[list(bibtype="article")]
+# capture.output(print(articlesall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/published.bib")
+# booksall <- bib[list(bibtype="book")]
+# capture.output(print(booksall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/published.bib")
+#
+# proceedingsall <- bib[list(bibtype="inproceedings")]
+# capture.output(print(proceedingsall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/proceedings.bib")
+output(books, withbrackets = TRUE)
+library(stringr)
+# endcit<- "</cite></p>"
+endcit<- "</cite></p>"
+begcit<- "<p><cite>"
+books -> bibobj
+bibobj
+capture.output(print(bibobj[i], .opts = list(no.print.fields="eprint") ))
+i <- 1
+capture.output(print(bibobj[i], .opts = list(no.print.fields="eprint") ))
+bibobj[i]
+as.character(bibobj[i])
+a <- capture.output(print(bibobj[i], .opts = list(no.print.fields="eprint") ))
+a
+a <- capture.output(print(bibobj[i], .opts = list(no.print.fields=c("eprint","URL") ))
+if(hack){
+a <- capture.output(print(bibobj[i], .opts = list(no.print.fields=c("eprint","URL") )))
+a
+output(books, withbrackets = TRUE)
+traceback()
+output(books, withbrackets = TRUE)
+output(books, withbrackets = TRUE)
+traceback()
+source("~/dev/bnicenboim/common.R", echo = TRUE)
+output(books, withbrackets = TRUE)
+output(books, withbrackets = TRUE)
+####
+# Add [bib] with the biblatex
+###
+library(knitr)
+library(rmarkdown)
+library(htmltools)
+options(htmltools.dir.version = FALSE)
+library(RefManageR)
+articles <- ReadBib("papers/articles.bib", check = FALSE)
+inproceedings <- ReadBib("papers/inproceedings.bib", check = FALSE)
+presentations <- ReadBib("papers/others.bib", check = FALSE)
+underreview <- ReadBib("papers/underreview.bib", check = FALSE)
+books <- ReadBib("papers/books.bib", check = FALSE)
+unpublished <- ReadBib("papers/unpublished.bib", check = FALSE)
+BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
+bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE)
+# sort(bib,sorting="ydnt")
+endcit <- "</cite></p>"
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+first_year <-  2000
+source("common.R")
+#dir.create("papers", showWarnings = FALSE)
+# capture.output(print(underreview, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/underreview")
+#
+# capture.output(print(unpublished, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/unpublished.bib")
+#
+# articlesall <- bib[list(bibtype="article")]
+# capture.output(print(articlesall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/published.bib")
+# booksall <- bib[list(bibtype="book")]
+# capture.output(print(booksall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/published.bib")
+#
+# proceedingsall <- bib[list(bibtype="inproceedings")]
+# capture.output(print(proceedingsall, .opts=list(style="Bibtex",no.print.fields=c("customa","customb","customc"))) ,file="papers/proceedings.bib")
+output(books, withbrackets = TRUE)
+####
+# Add [bib] with the biblatex
+###
+library(knitr)
+library(rmarkdown)
+library(htmltools)
+options(htmltools.dir.version = FALSE)
+library(RefManageR)
+articles <- ReadBib("papers/articles.bib", check = FALSE)
+inproceedings <- ReadBib("papers/inproceedings.bib", check = FALSE)
+presentations <- ReadBib("papers/others.bib", check = FALSE)
+underreview <- ReadBib("papers/underreview.bib", check = FALSE)
+books <- ReadBib("papers/books.bib", check = FALSE)
+unpublished <- ReadBib("papers/unpublished.bib", check = FALSE)
+BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
+bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE)
+# sort(bib,sorting="ydnt")
+endcit <- "</cite></p>"
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+first_year <-  2000
+source("common.R")
+sort
+# remove the year from talks, add months, order by months
+library(knitr)
+library(rmarkdown)
+library(htmltools)
+options(htmltools.dir.version = FALSE)
+library(RefManageR)
+articles <- ReadBib("papers/articles.bib", check = FALSE)
+inproceedings <- ReadBib("papers/inproceedings.bib", check = FALSE)
+presentations <- ReadBib("papers/others.bib", check = FALSE)
+underreview <- ReadBib("papers/underreview.bib", check = FALSE)
+books <- ReadBib("papers/books.bib", check = FALSE)
+unpublished <- ReadBib("papers/unpublished.bib", check = FALSE)
+endcit <- "</cite></p>"
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+first_year <-  2000
+source("common.R")
+BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
+bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE, no.print.fields=c("issn","eprint","url","customa","customb","customc"))
+sort(articles,sorting="ydnt")
+sort(inproceedings,sorting="ydnt")
+sort(inproceedings,sorting="ydnt")
+sort(presentations,sorting="ydnt")
+sort(underreview,sorting="ydnt")
+sort(books,sorting="ydnt")
+sort(unpublished,sorting="ydnt")
+endcit<- "</cite></p>"
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+first_year <-  2000
+confs <- presentations[list(bibtype="inproceedings")]
+confs <- presentations[list(bibtype="inproceedings")]
+output(confs,withbrackets = FALSE)
+quarto
+install.packages("quarto")
+quarto::quarto_add_extension("quarto-ext/fontawesome")
+quarto::quarto_add_extension("schochastics/academicons")

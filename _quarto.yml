@@ -1,0 +1,28 @@
+project:
+  type: website
+  output-dir: docs  # <-- add this
+
+website:
+  title: "Bruno Nicenboim"
+  navbar:
+    left:
+      - href: index.qmd
+        text: About me
+      - href: publications.qmd
+        text: Publications and presentations
+      - href: team.qmd
+        text: Team        
+      - href: software.qmd
+        text: Software   
+      - href: cv.qmd
+        text: CV           
+format:
+  html:
+    theme:
+      - cosmo
+      - brand
+    css: styles.css
+    toc: true
+
+editor: visual
+

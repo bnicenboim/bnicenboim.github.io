@@ -1,0 +1,31 @@
+---
+title: "Team"
+---
+
+Together with Giovanni Cassani, I am the PI of the [Computational Psycholinguistics Lab
+](https://www.tilburguniversity.edu/about/schools/tshd/departments/dca/lab/computational-psycholinguistics). 
+
+
+My current team is the following:
+
+## Phd Student
+
+:::: {style="display: grid; grid-template-columns: 20% 75%; grid-column-gap: 1px; "}
+::: {}
+![](https://saraoe.github.io/img/new_sara_hubbd7fc35c7002a749185caa85111773c_7078786_80x80_fill_q90_box_smart1.JPG)
+:::
+::: {}
+ [Sara Møller Østergaard](https://saraoe.github.io/)
+:::
+::::
+
+# Past members
+
+**Internship**:
+
+- [Hil Steketee](https://nl.linkedin.com/in/hil-steketee-75725923b)
+
+**Research assistants**
+
+- [Laura Boon](https://nl.linkedin.com/in/laura-boon-6992b8197)
+- [Lenneke Lichtenberg](https://nl.linkedin.com/in/lenneke-lichtenberg-a91a71172)

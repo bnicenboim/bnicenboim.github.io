@@ -1,0 +1,11 @@
+"0","sort
+"
+"1","function (x, decreasing = FALSE, ...) 
+{
+    if (!is.logical(decreasing) || length(decreasing) != 1L) 
+        stop(""'decreasing' must be a length-1 logical vector.\nDid you intend to set 'partial'?"")
+    UseMethod(""sort"")
+}
+<bytecode: 0x5ea23ab00610>
+<environment: namespace:base>
+"

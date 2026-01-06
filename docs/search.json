@@ -1,0 +1,205 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Bruno Nicenboim",
+    "section": "",
+    "text": "Email:\n[initial].[lastname] [at] tilburguniversity.edu\n\n\nOffice:\nD108, Dante Building, Tilburg University\n\n\nAddress:\nDepartment of Computational Cognitive Science,\n\n\n\nCognitive Science and Artificial Intelligence\n\n\n\nTilburg University\n\n\n\nPO Box 90153\n\n\n\n5000 LE Tilburg\n\n\n\nThe Netherlands"
+  },
+  {
+    "objectID": "index.html#computational-cognitive-modeling",
+    "href": "index.html#computational-cognitive-modeling",
+    "title": "Bruno Nicenboim",
+    "section": "Computational Cognitive Modeling",
+    "text": "Computational Cognitive Modeling\nI study computational cognitive modeling of psycholinguistic phenomena, with some examples below:\n\nNicenboim, B. (2023). “The CoFI Reader: A Continuous Flow of Information approach to modeling reading.” In: MathPsych/ICCM/EMPG. University of Amsterdam, the Netherlands. [read]\nNicenboim, B. and S. Vasishth (2018). “Models of Retrieval in Sentence Comprehension: A computational evaluation using Bayesian hierarchical modeling.” In: Journal of Memory and Language, 99, pp. 1–34. ISSN: 0749-596X. DOI: 10.1016/j.jml.2017.08.004. [read]\n\nI am also interested in broader aspects of computational modeling:\n\nDubova, M., S. Chandramouli, G. Gigerenzer, P. Grünwald, W. Holmes, T. Lombrozo, M. Marelli, S. Musslick, B. Nicenboim, L. N. Ross, et al. (2025). “Is Ockham’s razor losing its edge? New perspectives on the principle of model parsimony.” In: Proceedings of the National Academy of Sciences, 122(5), p. e2401230121. DOI: 10.1073/pnas.2401230121. [read]\nI organized the Lorentz Centre “Cognitive Modeling of Complex Behavior” workshop in January 2024, along with Riccardo Fusaroli and Marieke van Vugt. This hands-on event focused on collaborative modeling of cognitive phenomena. See here.\nI served as the local chair of the 57th Annual Meeting of the Society for Mathematical Psychology (MathPsych) and the 22nd International Conference on Cognitive Modeling (ICCM) 2024. (conference link)."
+  },
+  {
+    "objectID": "index.html#eeg-in-psycholinguistics",
+    "href": "index.html#eeg-in-psycholinguistics",
+    "title": "Bruno Nicenboim",
+    "section": "EEG in Psycholinguistics",
+    "text": "EEG in Psycholinguistics\nI also work with EEG in psycholinguistics:\n\nI’m currently finishing a project focusing on self-paced EEG data for benchmarks and computational modeling in the context of an NWO Open Competition SGW XS grant.\nK. Stone, B. Nicenboim, S. Vasishth, et al. “Understanding the effects of constraint and predictability in ERP.” In: Neurobiology of Language (Dec. 2022), pp. 1-71. DOI: 10.1162/nol_a_00094. [read]\nB. Nicenboim, S. Vasishth, and F. Rösler. “Are words pre-activated probabilistically during sentence comprehension? Evidence from new data and a Bayesian random-effects meta-analysis using publicly available data.” In: Neuropsychologia, 142 (2020), p. 107427. DOI: 10.1016/j.neuropsychologia.2020.107427. [read]\n\nI also developed an R package for EEG data manipulation: eeguana."
+  },
+  {
+    "objectID": "index.html#bayesian-statistics",
+    "href": "index.html#bayesian-statistics",
+    "title": "Bruno Nicenboim",
+    "section": "Bayesian Statistics",
+    "text": "Bayesian Statistics\nBayesian statistics provides a powerful framework for cognitive science by allowing principled uncertainty quantification and hierarchical modeling. I mostly work with Stan (and brms):\n\nIntroduction to Bayesian Data Analysis for Cognitive Science , co-authored with Shravan Vasishth and Daniel Schad. You can [buy it] or [read it for free].\nStan for Cognitive Science: A resource hub for Bayesian modeling with Stan."
+  },
+  {
+    "objectID": "index.html#data-and-code",
+    "href": "index.html#data-and-code",
+    "title": "Bruno Nicenboim",
+    "section": "Data and Code",
+    "text": "Data and Code\nMost of the data and code from my published papers are available on the OSF website, with some exceptions in my GitHub repository."
+  },
+  {
+    "objectID": "publications.html#section",
+    "href": "publications.html#section",
+    "title": "Publications & Presentations",
+    "section": "2025",
+    "text": "2025\n\nBoelders, S. M., B. Nicenboim, E. Butterbrod, W. De Baene, E. Postma, G. Rutten, L. Ong, and K. Gehring (2025). “Predicting cognitive function three months after surgery in patients with a glioma”. In: Neuro-Oncology Advances, p. vdaf081. ISSN: 2632-2498. DOI: 10.1093/noajnl/vdaf081. [eprint] [read] [bib]\n\n\nDubova, M., S. Chandramouli, G. Gigerenzer, P. Grünwald, W. Holmes, T. Lombrozo, M. Marelli, S. Musslick, B. Nicenboim, L. N. Ross, et al. (2025). “Is Ockham’s razor losing its edge? New perspectives on the principle of model parsimony”. In: Proceedings of the National Academy of Sciences 122.5, p. e2401230121. DOI: 10.1073/pnas.2401230121. [eprint] [read] [bib]"
+  },
+  {
+    "objectID": "publications.html#section-1",
+    "href": "publications.html#section-1",
+    "title": "Publications & Presentations",
+    "section": "2024",
+    "text": "2024\n\nBoelders, S. M., B. Nicenboim, E. O. Postma, L. S. Ong, and K. Gehring (2024). “Modeling uncertainty in individual predictions of cognitive functioning for untreated glioma patients using Bayesian regression and clinical variables”. In: Neuro-Oncology 26.Supplement_5, pp. v60-v60. ISSN: 1522-8517. DOI: 10.1093/neuonc/noae144.196. [eprint] [read] [bib]\n\n\nSchad, D. J., B. Nicenboim, and S. Vasishth (2024). “Data aggregation can lead to biased inferences in Bayesian linear mixed models and Bayesian analysis of variance.” In: Psychological Methods. ISSN: 1082-989X. DOI: 10.1037/met0000621. [bib]"
+  },
+  {
+    "objectID": "publications.html#section-2",
+    "href": "publications.html#section-2",
+    "title": "Publications & Presentations",
+    "section": "2023",
+    "text": "2023\n\nDoorn, J. van, J. M. Haaf, A. M. Stefan, E. Wagenmakers, G. E. Cox, C. P. Davis-Stober, A. Heathcote, D. W. Heck, M. Kalish, D. Kellen, et al. (2023). “Bayes Factors for Mixed Models: a Discussion”. In: Computational Brain & Behavior 6.1, pp. 140-158. ISSN: 2522-087X. DOI: 10.1007/s42113-022-00160-3. [eprint] [bib]\n\n\nVasishth, S., H. Yadav, D. J. Schad, and B. Nicenboim (2023). “Sample Size Determination for Bayesian Hierarchical Models Commonly Used in Psycholinguistics”. In: Computational Brain & Behavior 6.1, pp. 102-126. ISSN: 2522-087X. DOI: 10.1007/s42113-021-00125-y. [eprint] [bib]\n\n\nBen-Artzi, I., Y. Kessler, B. Nicenboim, and N. Shahar (2023). “Computational mechanisms underlying latent inverse value updating of unchosen actions”. In: Science Advances 9.42, p. eadi2704. DOI: 10.1126/sciadv.adi2704. [eprint] [bib]"
+  },
+  {
+    "objectID": "publications.html#section-3",
+    "href": "publications.html#section-3",
+    "title": "Publications & Presentations",
+    "section": "2022",
+    "text": "2022\n\nStone, K., B. Nicenboim, S. Vasishth, and F. Rösler (2022). “Understanding the effects of constraint and predictability in ERP”. In: Neurobiology of Language, pp. 1-71. ISSN: 2641-4368. DOI: 10.1162/nol_a_00094. [eprint] [code/data] [bib]\n\n\nPatterson, C., P. B. Schumacher, B. Nicenboim, J. Hagen, and A. Kehler (2022). “A Bayesian approach to German personal and demonstrative pronouns”. In: Frontiers in Psychology, Language Sciences 12. ISSN: 1664-1078. DOI: 10.3389/fpsyg.2021.672927. eprint: https://www.frontiersin.org/articles/10.3389/fpsyg.2021.672927/abstract. [eprint] [bib]\n\n\nSchad, D. J., B. Nicenboim, P. Bürkner, M. Betancourt, and S. Vasishth (2022). “Workflow Techniques for the Robust Use of Bayes Factors”. In: Psychological methods. ISSN: 1082-989X. DOI: 10.1037/met0000472. [eprint] [code/data] [bib]\n\n\nAlbert, A. and B. Nicenboim (2022). “Modeling Sonority in Terms of Pitch Intelligibility With the Nucleus Attraction Principle”. In: Cognitive Science 46.7, p. e13161. DOI: doi.or1/cogs.13161. [eprint] [code/data] [bib]"
+  },
+  {
+    "objectID": "publications.html#section-4",
+    "href": "publications.html#section-4",
+    "title": "Publications & Presentations",
+    "section": "2021",
+    "text": "2021\n\nLisson, P., D. Pregla, B. Nicenboim, D. Paape, M. L. van het Nederend, F. Burchert, N. Stadie, D. Caplan, and S. Vasishth (2021). “A computational evaluation of two models of retrieval processes in sentence processing in aphasia”. In: Cognitive Science 45.4. DOI: 10.1111/cogs.12956. [eprint] [bib]"
+  },
+  {
+    "objectID": "publications.html#section-5",
+    "href": "publications.html#section-5",
+    "title": "Publications & Presentations",
+    "section": "2020",
+    "text": "2020\n\nNicenboim, B., S. Vasishth, and F. Rösler (2020). “Are words pre-activated probabilistically during sentence comprehension? Evidence from new data and a Bayesian random-effects meta-analysis using publicly available data”. In: Neuropsychologia 142, p. 107427. ISSN: 0028-3932. DOI: 10.1016/j.neuropsychologia.2020.107427. [eprint] [bib]"
+  },
+  {
+    "objectID": "publications.html#section-6",
+    "href": "publications.html#section-6",
+    "title": "Publications & Presentations",
+    "section": "2019",
+    "text": "2019\n\nVasishth, S., B. Nicenboim, F. Engelmann, and F. Burchert (2019). “Computational models of retrieval processes in sentence processing”. In: Trends in Cognitive Sciences 23.11, pp. 968 - 982. ISSN: 1364-6613. DOI: 10.1016/j.tics.2019.09.003. [eprint] [bib]"
+  },
+  {
+    "objectID": "publications.html#section-7",
+    "href": "publications.html#section-7",
+    "title": "Publications & Presentations",
+    "section": "2018",
+    "text": "2018\n\nNicenboim, B., S. Vasishth, F. Engelmann, and K. Suckow (2018). “Exploratory and confirmatory analyses in sentence processing: A case study of number interference in German”. In: Cognitive Science 42.S4, pp. 1075–1100. DOI: 10.1111/cogs.12589. [eprint] [code/data] [bib]\n\n\nNicenboim, B., T. B. Roettger, and S. Vasishth (2018). “Using meta-analysis for evidence synthesis: The case of incomplete neutralization in German”. In: Journal of Phonetics 70, pp. 39–55. DOI: 10.1016/j.wocn.2018.06.001. [eprint] [code/data] [bib]\n\n\nVasishth, S., B. Nicenboim, M. E. Beckman, F. Li, and E. Kong (2018). “Bayesian data analysis in the phonetic sciences: A tutorial introduction”. In: Journal of Phonetics 71, pp. 147–161. DOI: 10.1016/j.wocn.2018.07.008. [eprint] [code/data] [bib]\n\n\nNicenboim, B. and S. Vasishth (2018). “Models of Retrieval in Sentence Comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: Journal of Memory and Language 99, pp. 1 –34. ISSN: 0749-596X. DOI: 10.1016/j.jml.2017.08.004. [eprint] [code/data] [bib]"
+  },
+  {
+    "objectID": "publications.html#section-8",
+    "href": "publications.html#section-8",
+    "title": "Publications & Presentations",
+    "section": "2017",
+    "text": "2017\n\nPaape, D., B. Nicenboim, and S. Vasishth (2017). “Does antecedent complexity affect ellipsis processing? An empirical investigation”. In: Glossa: A journal of general linguistics. 2.1, p. 71. DOI: 10.5334/gjgl.290. [eprint] [bib]"
+  },
+  {
+    "objectID": "publications.html#section-9",
+    "href": "publications.html#section-9",
+    "title": "Publications & Presentations",
+    "section": "2016",
+    "text": "2016\n\nNicenboim, B., P. Logačev, C. Gattei, and S. Vasishth (2016). “When high-capacity readers slow down and low-capacity readers speed up: Working memory and locality effects”. In: Frontiers in Psychology 7.280. ISSN: 1664-1078. DOI: 10.3389/fpsyg.2016.00280. [eprint] [code/data] [bib]\n\n\nNicenboim, B. and S. Vasishth (2016). “Statistical methods for linguistic research: Foundational Ideas - Part II”. In: Language and Linguistics Compass 10.11, pp. 591–613. ISSN: 1749-818X. DOI: 10.1111/lnc3.12207. [eprint] [bib]\n\n\nVasishth, S. and B. Nicenboim (2016). “Statistical Methods for Linguistic Research: Foundational Ideas - Part I”. In: Language and Linguistics Compass 10.8, pp. 349–369. ISSN: 1749-818X. DOI: 10.1111/lnc3.12201. [eprint] [bib]"
+  },
+  {
+    "objectID": "publications.html#section-10",
+    "href": "publications.html#section-10",
+    "title": "Publications & Presentations",
+    "section": "2015",
+    "text": "2015\n\nNicenboim, B., S. Vasishth, C. Gattei, M. Sigman, and R. Kliegl (2015). “Working memory differences in long-distance dependency resolution”. In: Frontiers in Psychology 6.312. ISSN: 1664-1078. DOI: 10.3389/fpsyg.2015.00312. [eprint] [code/data] [bib]"
+  },
+  {
+    "objectID": "team.html",
+    "href": "team.html",
+    "title": "Team",
+    "section": "",
+    "text": "Together with Giovanni Cassani, I am the PI of the Computational Psycholinguistics Lab.\nMy current team is the following:"
+  },
+  {
+    "objectID": "team.html#phd-student",
+    "href": "team.html#phd-student",
+    "title": "Team",
+    "section": "Phd Student",
+    "text": "Phd Student\n\n\n\n\n\nSara Møller Østergaard"
+  },
+  {
+    "objectID": "software.html",
+    "href": "software.html",
+    "title": "Software",
+    "section": "",
+    "text": "An R package for tidy-ish manipulation of EEG data. It is fully functional, but it’s only able to do basic preprocessing.\n\n\n\nAn R package for estimating the log-probabilities of words in a given context using transformer models. The package provides an interface for utilizing pre-trained transformer models (such as GPT-2 or BERT) to obtain word probabilities. These log-probabilities are often utilized as predictors in psycholinguistic studies."
+  },
+  {
+    "objectID": "software.html#eeguana",
+    "href": "software.html#eeguana",
+    "title": "Software",
+    "section": "",
+    "text": "An R package for tidy-ish manipulation of EEG data. It is fully functional, but it’s only able to do basic preprocessing."
+  },
+  {
+    "objectID": "software.html#pangoling",
+    "href": "software.html#pangoling",
+    "title": "Software",
+    "section": "",
+    "text": "An R package for estimating the log-probabilities of words in a given context using transformer models. The package provides an interface for utilizing pre-trained transformer models (such as GPT-2 or BERT) to obtain word probabilities. These log-probabilities are often utilized as predictors in psycholinguistic studies."
+  },
+  {
+    "objectID": "cv.html",
+    "href": "cv.html",
+    "title": "CURRICULUM VITAE",
+    "section": "",
+    "text": "Email:\n[initial].[lastname] [at] tilburguniversity.edu\n\n\nOffice:\nD108, Dante Building, Tilburg University\n\n\nAddress:\nDepartment of Computational Cognitive Science,\n\n\n\nCognitive Science and Artificial Intelligence\n\n\n\nTilburg University\n\n\n\nPO Box 90153\n\n\n\n5000 LE Tilburg\n\n\n\nThe Netherlands"
+  },
+  {
+    "objectID": "cv.html#books",
+    "href": "cv.html#books",
+    "title": "CURRICULUM VITAE",
+    "section": "Books",
+    "text": "Books\n\nNicenboim, B., D. J. Schad, and S. Vasishth (2025). Introduction to Bayesian Data Analysis for Cognitive Science. 1st ed. Chapman and Hall/CRC. DOI: 10.1201/9780429342646."
+  },
+  {
+    "objectID": "cv.html#published-or-accepted-in-peer-reviewed-journals",
+    "href": "cv.html#published-or-accepted-in-peer-reviewed-journals",
+    "title": "CURRICULUM VITAE",
+    "section": "Published or accepted in peer-reviewed journals",
+    "text": "Published or accepted in peer-reviewed journals\n\nBoelders, S. M., B. Nicenboim, E. Butterbrod, W. De Baene, E. Postma, G. Rutten, L. Ong, and K. Gehring (2025). “Predicting cognitive function three months after surgery in patients with a glioma”. In: Neuro-Oncology Advances, p. vdaf081. ISSN: 2632-2498. DOI: 10.1093/noajnl/vdaf081.\n\n\nDubova, M., S. Chandramouli, G. Gigerenzer, P. Grünwald, W. Holmes, T. Lombrozo, M. Marelli, S. Musslick, B. Nicenboim, L. N. Ross, et al. (2025). “Is Ockham’s razor losing its edge? New perspectives on the principle of model parsimony”. In: Proceedings of the National Academy of Sciences 122.5, p. e2401230121. DOI: 10.1073/pnas.2401230121.\n\n\nBoelders, S. M., B. Nicenboim, E. O. Postma, L. S. Ong, and K. Gehring (2024). “Modeling uncertainty in individual predictions of cognitive functioning for untreated glioma patients using Bayesian regression and clinical variables”. In: Neuro-Oncology 26.Supplement_5, pp. v60-v60. ISSN: 1522-8517. DOI: 10.1093/neuonc/noae144.196.\n\n\nSchad, D. J., B. Nicenboim, and S. Vasishth (2024). “Data aggregation can lead to biased inferences in Bayesian linear mixed models and Bayesian analysis of variance.” In: Psychological Methods. ISSN: 1082-989X. DOI: 10.1037/met0000621.\n\n\nDoorn, J. van, J. M. Haaf, A. M. Stefan, E. Wagenmakers, G. E. Cox, C. P. Davis-Stober, A. Heathcote, D. W. Heck, M. Kalish, D. Kellen, et al. (2023). “Bayes Factors for Mixed Models: a Discussion”. In: Computational Brain & Behavior 6.1, pp. 140-158. ISSN: 2522-087X. DOI: 10.1007/s42113-022-00160-3.\n\n\nVasishth, S., H. Yadav, D. J. Schad, and B. Nicenboim (2023). “Sample Size Determination for Bayesian Hierarchical Models Commonly Used in Psycholinguistics”. In: Computational Brain & Behavior 6.1, pp. 102-126. ISSN: 2522-087X. DOI: 10.1007/s42113-021-00125-y.\n\n\nBen-Artzi, I., Y. Kessler, B. Nicenboim, and N. Shahar (2023). “Computational mechanisms underlying latent inverse value updating of unchosen actions”. In: Science Advances 9.42, p. eadi2704. DOI: 10.1126/sciadv.adi2704.\n\n\nStone, K., B. Nicenboim, S. Vasishth, and F. Rösler (2022). “Understanding the effects of constraint and predictability in ERP”. In: Neurobiology of Language, pp. 1-71. ISSN: 2641-4368. DOI: 10.1162/nol_a_00094.\n\n\nPatterson, C., P. B. Schumacher, B. Nicenboim, J. Hagen, and A. Kehler (2022). “A Bayesian approach to German personal and demonstrative pronouns”. In: Frontiers in Psychology, Language Sciences 12. ISSN: 1664-1078. DOI: 10.3389/fpsyg.2021.672927. eprint: https://www.frontiersin.org/articles/10.3389/fpsyg.2021.672927/abstract.\n\n\nSchad, D. J., B. Nicenboim, P. Bürkner, M. Betancourt, and S. Vasishth (2022). “Workflow Techniques for the Robust Use of Bayes Factors”. In: Psychological methods. ISSN: 1082-989X. DOI: 10.1037/met0000472.\n\n\nAlbert, A. and B. Nicenboim (2022). “Modeling Sonority in Terms of Pitch Intelligibility With the Nucleus Attraction Principle”. In: Cognitive Science 46.7, p. e13161. DOI: doi.or1/cogs.13161.\n\n\nLisson, P., D. Pregla, B. Nicenboim, D. Paape, M. L. van het Nederend, F. Burchert, N. Stadie, D. Caplan, and S. Vasishth (2021). “A computational evaluation of two models of retrieval processes in sentence processing in aphasia”. In: Cognitive Science 45.4. DOI: 10.1111/cogs.12956.\n\n\nNicenboim, B., S. Vasishth, and F. Rösler (2020). “Are words pre-activated probabilistically during sentence comprehension? Evidence from new data and a Bayesian random-effects meta-analysis using publicly available data”. In: Neuropsychologia 142, p. 107427. ISSN: 0028-3932. DOI: 10.1016/j.neuropsychologia.2020.107427.\n\n\nVasishth, S., B. Nicenboim, F. Engelmann, and F. Burchert (2019). “Computational models of retrieval processes in sentence processing”. In: Trends in Cognitive Sciences 23.11, pp. 968 - 982. ISSN: 1364-6613. DOI: 10.1016/j.tics.2019.09.003.\n\n\nNicenboim, B., S. Vasishth, F. Engelmann, and K. Suckow (2018). “Exploratory and confirmatory analyses in sentence processing: A case study of number interference in German”. In: Cognitive Science 42.S4, pp. 1075–1100. DOI: 10.1111/cogs.12589.\n\n\nNicenboim, B., T. B. Roettger, and S. Vasishth (2018). “Using meta-analysis for evidence synthesis: The case of incomplete neutralization in German”. In: Journal of Phonetics 70, pp. 39–55. DOI: 10.1016/j.wocn.2018.06.001.\n\n\nVasishth, S., B. Nicenboim, M. E. Beckman, F. Li, and E. Kong (2018). “Bayesian data analysis in the phonetic sciences: A tutorial introduction”. In: Journal of Phonetics 71, pp. 147–161. DOI: 10.1016/j.wocn.2018.07.008.\n\n\nNicenboim, B. and S. Vasishth (2018). “Models of Retrieval in Sentence Comprehension: A computational evaluation using Bayesian hierarchical modeling”. In: Journal of Memory and Language 99, pp. 1 –34. ISSN: 0749-596X. DOI: 10.1016/j.jml.2017.08.004.\n\n\nPaape, D., B. Nicenboim, and S. Vasishth (2017). “Does antecedent complexity affect ellipsis processing? An empirical investigation”. In: Glossa: A journal of general linguistics. 2.1, p. 71. DOI: 10.5334/gjgl.290.\n\n\nNicenboim, B., P. Logačev, C. Gattei, and S. Vasishth (2016). “When high-capacity readers slow down and low-capacity readers speed up: Working memory and locality effects”. In: Frontiers in Psychology 7.280. ISSN: 1664-1078. DOI: 10.3389/fpsyg.2016.00280.\n\n\nNicenboim, B. and S. Vasishth (2016). “Statistical methods for linguistic research: Foundational Ideas - Part II”. In: Language and Linguistics Compass 10.11, pp. 591–613. ISSN: 1749-818X. DOI: 10.1111/lnc3.12207.\n\n\nVasishth, S. and B. Nicenboim (2016). “Statistical Methods for Linguistic Research: Foundational Ideas - Part I”. In: Language and Linguistics Compass 10.8, pp. 349–369. ISSN: 1749-818X. DOI: 10.1111/lnc3.12201.\n\n\nNicenboim, B., S. Vasishth, C. Gattei, M. Sigman, and R. Kliegl (2015). “Working memory differences in long-distance dependency resolution”. In: Frontiers in Psychology 6.312. ISSN: 1664-1078. DOI: 10.3389/fpsyg.2015.00312."
+  },
+  {
+    "objectID": "cv.html#unpublishedunder-review-manuscripts",
+    "href": "cv.html#unpublishedunder-review-manuscripts",
+    "title": "CURRICULUM VITAE",
+    "section": "Unpublished/Under review manuscripts",
+    "text": "Unpublished/Under review manuscripts\n\nNicenboim, B., M. K. van Vugt, R. G. Alhama, B. Anderson, F. Bontje, M. Chimento, S. Columbus, E. S. Dalmaijer, J. Dotlacil, S. M. Østergaard, et al. (2025). “It takes a village to model complex behaviour: A community-based approach”. DOI: 10.31234/osf.io/d2v54_v1.\n\n\nVasishth, S., B. Nicenboim, N. Chopin, and R. Ryder (2017). “Bayesian hierarchical finite mixture models of reading times: A case study”. DOI: 10.17605/OSF.IO/FWX3S."
+  },
+  {
+    "objectID": "cv.html#short-peer-reviewed-papers-in-conferences",
+    "href": "cv.html#short-peer-reviewed-papers-in-conferences",
+    "title": "CURRICULUM VITAE",
+    "section": "Short peer-reviewed papers in conferences",
+    "text": "Short peer-reviewed papers in conferences\n\nNicenboim, B. (2023). “The CoFI Reader: A Continuous Flow of Information approach to modeling reading”. In: MathPsych/ICCM/EMPG. University of Amsterdam, the Netherlands.\n\n\nNicenboim, B. (2018). “The implementation of a model of choice: The (truncated) linear ballistic accumulator”. In: StanCon. Aalto University, Helsinki, Finland. DOI: 10.5281/zenodo.1465990.\n\n\nVasishth, S., N. Chopin, R. Ryder, and B. Nicenboim (2017). “Modelling dependency completion in sentence comprehension as a Bayesian hierarchical mixture process: A case study involving Chinese relative clauses”. In: Proceedings of Cognitive Science Conference. London, UK.\n\n\nVasishth, S., L. Jaeger, and B. Nicenboim (2017). “Feature overwriting as a finite mixture process: Evidence from comprehension data”. In: Proceedings of MathPsych/ICCM Conference. Warwick, UK.\n\n\nNicenboim, B. and S. Vasishth (2017). “Models of Retrieval in Sentence Comprehension”. In: StanCon. (superseeded by 10.1016/j.jml.2017.08.004). Columbia University New York, NY."
+  },
+  {
+    "objectID": "cv.html#contributions-to-open-software",
+    "href": "cv.html#contributions-to-open-software",
+    "title": "CURRICULUM VITAE",
+    "section": "Contributions to open software",
+    "text": "Contributions to open software\n\neeguana (https://bruno.nicenboim.me/eeguana/) An R package for tidy-ish manipulation of EEG data. Author\npangoling (https://bruno.nicenboim.me/pangoling/) An R package for estimating the log-probabilities of words in a given context using transformer models. Author\nloo (https://cran.r-project.org/web/packages/loo/). Efficient Leave-One-Out Cross-Validation and WAIC for Bayesian Models. Contributor\nMNE (https://mne.tools/). Open-source Python package for exploring, visualizing, and analyzing human neurophysiological data. Bug fixing\nBayesplot (https://github.com/stan-dev) R package providing an extensive library of plotting functions for use after fitting Bayesian models. Bug fixing"
+  },
+  {
+    "objectID": "cv.html#workshops-and-summer-schools",
+    "href": "cv.html#workshops-and-summer-schools",
+    "title": "CURRICULUM VITAE",
+    "section": "Workshops and summer schools",
+    "text": "Workshops and summer schools\n\n\n\n\n\n\n\n2017-2025\n“Advanced Bayesian methods”,\n\n\n\nYearly Summer School on Statistical Methods for Linguistics and Psychology (SMLP),\n\n\n\nUniversity of Potsdam, Germany\n\n\n2020-2021\n“Introduction to computational Bayesian methods using Stan”, Physalia courses,\n\n\n\nBerlin, Germany\n\n\n2020\n“Methods in Advanced Statistics”, with Shravan Vasishth\n\n\n\n2020 Winter School organized by Netherlands Graduate School in Linguistics (LOT),\n\n\n\nTilburg, Netherlands\n\n\n2019\n“Introduction to Bayesian statistics using brms”,\n\n\n\nUniversity of Cologne, Germany\n\n\n2019\n“Introduction to Bayesian statistics using brms”,\n\n\n\nUniversity of Edinburgh, UK\n\n\n2018\nTalk:“Cognitive models of memory processes in sentence comprehension: A case study using Bayesian hierarchical modeling”\n\n\n\nMasterclass in Bayesian Statistics, Research school,\n\n\n\nCIRM (Marseille Luminy, France)\n\n\n2017\n“Introduction to Bayesian Modeling using Stan”,\n\n\n\n13. Tagung der Fachgruppe Methoden und Evaluation der Deutschen Gesellschaft für Psychologie,\n\n\n\nTübingen, Germany"
+  },
+  {
+    "objectID": "cv.html#courses",
+    "href": "cv.html#courses",
+    "title": "CURRICULUM VITAE",
+    "section": "Courses",
+    "text": "Courses\n\n\n\n\n\n\n\n2025-2026\nLecturer in “Research Workshop”, BA in Cognitive Science & AI. Tilburg University\n\n\n2022-2025\nLecturer in “Bayesian Multilevel Models/Bayesian Modeling for Data Science”, Master in Data Science & Society. Tilburg University\n\n\n2021-2025\nLecturer in “Bayesian Models of Cognitive Processes”, Master in Cognitive Science & AI. Tilburg University\n\n\n2020-2021\nLecturer in “Research skill: Programing with R”, Data Science & Society. Tilburg University\n\n\n2020-2021\nLecturer in “Methodology for Premasters Data Science & Society”. Tilburg University\n\n\n2015–2017 (Winter)\nLecturer in “Advanced Data Analysis”. University of Potsdam\n\n\n2016 (Summer)\nLecturer in “Predictions in Language Processing”. University of Potsdam\n\n\n2015–2016 (Winter)\nLecturer in “Individual Differences in Sentence Processing”. University of Potsdam\n\n\n2015 (Summer)\nLecturer in “Predictions in Language Processing”. University of Potsdam\n\n\n2008–2010\nTeaching assistant in “Syntax Beginners” and “Foundations of Theoretical Linguistics” Tel Aviv University"
+  }
+]
