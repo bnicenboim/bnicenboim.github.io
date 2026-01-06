@@ -2,7 +2,6 @@
 title: "Publications & Presentations"
 ---
 
-
 ```{r setup, include=FALSE,cache=FALSE}
 ####
 # Add [bib] with the biblatex
@@ -44,7 +43,6 @@ output(books, withbrackets = TRUE)
 
 # Under review
 
-
 ```{r,echo=F,results="asis",cache=F}
 output(underreview) 
 ```
@@ -52,7 +50,6 @@ output(underreview)
 <br/> <br/>
 
 # Published (or accepted) in peer-reviewed journals
-
 
 ```{r articles-pub,echo=F,results="asis",cache=FALSE}
 for(y in sort(unique(as.numeric(articles$year)), decreasing  = TRUE)){
@@ -78,7 +75,6 @@ for(y in sort(unique(as.numeric(inproceedings$year)), decreasing  = TRUE)){
 ```
 
 # Unpublished manuscripts
-
 
 ```{r,echo=F,results="asis",cache=F}
 output(unpublished) 

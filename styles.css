@@ -8,3 +8,42 @@ a:has(img[src*="osf.svg"]) img {
 a:has(img[src*="osf.svg"]):hover img {
   filter: grayscale(0%);
 }
+
+
+/* Recent posts in sidebar */
+.recent-posts-sidebar {
+  margin-top: 2em;
+  padding-top: 1em;
+  border-top: 1px solid #dee2e6;
+}
+
+.recent-posts-sidebar h2 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+}
+
+.recent-posts-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recent-posts-sidebar li {
+  margin-bottom: 0.75em;
+  font-size: 0.9em;
+}
+
+.recent-posts-sidebar li a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.recent-posts-sidebar li a:hover {
+  text-decoration: underline;
+}
+
+.recent-posts-sidebar small {
+  color: #6c757d;
+  font-size: 0.85em;
+}

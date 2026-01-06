@@ -16,8 +16,10 @@ website:
         text: Software   
       - href: cv.qmd
         text: CV           
-      - href: blog/index.qmd
+      - href: posts/index.qmd
         text: Posts
+
+
 format:
   html:
     code-fold: false
@@ -26,6 +28,9 @@ format:
       - brand
     css: styles.css
     toc: true
-
+    toc-location: right
+    include-after-body: recent-posts.html
+    
 editor: visual
+
 

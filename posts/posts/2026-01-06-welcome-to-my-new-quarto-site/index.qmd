@@ -1,0 +1,14 @@
+---
+title: "Welcome to my new Quarto site"
+author: "Bruno Nicenboim"
+date: "2026-01-06"
+categories: ["Meta", "Quarto"]
+---
+
+## A fresh start
+
+After years of using Hugo, I've finally made the switch to [Quarto](https://quarto.org/).
+
+The main reason? Hugo wasn't allowing me to update my website anymore!
+
+The old posts from my Hugo site are gone (for now), but I'm looking forward to building up new content here. Stay tuned!

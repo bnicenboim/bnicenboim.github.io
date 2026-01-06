@@ -1,6 +1,8 @@
 [
   {
-    "listing": "/blog/index.html",
-    "items": []
+    "listing": "/posts/index.html",
+    "items": [
+      "/posts/posts/2026-01-06-welcome-to-my-new-quarto-site/index.html"
+    ]
   }
 ]

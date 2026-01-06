@@ -111,7 +111,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">CV</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./blog/index.html"> 
+    <a class="nav-link" href="./posts/index.html"> 
 <span class="menu-text">Posts</span></a>
   </li>  
 </ul>
@@ -278,6 +278,77 @@ ul.task-list li input[type="checkbox"] {
   </div>
 </div>
  <!-- /main -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Find the TOC
+  const toc = document.querySelector('#TOC');
+  
+  if (toc) {
+    // Create recent posts section
+    const postsSection = document.createElement('div');
+    postsSection.className = 'recent-posts-sidebar';
+    postsSection.innerHTML = `
+      <h2>Posts</h2>
+      <ul id="recent-posts-list">
+        <li>Loading...</li>
+      </ul>
+    `;
+    
+    // Insert after the TOC list
+    toc.appendChild(postsSection);
+    
+    // Fetch and display posts
+    fetchRecentPosts();
+  }
+});
+
+async function fetchRecentPosts() {
+  try {
+    const response = await fetch('/posts/');
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    // Get all post items
+    const postItems = doc.querySelectorAll('.quarto-post');
+    
+    const posts = [];
+    postItems.forEach((item, index) => {
+      if (index < 5) {
+        const titleLink = item.querySelector('h3.listing-title a');
+        const dateEl = item.querySelector('.listing-date');
+        
+        if (titleLink) {
+          const href = titleLink.getAttribute('href');
+          // Extract just the path part (remove domain if present)
+          const url = href.replace(/^https?:\/\/[^\/]+/, '');
+          
+          posts.push({
+            title: titleLink.textContent.trim(),
+            url: url,
+            date: dateEl ? dateEl.textContent.trim() : ''
+          });
+        }
+      }
+    });
+    
+    const listEl = document.getElementById('recent-posts-list');
+    if (posts.length > 0) {
+      listEl.innerHTML = posts.map(post => 
+        `<li>
+          <a href="${post.url}">${post.title}</a>
+          ${post.date ? `<br><small>${post.date}</small>` : ''}
+        </li>`
+      ).join('') + '<li><a href="/posts/">See all posts...</a></li>';
+    } else {
+      listEl.innerHTML = '<li><a href="/posts/">View posts</a></li>';
+    }
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    document.getElementById('recent-posts-list').innerHTML = '<li><a href="/posts/">View posts</a></li>';
+  }
+}
+</script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     const isCodeAnnotation = (el) => {
