@@ -14,8 +14,8 @@ options(htmltools.dir.version = FALSE)
 
 library(RefManageR)
 articles <- ReadBib("papers/articles.bib", check = FALSE)
-inproceedings <- ReadBib("papers/inproceedings.bib", check = FALSE)
-presentations <- ReadBib("papers/others.bib", check = FALSE)
+inproceedings <- ReadBib("papers/papers_inproceedings.bib", check = FALSE)
+presentations <- ReadBib("papers/selected.bib", check = FALSE)
 underreview <- ReadBib("papers/underreview.bib", check = FALSE)
 books <- ReadBib("papers/books.bib", check = FALSE)
 unpublished <- ReadBib("papers/unpublished.bib", check = FALSE)
@@ -33,7 +33,7 @@ source("common.R")
 
 <br/> <br/>
 
-# Books
+# Book
 
 ```{r books,echo=F,results="asis",cache=F}
 output(books, withbrackets = TRUE) 
@@ -78,20 +78,4 @@ for(y in sort(unique(as.numeric(inproceedings$year)), decreasing  = TRUE)){
 
 ```{r,echo=F,results="asis",cache=F}
 output(unpublished) 
-```
-
-<br/> <br/>
-
-# Conferences
-
-```{r,echo=F,results="asis",cache=F}
-
-for(y in sort(unique(as.numeric(presentations$year)),, decreasing  = TRUE)){
-
-    presentations_y <- suppressMessages(presentations[list(year=as.character(y))])
-    if(length(presentations_y)!=0){    
-        cat(paste0("### ",as.character(y),"\n" ))  
-        output(presentations_y)
-    }
-}
 ```

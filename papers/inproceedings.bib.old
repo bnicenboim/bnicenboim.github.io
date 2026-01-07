@@ -280,162 +280,67 @@ Booktitle                = {Architectures and Mechanisms for Language Processing
   customc = {Poster}
 }
 
- @misc{TAU2022,
-booktitle={},
-journaltitle={},
-title ={Revising the linking hypothesis between reading times and processing difficulty using a computational model of reading},
-Month = {12},
-year = {2022},
-location = {Department of Linguistics, Tel Aviv University}
-}
 
-@misc{CIN2022,
-booktitle={},
-journaltitle={},
-title ={¿Qué puede aportar el modelado computacional de la lectura a la investigación de la comprensión del lenguaje?},
-Month = {11},
-year = {2022},
-location = {Centro de Investigaciones en Neurociencias, San José, Costa Rica}
+@Inproceedings{Nicenboim2018StanCon,
+  Title                    = {The implementation of a model of choice: {The} (truncated) linear ballistic accumulator},
+  Author                   = {Nicenboim, Bruno},
+  Booktitle                = {{StanCon}},
+  Year                     = {2018},
+doi = {10.5281/zenodo.1465990},
+  Location                 = {Aalto University, Helsinki, Finland},
+  Month                    = {8},
+eprint = {https://htmlpreview.github.io/?https://github.com/stan-dev/stancon_talks/blob/master/2018-helsinki/Contributed-Talks/nicenboim/LBA_stancon2018.html},
+  customd = {https://www.youtube.com/watch?v=wcpjZC9AV84&t=1h44m33s}
 }
 
 
- @misc{O2019,
-booktitle={},
-journaltitle={},
-title ={Bayesian models of memory retrieval in sentence comprehension},
-Month = {6},
-year = {2019},
-location = { Institute of Cognitive Science, University of Osnabrueck, Germany}
-}
-
-
-@misc{ModelsJul2017,
-booktitle={},
-journaltitle={},
-title ={Bayesian models in psycholinguistics},
-Month = {7},
-year = {2017},
-location = {Institut für Linguistik - Phonetik, University of Cologne, Germany}
+@Inproceedings{Nicenboim2023ICCM,
+  Title                    = {The {CoFI} Reader: {A} Continuous Flow of Information approach to modeling reading},
+  Author                   = {Nicenboim, Bruno},
+  Booktitle                = {{MathPsych/ICCM/EMPG}},
+  Year                     = {2023},
+  Location                 = {University of Amsterdam, the Netherlands},
+  Month                    = {7},
+eprint = {https://mathpsych.org/presentation/998#/document}
 }
 
 
 
-
- @misc{BG2018,
-booktitle={},
-journaltitle={},
-title ={Memory in sentence comprehension},
-Month = {1},
-year = {2018},
-location = {Job Talk at the Department of Cognitive and Brain Sciences, University of Ben Gurion, Israel}
-}
-
- 
-
-
- @misc{StanUsers2018,
-booktitle={},
-journaltitle={},
-title ={A comparison of race and mixture models for explaining memory processes in sentence comprehension},
-Month = {6},
-year = {2018},
-location = {Stan user group in Berlin, Germany}
-}
-
- 
-
-
-@misc{ModelsJan22017,
-booktitle={},
-journaltitle={},
-title ={Models of retrieval in sentence comprehension: {A} computational evaluation using Bayesian hierarchical modeling},
-Month = {1},
-year = {2017},
-location = {Colloquium of the HLP Lab at University of Rochester, NY, USA}
+@Inproceedings{VasishthEtAl2017Modelling,
+  Title                    = {Modelling dependency completion in sentence comprehension as a {Bayesian} hierarchical mixture process: {A} case study involving {Chinese} relative clauses},
+  Author                   = {Shravan Vasishth and Nicolas Chopin and Robin Ryder and Bruno Nicenboim},
+  eprint = {https://arxiv.org/abs/1702.00564v2},
+       year = 2017,
+    Booktitle={Proceedings of Cognitive Science Conference},
+Location={London, UK}
 }
 
 
-@misc{FailMar2015,
-booktitle={},
-journaltitle={},
-Month={3},
-year= {2015},
-title= {Fail fast or succeed slowly: {Good-enough} processing can mask interference effects}, 
-location ={Center for Research in Language at University of San Diego, California, USA}
+@Inproceedings{VasishthEtAl2017Feature,
+   author = {{Vasishth}, S. and {Jaeger}, L.~A. and {Nicenboim}, B.},
+    title = "{Feature overwriting as a finite mixture process: {Evidence} from comprehension data}",
+archivePrefix = "arXiv",
+   eprint = {https://arxiv.org/abs/1703.04081},
+     Booktitle={Proceedings of MathPsych/ICCM Conference},
+Location={Warwick, UK},
+      year = 2017
 }
 
 
-@misc{HierarchicalJan2015,
-booktitle={},
-journaltitle={},
-Month={1},
-year= {2015},
-title= {Hierarchical multinomial processing tree models}, 
-location ={Research Seminar in Cognitive Psychology, University of Potsdam, Germany}
-}
-  
-@misc{SpeedDec013,
-booktitle={},
-journaltitle={},
-month= {12},
-year={2013},
-title= {Speed-up does not necessarily mean facilitation:{ Working} memory differences in long-distance dependency resolution}, 
-location ={Research Seminar in Cognitive Psychology, University of Potsdam, Germany}
-}
 
-@misc{EffectApr2013,
-booktitle={},
-journaltitle={},
-Month={4},
-year= {2013},
-title= {The Effect of Distance on Long-Distance Dependencies. {An} Individual Differences Perspective}, 
-location ={Research Seminar in Cognitive Psychology, University of Potsdam, Germany}
-}
 
-@misc{EffectMar2013,
-booktitle={},
-journaltitle={},
-Month={3},
-year= {2013},
-title= {The Effect of Distance on Long-Distance Dependencies. {An } Individual Differences Perspective}, 
-location ={Interdisciplinary Colloquium of the Linguistic Department, Tel Aviv University, Israel}
-}
 
-@misc{EffectDec2012,
-booktitle={},
-journaltitle={},
-Month={12},
-year= {2012},
-title= {The Effect of Distance on Unbounded  Dependencies.{ An} Individual Differences Perspective}, 
-location ={Psycholinguistic Seminar, Institute of Linguistics, University of Buenos Aires, Argentina}
-}
 
-@misc{EffectOct2012,
-booktitle={},
-journaltitle={},
-Month={8},
-year=  {2012},
-title= {The Effect of Distance on Unbounded (Linguistic) Dependencies. {An} Individual Differences Perspective}, 
-location ={Seminar, Laboratory of Integrative Neuroscience, University of Buenos Aires, Argentina}
+@Inproceedings{NicenboimVasishth2017StanCon,
+  Title                    = {Models of Retrieval in Sentence Comprehension},
+  Author                   = {Nicenboim, Bruno and Vasishth, Shravan},
+  Booktitle                = {{StanCon}},
+  Year                     = {2017},
+  Location                 = {Columbia University New York, NY},
+  Month                    = {1},
+  note = {(superseeded by 10.1016/j.jml.2017.08.004)},
+  customa ={http://mc-stan.org/events/stancon2017-notebooks/stancon2017-nicenboim-vasishth-retrieval-models.html},
+  customd = {https://youtu.be/DJ0c7Bm5Djk?t=6h18m1s}
 }
 
 
-@misc{Bayes2024,
-booktitle={},
-journaltitle={},
-Month={3},
-year=  {2024},
-title= {Bayesian Inference for Complex Hierarchical Models – Methods, Applications, and Challenges}, 
-location ={Department of Psychology, Cognitive Psychology, University of Zurich, Switzerland},
-url = {https://www.psychology.uzh.ch/en/areas/nec/allgpsy/events.html}
-}
-
-@misc{cofi2024,
-booktitle={},
-journaltitle={},
-Month={11},
-year=  {2024},
-title= {The CoFI Reader: A Continuous Flow of Information approach to modeling reading}, 
-location ={Guest lecture for Advanced Neural and Cognitive Modeling,  Brain and Cognitive Science research master's, at University of Amsterdam (UvA), the Netherlands},
-url = {}
-}

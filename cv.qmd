@@ -14,8 +14,9 @@ options(htmltools.dir.version = FALSE)
 
 library(RefManageR)
 articles <- ReadBib("papers/articles.bib", check = FALSE)
-inproceedings <- ReadBib("papers/inproceedings.bib", check = FALSE)
-presentations <- ReadBib("papers/others.bib", check = FALSE)
+inproceedings <- ReadBib("papers/papers_inproceedings.bib", check = FALSE)
+presentations <- ReadBib("papers/selected.bib", check = FALSE)
+
 underreview <- ReadBib("papers/underreview.bib", check = FALSE)
 books <- ReadBib("papers/books.bib", check = FALSE)
 unpublished <- ReadBib("papers/unpublished.bib", check = FALSE)
@@ -46,23 +47,23 @@ first_year <-  2000
 
 ```
 
-|          |                                                             |
-|:---------|-------------------------------------------------------------|
-| Email:   | \[initial\].\[lastname\] \[at\] tilburguniversity.edu       |
-| Office:  | D108, Dante Building, Tilburg University                    |
-| Address: | Department of Computational Cognitive Science,              |
-|          | Cognitive Science and Artificial Intelligence               |
-|          | Tilburg University                                          |
-|          | PO Box 90153                                                |
-|          | 5000 LE Tilburg                                             |
-|          | The Netherlands                                             |
+|          |                                                       |
+|:---------|-------------------------------------------------------|
+| Email:   | \[initial\].\[lastname\] \[at\] tilburguniversity.edu |
+| Office:  | D108, Dante Building, Tilburg University              |
+| Address: | Department of Computational Cognitive Science,        |
+|          | Cognitive Science and Artificial Intelligence         |
+|          | Tilburg University                                    |
+|          | PO Box 90153                                          |
+|          | 5000 LE Tilburg                                       |
+|          | The Netherlands                                       |
 
 <br/> <br/>
 
 # Education
 
 |  |  |
-|:-------------------|:---------------------------------------------------|
+|:--------------------|:--------------------------------------------------|
 | 2011--2017 | **PhD in Cognitive Science, University of Potsdam** |
 |  | Topic: Dependency resolution as a retrieval process |
 |  | Supervisors: Prof. Dr. Shravan Vasishth and Prof. Dr. Reinhold Kliegl |
@@ -80,7 +81,7 @@ first_year <-  2000
 # Academic-related work
 
 |  |  |
-|:-------------------|----------------------------------------------------|
+|:--------------------|---------------------------------------------------|
 | 2020-- | **Assistant professor** (tenured) at the department of Cognitive Science and AI of Tilburg University, the Netherlands.<br/> <br/> |
 | 2020-- | Guest researcher at the Department of Linguistics of the University of Potsdam, Germany |
 | 2017--2020 | Postdoctoral Researcher, University of Potsdam. |
@@ -98,15 +99,15 @@ first_year <-  2000
 
 # Service and Leadership
 
-- I was one of the organizers of the first [Computational Psycholinguistics Meeting (2025)](https://cpl2025.sites.uu.nl/): a new recurring meeting dedicated exclusively to computational psycholinguistics.
-- I organized the Lorentz Centre "Cognitive Modeling of Complex Behavior" workshop in January 2024, along with [Riccardo Fusaroli](https://fusaroli.weebly.com) and [Marieke van Vugt](https://mkvanvugt.wordpress.com/). This hands-on event focused on collaborative modeling of cognitive phenomena. See [here](https://www.lorentzcenter.nl/cognitive-modeling-of-complex-behavior.html).
-- I served as the local chair of the 57th Annual Meeting of the Society for Mathematical Psychology (MathPsych) and the 22nd International Conference on Cognitive Modeling (ICCM) 2024. [(conference link)](https://mathpsych.org/conference/15/).
+-   I was one of the organizers of the first [Computational Psycholinguistics Meeting (2025)](https://cpl2025.sites.uu.nl/): a new recurring meeting dedicated exclusively to computational psycholinguistics.
+-   I organized the Lorentz Centre "Cognitive Modeling of Complex Behavior" workshop in January 2024, along with [Riccardo Fusaroli](https://fusaroli.weebly.com) and [Marieke van Vugt](https://mkvanvugt.wordpress.com/). This hands-on event focused on collaborative modeling of cognitive phenomena. See [here](https://www.lorentzcenter.nl/cognitive-modeling-of-complex-behavior.html).
+-   I served as the local chair of the 57th Annual Meeting of the Society for Mathematical Psychology (MathPsych) and the 22nd International Conference on Cognitive Modeling (ICCM) 2024. [(conference link)](https://mathpsych.org/conference/15/).
 
 <br/> <br/>
 
 # Articles
 
-## Books
+## Book
 
 ```{r books,echo=F,results="asis",cache=F}
 output(books, withbrackets = FALSE) 
@@ -153,7 +154,6 @@ for(y in sort(unique(as.numeric(inproceedings$year)), decreasing  = TRUE)){
 
 <br/> <br/>
 
-
 ## Contributions to open software
 
 -   `eeguana` (https://bruno.nicenboim.me/eeguana/) An R package for tidy-ish manipulation of EEG data. **Author**
@@ -164,7 +164,7 @@ for(y in sort(unique(as.numeric(inproceedings$year)), decreasing  = TRUE)){
 
 <br/> <br/>
 
-# Abstracts in conferences
+# Selected abstracts in conferences
 
 ```{r,echo=F,results="asis",cache=F}
 confs <- presentations[list(bibtype="inproceedings")]
@@ -178,7 +178,7 @@ for(y in sort(unique(as.numeric(confs$year)), decreasing  = TRUE)){
 
 <br/> <br/>
 
-# Invited talks
+# Selected invited talks
 
 ```{r,echo=F,results="asis",cache=F}
  
@@ -197,7 +197,7 @@ for(y in sort(unique(as.numeric(talksall$year)), decreasing  = TRUE)){
 # Honors and grants
 
 |  |  |
-|:-------------------|:---------------------------------------------------|
+|:--------------------|:--------------------------------------------------|
 | 2022 | NWO Starter Grant |
 | 2022 | [NWO Open Competition SGW XS grant](https://www.nwo.nl/en/researchprogrammes/open-competition-ssh/granted-projects) |
 | 2012--2018 | Potsdam Graduate School (PoGS) Travel Grants |
@@ -216,7 +216,7 @@ for(y in sort(unique(as.numeric(talksall$year)), decreasing  = TRUE)){
 ## Workshops and summer schools
 
 |  |  |
-|:-------------------|:---------------------------------------------------|
+|:--------------------|:--------------------------------------------------|
 | 2017-2025 | "Advanced Bayesian methods", |
 |  | Yearly Summer School on Statistical Methods for Linguistics and Psychology (SMLP), |
 |  | University of Potsdam, Germany\vspace{.1cm} |
@@ -239,7 +239,7 @@ for(y in sort(unique(as.numeric(talksall$year)), decreasing  = TRUE)){
 ## Courses
 
 |  |  |
-|:-------------------|---------------------------------------------------:|
+|:--------------------|--------------------------------------------------:|
 | 2025-2026 | **Lecturer** in "Research Workshop", BA in Cognitive Science & AI. Tilburg University |
 | 2022-2025 | **Lecturer** in "Bayesian Multilevel Models/Bayesian Modeling for Data Science", Master in Data Science & Society. Tilburg University |
 | 2021-2025 | **Lecturer** in "Bayesian Models of Cognitive Processes", Master in Cognitive Science & AI. Tilburg University |
@@ -272,7 +272,7 @@ for(y in sort(unique(as.numeric(talksall$year)), decreasing  = TRUE)){
 # Academic-related training
 
 |  |  |
-|:-------------------|:---------------------------------------------------|
+|:--------------------|:--------------------------------------------------|
 | 2016 | Groningen Spring School on Cognitive Modeling, the Netherlands |
 | 2015--2016 | International Teaching Professionals, University of Potsdam, Germany |
 | 2013 | Autumn School Methods in Language Comprehension, Rovereto (TN), Italy |
@@ -283,7 +283,7 @@ for(y in sort(unique(as.numeric(talksall$year)), decreasing  = TRUE)){
 # Reviewing
 
 |  |  |
-|----|:---|
+|------------------------------------|:-----------------------------------|
 | \* | NWO |
 | \* | DFG |
 | \* | Cognitive Psychology |
@@ -317,7 +317,7 @@ for(y in sort(unique(as.numeric(talksall$year)), decreasing  = TRUE)){
 # Non-academic professional experience
 
 |  |  |
-|:-------------------|----------------------------------------------------|
+|:--------------------|---------------------------------------------------|
 | 2009--2011 | QA engineer: NLP Testing at Clearforest. Testing rules and heuristics for identifying semantic entities and relations in English, Spanish and French texts. |
 | 2007--2009 | Content Specialist position at Celebros. Organization, analysis and categorization of data of Spanish and U.S. clients' databases. |
 

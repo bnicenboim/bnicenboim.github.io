@@ -10,7 +10,855 @@
 <atom:link href="https://bruno.nicenboim.me/posts/index.xml" rel="self" type="application/rss+xml"/>
 <description>Posts about computational cognitive science, Bayesian methods, EEG, and AI.</description>
 <generator>quarto-1.7.31</generator>
-<lastBuildDate>Mon, 05 Jan 2026 23:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 06 Jan 2026 23:00:00 GMT</lastBuildDate>
+<item>
+  <title>A simple way to model rankings with Stan</title>
+  <dc:creator>Bruno Nicenboim</dc:creator>
+  <link>https://bruno.nicenboim.me/posts/posts/2026-01-06-a-simple-way-to-model-rankings-with-stan/</link>
+  <description><![CDATA[ 
+
+
+
+
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Update Notice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>This is an updated version of a post originally published on March 21, 2021.</strong></p>
+<p>I’ve updated this post in January 2026 to work with current versions of Stan and R packages. The main changes include:</p>
+<ul>
+<li><p>Updated Stan syntax to current standards</p></li>
+<li><p>Using cmdstanr instead of rstan and some other R packages.</p></li>
+</ul>
+<p>The core content and ideas remain the same.</p>
+</div>
+</div>
+<section id="the-initial-problem" class="level2">
+<h2 class="anchored" data-anchor-id="the-initial-problem">The initial problem</h2>
+<p>I wrote what I thought was the generative process for some modeling work, and it looked too common to not have a name, so I started asking around on what it was a very popular website back in 2021, <a href="https://en.wikipedia.org/wiki/Twitter">Twitter</a>.</p>
+<p>One useful clue was about the <a href="https://en.wikipedia.org/wiki/Discrete_choice#exploded_logit"><em>exploded logit distribution</em></a>.<sup>1</sup></p>
+<p><img src="https://media.giphy.com/media/3osxYCsLd9qgsgqpwI/giphy.gif" class="img-fluid"></p>
+<p>In this post, I’ll show how this model can be fit in the probabilistic programming language <a href="https://mc-stan.org/">Stan</a>, and how it can be used to describe the underlying order of ranking data.</p>
+<p>I’m going to load some R packages that will be useful throughout this post.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidytable) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Nicer alternative to dplyr and purrr</span></span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(ggplot2) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Nice plots</span></span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(extraDistr) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># More distributions</span></span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(rcorpora) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Get random words</span></span>
+<span id="cb1-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(cmdstanr) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Lightweight Stan interface</span></span>
+<span id="cb1-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(bayesplot) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Nice Bayesian plots</span></span>
+<span id="cb1-7"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Keep everything R the same (not for Stan though)</span></span></code></pre></div>
+</div>
+</section>
+<section id="ranking-data" class="level2">
+<h2 class="anchored" data-anchor-id="ranking-data">Ranking data</h2>
+<p>Ranking data appear when we care about the <em>underlying</em> order that certain elements have. We might want to know which are the best horses after looking at several races <span class="citation" data-cites="gakisetal2018">(Gakis et al. 2018)</span>, which is the best candidate for a job after a series of interviewers talked to several candidates. More in line with cognitive science, we might want to know which are the best possible completions for a sentence or the best exemplars of a category.</p>
+<p>One way to get a ranking of exemplars of a category, for example, is to present them to participants and ask them to order all (or a subset) of them <span class="citation" data-cites="Barsalou1985">(see Barsalou 1985)</span>.</p>
+<section id="a-ranking-simulation-using-pizza-toppings" class="level3">
+<h3 class="anchored" data-anchor-id="a-ranking-simulation-using-pizza-toppings">A ranking simulation using pizza toppings</h3>
+<p><img src="https://media.giphy.com/media/3oEjHZhG9COPG6XjzO/giphy.gif" class="img-fluid"></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">toppings <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">corpora</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"foods/pizzaToppings"</span>)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>pizzaToppings</span>
+<span id="cb2-2">N_toppings <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(toppings)</span>
+<span id="cb2-3">toppings</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "anchovies"        "artichoke"       
+ [3] "bacon"            "breakfast bacon" 
+ [5] "Canadian bacon"   "cheese"          
+ [7] "chicken"          "chili peppers"   
+ [9] "feta"             "garlic"          
+[11] "green peppers"    "grilled onions"  
+[13] "ground beef"      "ham"             
+[15] "hot sauce"        "meatballs"       
+[17] "mushrooms"        "olives"          
+[19] "onions"           "pepperoni"       
+[21] "pineapple"        "sausage"         
+[23] "spinach"          "sun-dried tomato"
+[25] "tomatoes"        </code></pre>
+</div>
+</div>
+<p>Let’s say that we want to know the underlying order of pizza toppings. For the modeling, I’m going to assume that the toppings are ordered according to an underlying value, which also represents how likely it is for each topping to be <em>the</em> exemplar of their category.</p>
+<p>To get a known ground truth for the ranking, I’m going to simulate an order of pizza toppings. I assign probabilities that sum up to one to the toppings by drawing a random sample from a <a href="https://en.wikipedia.org/wiki/Dirichlet_distribution">Dirichlet distribution</a>. The Dirichlet distribution is the generalization of the Beta distribution. It has a concentration parameter, usually <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Calpha%7D">, which is a vector as long as the probabilities we are sampling (25 here). When the vector is full of ones, the distribution is uniform: All probabilities are equally likely, so on average each one is <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B%5Ctext%7Bvector%20length%7D%7D"> (<img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B25%7D"> here). By setting all the concentration parameters below one (namely <img src="https://latex.codecogs.com/png.latex?0.2">), I’m enforcing sparsity in the random values that I’m generating, that is, many probability values close to zero.</p>
+<p>These is the true order that I’m assuming here:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># all elements of the vector are 0.2</span></span>
+<span id="cb4-2">alpha <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(.<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, N_toppings)</span>
+<span id="cb4-3"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate one draw from a Dirichlet distribution</span></span>
+<span id="cb4-4">P_toppings <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rdirichlet</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, alpha)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb4-5">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add names</span></span>
+<span id="cb4-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">setNames</span>(toppings) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb4-7">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Sort from the best exemplar</span></span>
+<span id="cb4-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sort</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">decreasing =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb4-9">P_toppings <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb4-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">round</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> breakfast bacon          chicken             feta 
+           0.294            0.241            0.087 
+       anchovies sun-dried tomato           olives 
+           0.087            0.077            0.057 
+       pepperoni        artichoke           cheese 
+           0.056            0.049            0.010 
+  Canadian bacon            bacon              ham 
+           0.008            0.008            0.006 
+       meatballs    chili peppers           garlic 
+           0.004            0.004            0.004 
+     ground beef         tomatoes        hot sauce 
+           0.003            0.003            0.002 
+          onions          sausage        pineapple 
+           0.000            0.000            0.000 
+         spinach        mushrooms   grilled onions 
+           0.000            0.000            0.000 
+   green peppers 
+           0.000 </code></pre>
+</div>
+</div>
+<ul>
+<li>Given these values, if I were to ask a participant “What’s the most appropriate topping for a pizza?” I would assume that 29.37 percent of the time, I would get <em>breakfast bacon</em>.</li>
+</ul>
+<p>Essentially, we expect something like this to be happening:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Ctext%7Bresponse%7D%20%5Csim%20%5Ctext%7BCategorical%7D(%5CTheta_%7B%5Ctext%7Btoppings%7D%7D)%0A"></p>
+<p>With <img src="https://latex.codecogs.com/png.latex?%5CTheta_%7B%5Ctext%7Btoppings%7D%7D"> representing the different probabilities for each topping. The probability mass function of the categorical distribution is absurdly simple: It’s just the probability of the outcome.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ap(x%20=%20i)%20=%20%5CTheta_i%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?i%20=%20%5C%7B">breakfast bacon, chicken, feta, anchovies, sun-dried tomato, olives, pepperoni, artichoke, cheese, Canadian bacon, bacon, ham, meatballs, chili peppers, garlic, ground beef, tomatoes, hot sauce, onions, sausage, pineapple, spinach, mushrooms, grilled onions, green peppers<img src="https://latex.codecogs.com/png.latex?%5C%7D">.</p>
+<p>We can simulate this with 100 participants as follows:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">response <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rcat</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>, P_toppings, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(P_toppings))</span></code></pre></div>
+</div>
+<p>And this should match approximately <code>P_toppings</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">table</span>(response)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>response
+ breakfast bacon          chicken             feta 
+            0.26             0.19             0.16 
+       anchovies sun-dried tomato           olives 
+            0.07             0.15             0.06 
+       pepperoni        artichoke           cheese 
+            0.01             0.08             0.00 
+  Canadian bacon            bacon              ham 
+            0.02             0.00             0.00 
+       meatballs    chili peppers           garlic 
+            0.00             0.00             0.00 
+     ground beef         tomatoes        hot sauce 
+            0.00             0.00             0.00 
+          onions          sausage        pineapple 
+            0.00             0.00             0.00 
+         spinach        mushrooms   grilled onions 
+            0.00             0.00             0.00 
+   green peppers 
+            0.00 </code></pre>
+</div>
+</div>
+<p><em>It seems that by only asking participants to give the best topping we could already deduce the underlying order…</em></p>
+<p>True, but one motivation for considering ranking data is the amount of information that we gather with a list due to their combinatorial nature. If we ask participants to rank <img src="https://latex.codecogs.com/png.latex?n"> items, an answer consists in making a single selection out of <img src="https://latex.codecogs.com/png.latex?n!"> possibilities. Ordering 7 pizza toppings, for example, constitutes making a single selection out of 5040 possibilities!</p>
+<p>If we don’t relay on lists and there is sparcity, it requires a large number of participants until we get answers of low probability. (For example, we’ll need a very large number of participants until we hear something else but <em>hammer</em> as an exemplar of tools).</p>
+<ul>
+<li>Now, what happens if we ask about the second most appropriate topping for a pizza?</li>
+</ul>
+<p>Now we need to exclude the first topping that was given, and draw another sample from a categorical distribution. (We don’t allow the participant to repeat toppings, that is, to say that the best topping is pineapple and the second best is also pineapple). This means that now the probability of the topping already given is zero, and that we need to normalize our original probability values by dividing them by the new total probability (which will be lower than 1).</p>
+<p>Here, the probability of getting the element <img src="https://latex.codecogs.com/png.latex?j"> (where <img src="https://latex.codecogs.com/png.latex?j%20%5Cneq%20i">) is</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ap(x%20=%20j)%20=%20%5Cfrac%7B%5CTheta_j%7D%7B%5Csum%20%5CTheta_%7B%5B-i%5D%7D%7D%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5CTheta_%7B%5B-i%5D%7D"> represents the probabilities of all the outcomes except of <img src="https://latex.codecogs.com/png.latex?i">, which was the first one.</p>
+<ul>
+<li>We can go on with the third best topping, where we need to normalize the remaining probabilities by dividing by the new sum of probabilities (e.g., we remove elements <img src="https://latex.codecogs.com/png.latex?i"> and <img src="https://latex.codecogs.com/png.latex?j">).</li>
+</ul>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ap(x%20=%20k)%20=%20%5Cfrac%7B%5CTheta_k%7D%7B%5Csum%20%5CTheta_%7B%5B-i,-j%5D%7D%7D%0A"></p>
+<ul>
+<li>We can do this until we get to the last element, which will be drawn with probability 1.</li>
+</ul>
+<p><strong>And this is the exploded logit distribution.</strong></p>
+<p>This process can be simulated in R as follows:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">rexploded <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span>  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(n, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ranked =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, prob, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labels =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NULL</span>){</span>
+<span id="cb9-2">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># run n times</span></span>
+<span id="cb9-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lapply</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>n, <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(nn){</span>
+<span id="cb9-4">    res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rep</span>(<span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">NA</span>, ranked)</span>
+<span id="cb9-5">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">is.null</span>(labels)){</span>
+<span id="cb9-6">      res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(res, labels)</span>
+<span id="cb9-7">    } <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span> {</span>
+<span id="cb9-8">      <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># if there are no labels, just 1,2,3,...</span></span>
+<span id="cb9-9">      labels <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq_along</span>(prob)</span>
+<span id="cb9-10">    }</span>
+<span id="cb9-11">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span>(i <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>ranked){</span>
+<span id="cb9-12">      <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># normalize the probability so that it sums to 1</span></span>
+<span id="cb9-13">      prob <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> prob<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span>(prob)</span>
+<span id="cb9-14">      res[i] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rcat</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">prob =</span> prob, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labels =</span> labels)</span>
+<span id="cb9-15">      <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># remove the choice from the set:</span></span>
+<span id="cb9-16">      prob[res[i]] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span></span>
+<span id="cb9-17">    }</span>
+<span id="cb9-18">    res</span>
+<span id="cb9-19">  })</span>
+<span id="cb9-20">}</span></code></pre></div>
+</div>
+<p>If we would like to simulate 50 subjects creating a ranking of the best 7 toppings, we would do the following:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">res <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rexploded</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>,</span>
+<span id="cb10-2">                 <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ranked =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>,</span>
+<span id="cb10-3">                 <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">prob =</span> P_toppings,</span>
+<span id="cb10-4">                 <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">names</span>(P_toppings))</span>
+<span id="cb10-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># subject 1:</span></span>
+<span id="cb10-6">res[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] sun-dried tomato artichoke        olives          
+[4] breakfast bacon  chicken          pepperoni       
+[7] anchovies       
+25 Levels: breakfast bacon chicken feta ... green peppers</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://bruno.nicenboim.me/posts/posts/2026-01-06-a-simple-way-to-model-rankings-with-stan/index_files/figure-html/subjects-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We have simulated ranking data of pizza toppings, can we recover the original probability values and “discover” the underlying order?</p>
+</section>
+</section>
+<section id="fitting-the-exploded-logistic-distribution-in-stan" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-the-exploded-logistic-distribution-in-stan">Fitting the exploded logistic distribution in Stan</h2>
+<p>To fit the model in Stan, I’m going to create a custom probability mass function that takes an array of integers, <code>x</code>, which represents a set of rankings, and a vector of probability values, <code>theta</code>, that sums up to one.</p>
+<p>The logic of this function is that the probability mass function of a ranking <img src="https://latex.codecogs.com/png.latex?%5C%7Bi,j,k,%20%5Cldots,%20N%20%5C%7D"> can be written as a product of normalized categorical distributions (where the first one is just divided by 1).</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ap(x%20=%20%5C%7Bi,j,k,%5Cldots%5C%7D)%20=%20%5Cfrac%7B%5CTheta_i%7D%7B%5Csum%20%5CTheta%7D%20%5Ccdot%20%5Cfrac%7B%5CTheta_j%7D%7B%5Csum%20%5CTheta_%7B%5B-i%5D%7D%7D%20%5Ccdot%20%5Cfrac%7B%5CTheta_k%7D%7B%5Csum%20%5CTheta_%7B%5B-i,%20-j%5D%7D%7D%20%5Cldots%0A"></p>
+<p>For Stan, we need the log-PDF. In log-space, products become sums, and divisions differences, and the log of <img src="https://latex.codecogs.com/png.latex?%5Csum%20%5CTheta"> will be zero:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Clog(p(x%20=%20%5C%7Bi,j,k,%5Cldots%5C%7D))%20=&amp;%20%5Clog(%5CTheta_i)%20-%20%5Clog(%5Csum%20%5CTheta)%20%5C%5C%0A&amp;%20+%20%5Clog(%5CTheta_j)%20-%20%5Clog(%5Csum%20%5CTheta_%7B%5B-i%5D%7D)%20%5C%5C%0A&amp;+%20%5Clog(%5CTheta_k)%20-%20%5Clog(%5Csum%20%5CTheta_%7B%5B-i,%20-j%5D%7D)%20%5C%5C%0A&amp;%20+%20%5Cldots%0A%5Cend%7Baligned%7D%0A"></p>
+<p>The following Stan code has a custom function that follows this logic but iterating over the rankings. In each iteration, it aggregates in the variable <code>out</code> the addends of the log probability mass function, and turns the probability of selecting again the already ranked element to zero. I save this code as <code>"exploded.stan"</code>.</p>
+<div class="cell" data-output.var="exploded">
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode stan code-with-copy"><code class="sourceCode stan"><span id="cb12-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">functions</span> {</span>
+<span id="cb12-2">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">real</span> exploded_lpmf(<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">array</span>[] <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">int</span> x, <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">vector</span> Theta){</span>
+<span id="cb12-3">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">real</span> out = <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>;</span>
+<span id="cb12-4">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">vector</span>[num_elements(Theta)] thetar = Theta;</span>
+<span id="cb12-5">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span>(pos <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> x){</span>
+<span id="cb12-6">      out += log(thetar[pos]) - log(sum(thetar));</span>
+<span id="cb12-7">      thetar[pos] = <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>;</span>
+<span id="cb12-8">    }</span>
+<span id="cb12-9">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span>(out);</span>
+<span id="cb12-10">  }</span>
+<span id="cb12-11">}</span>
+<span id="cb12-12"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">data</span>{</span>
+<span id="cb12-13">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">int</span> N_ranking; <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// total times the choices were ranked</span></span>
+<span id="cb12-14">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">int</span> N_ranked; <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// total choices ranked</span></span>
+<span id="cb12-15">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">int</span> N_options; <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">// total options</span></span>
+<span id="cb12-16">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">array</span>[N_ranking, N_ranked] <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">int</span> res;</span>
+<span id="cb12-17">}</span>
+<span id="cb12-18"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">parameters</span> {</span>
+<span id="cb12-19">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">simplex</span>[N_options] Theta;</span>
+<span id="cb12-20">}</span>
+<span id="cb12-21"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">model</span> {</span>
+<span id="cb12-22">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">target +=</span> dirichlet_lpdf(Theta | rep_vector(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, N_options));</span>
+<span id="cb12-23">  <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span>(r <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>:N_ranking){</span>
+<span id="cb12-24">    <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">target +=</span> exploded_lpmf(res[r] | Theta);</span>
+<span id="cb12-25">  }</span>
+<span id="cb12-26">}</span></code></pre></div>
+</div>
+<p>The whole model includes the usual data declaration, the parameter <code>Theta</code> declared as a simplex (i.e., it sums to one), and a uniform Dirichlet prior for <code>Theta</code>. (I’m assuming that I don’t know how sparse the probabilities are).</p>
+<p>Let’s see if I can recover the parameter values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Make the list of lists into a matrix</span></span>
+<span id="cb13-2">res_matrix <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">t</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sapply</span>(res, as.numeric))</span>
+<span id="cb13-3">ldata <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb13-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">res =</span> res_matrix, </span>
+<span id="cb13-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">N_ranked =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(res[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]]), </span>
+<span id="cb13-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">N_options =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(P_toppings), </span>
+<span id="cb13-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">N_ranking =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(res)</span>
+<span id="cb13-8">) </span>
+<span id="cb13-9"></span>
+<span id="cb13-10">m_expl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cmdstan_model</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"exploded.stan"</span>)</span>
+<span id="cb13-11"></span>
+<span id="cb13-12">f_exploded <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> m_expl<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(</span>
+<span id="cb13-13">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> ldata,</span>
+<span id="cb13-14">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>,</span>
+<span id="cb13-15">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">parallel_chains =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>,</span>
+<span id="cb13-16">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">refresh =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span></span>
+<span id="cb13-17">)</span></code></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1">f_exploded</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> variable    mean  median   sd  mad      q5     q95 rhat
+ lp__     -724.97 -724.61 3.65 3.57 -731.42 -719.65 1.00
+ Theta[1]    0.29    0.29 0.04 0.04    0.23    0.35 1.00
+ Theta[2]    0.27    0.27 0.04 0.03    0.21    0.33 1.00
+ Theta[3]    0.08    0.08 0.01 0.01    0.06    0.10 1.00
+ Theta[4]    0.09    0.08 0.01 0.01    0.06    0.11 1.00
+ Theta[5]    0.07    0.07 0.01 0.01    0.05    0.09 1.00
+ Theta[6]    0.05    0.04 0.01 0.01    0.03    0.06 1.00
+ Theta[7]    0.04    0.04 0.01 0.01    0.03    0.06 1.00
+ Theta[8]    0.05    0.05 0.01 0.01    0.03    0.06 1.00
+ Theta[9]    0.01    0.01 0.00 0.00    0.00    0.02 1.00
+ ess_bulk ess_tail
+     1637     2191
+     5941     3310
+     4884     3247
+     5410     2878
+     5771     2956
+     5578     3435
+     5973     3091
+     6068     2815
+     5606     3141
+     6586     3244
+
+ # showing 10 of 26 rows (change via 'max_rows' argument or 'cmdstanr_max_rows' option)</code></pre>
+</div>
+</div>
+<p>I plot the posterior distributions of the probability values and the true probability values below.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mcmc_recover_hist</span>(f_exploded<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draws</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Theta"</span>),</span>
+<span id="cb16-2">                  P_toppings,</span>
+<span id="cb16-3">                  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">facet_args =</span></span>
+<span id="cb16-4">                    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">scales =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"fixed"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb16-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend.position =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bottom"</span>)</span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://bruno.nicenboim.me/posts/posts/2026-01-06-a-simple-way-to-model-rankings-with-stan/index_files/figure-html/recovery-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>It looks reasonable. However, if we really want to be sure that this is working, we should probably use simulation based calibration <span class="citation" data-cites="taltsValidatingBayesianInference2018">(Talts et al. 2018)</span>.</p>
+</section>
+<section id="what-is-this-good-for" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-this-good-for">What is this good for?</h2>
+<p>This super simple example shows how to get an underlying ranking based on a set of responses from a number of subjects. It’s straightforward to adapt this model to data from participants ranking elements from different sets of the <em>same size</em> (e.g., 7 out of 25 toppings, 7 out of 25 tools). It’s a little less straightforward if the sets are of different sizes, e.g., rank 7 toppings out 25, but 7 tools out 50. This is just because Stan doesn’t allow ragged arrays. See <a href="https://discourse.mc-stan.org/t/ragged-array-of-simplexes/1382/31">this Stan Discourse thread</a> for some tips on implementing the latter model.</p>
+</section>
+<section id="could-this-be-used-as-a-cognitive-model-of-peoples-rankings" class="level2">
+<h2 class="anchored" data-anchor-id="could-this-be-used-as-a-cognitive-model-of-peoples-rankings">Could this be used as a cognitive model of people’s rankings?</h2>
+<p><img src="https://media.giphy.com/media/dXcwxFuXCd8sI3VcFb/giphy.gif" class="img-fluid"></p>
+<p>Maybe. And I enter here in the realm of half baked research, ideal for a blog post.</p>
+<p><span class="citation" data-cites="Lee2014">Lee, Steyvers, and Miller (2014)</span> show the implementation of a cognitive model for rank order data from the latent knowledge of participants, which is based on Thurstonian models <span class="citation" data-cites="thurstone1927law thurstone1931rank">(Thurstone 1927, 1931)</span> fitted with Bayesian methods in JAGS <span class="citation" data-cites="Johnson2013">(Johnson and Kuhn 2013)</span>.</p>
+<p>The exploded logit model seems to be closely related to the Thurstonian model. The Thurstonian model assumes that each participant assigns an underlying score to each item of a set, which is drawn from a true score with normally distributed error. The score determines the order that the participant gives. We can think about the exploded logit similarly. While I modeled the underlying ranking based on probability values, one could assume that each participant <img src="https://latex.codecogs.com/png.latex?s"> had their own score <img src="https://latex.codecogs.com/png.latex?%5Cmu_%7Bis%7D"> for each item (or pizza topping) <img src="https://latex.codecogs.com/png.latex?i">, which is built as a common score <img src="https://latex.codecogs.com/png.latex?%5Cmu_i"> together with some individual deviation <img src="https://latex.codecogs.com/png.latex?%5Cepsilon_%7Bis%7D">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmu_%7Bis%7D%20=%20%5Cmu_i%20+%20%5Cepsilon_%7Bis%7D%0A"></p>
+<p>If we assume that <img src="https://latex.codecogs.com/png.latex?%5Cepsilon_%7Bis%7D"> has a <a href="https://en.wikipedia.org/wiki/Gumbel_distribution">Gumbel</a> distribution, then the probability of <img src="https://latex.codecogs.com/png.latex?%5Cmu_%7Bis%7D"> being ranked first out of N options is determined by a softmax function:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AP(i)%20=%20%5Cfrac%7B%5Cexp(%5Cmu_i)%7D%7B%5Csum%20%5Cexp(%5Cmu)%7D%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Cmu"> is the vector of scores for all elements of the set.</p>
+<p>And the probability of ordering <img src="https://latex.codecogs.com/png.latex?j"> second is:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AP(i,j,%5Cldots)%20=%20%5Cfrac%7B%5Cexp(%5Cmu_j)%7D%7B%5Csum%20%5Cexp(%5Cmu_%7B%5B-i%5D%7D)%7D%0A"></p>
+<p>and so forth.</p>
+<p>These last equations are essentially the same categorical distributions that I used before, but the softmax function converts the unbounded scores into probabilities first. However, with the exploded logit, the error term goes away leading to a more tractable model. This is not the case for the Thurstonian model. The Thurstonian model is more complex, but at the same time we gain more flexibility. With the error term, the Thurstonian model can incorporate the reliability of the participants’ judgments and even correlations, which, as far as I know, can’t be included in the exploded logit model.</p>
+</section>
+<section id="how-to-cite-this-post" class="level2">
+<h2 class="anchored" data-anchor-id="how-to-cite-this-post">How to cite this post</h2>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Citation
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><strong>BibTeX:</strong></p>
+<div class="sourceCode" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode bibtex code-with-copy"><code class="sourceCode bibtex"><span id="cb17-1"><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">@misc</span>{<span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">nicenboim2026asimplewaytomodelrankingswithstan</span>,</span>
+<span id="cb17-2">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">author</span> = {Nicenboim, Bruno},</span>
+<span id="cb17-3">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">title</span> = {A simple way to model rankings with Stan},</span>
+<span id="cb17-4">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">year</span> = {2026},</span>
+<span id="cb17-5">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">month</span> = {januari},</span>
+<span id="cb17-6">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">url</span> = {https://bruno.nicenboim.me/posts/posts/2026-01-07-a-simple-way-to-model-rankings-with-stan/},</span>
+<span id="cb17-7">  <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">doi</span> = {10.5281/zenodo.18171805}</span>
+<span id="cb17-8">}</span></code></pre></div>
+<p><strong>APA:</strong></p>
+<p>Nicenboim, B. (2026, januari 07). <em>A simple way to model rankings with Stan</em>. https://doi.org/10.5281/zenodo.18171805</p>
+</div>
+</div>
+</div>
+</section>
+<section id="session-info" class="level2">
+<h2 class="anchored" data-anchor-id="session-info">Session info</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sessionInfo</span>()</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>R version 4.5.0 (2025-04-11)
+Platform: x86_64-pc-linux-gnu
+Running under: Ubuntu 22.04.5 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.10.0 
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0  LAPACK version 3.10.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=nl_NL.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=nl_NL.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=nl_NL.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=nl_NL.UTF-8 LC_IDENTIFICATION=C       
+
+time zone: Europe/Amsterdam
+tzcode source: system (glibc)
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets 
+[6] methods   base     
+
+other attached packages:
+[1] bayesplot_1.12.0  cmdstanr_0.9.0    rcorpora_2.0.1   
+[4] extraDistr_1.10.0 ggplot2_3.5.2     tidytable_0.11.2 
+
+loaded via a namespace (and not attached):
+ [1] gtable_0.3.6         jsonlite_2.0.0      
+ [3] dplyr_1.1.4          compiler_4.5.0      
+ [5] tidyselect_1.2.1     Rcpp_1.1.0          
+ [7] stringr_1.5.1        scales_1.4.0        
+ [9] yaml_2.3.10          fastmap_1.2.0       
+[11] plyr_1.8.9           R6_2.6.1            
+[13] labeling_0.4.3       generics_0.1.4      
+[15] distributional_0.5.0 knitr_1.50          
+[17] htmlwidgets_1.6.4    backports_1.5.0     
+[19] checkmate_2.3.2      tibble_3.3.0        
+[21] pillar_1.11.1        RColorBrewer_1.1-3  
+[23] posterior_1.6.1      rlang_1.1.6         
+[25] stringi_1.8.7        xfun_0.52           
+[27] cli_3.6.5            withr_3.0.2         
+[29] magrittr_2.0.4       ps_1.9.1            
+[31] processx_3.8.6       digest_0.6.37       
+[33] grid_4.5.0           lifecycle_1.0.4     
+[35] vctrs_0.6.5          tensorA_0.36.2.1    
+[37] evaluate_1.0.3       glue_1.8.0          
+[39] data.table_1.18.0    farver_2.1.2        
+[41] abind_1.4-8          reshape2_1.4.4      
+[43] rmarkdown_2.29       matrixStats_1.5.0   
+[45] tools_4.5.0          pkgconfig_2.0.3     
+[47] htmltools_0.5.8.1   </code></pre>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0">
+<div id="ref-Barsalou1985" class="csl-entry">
+Barsalou, Lawrence W. 1985. <span>“Ideals, Central Tendency, and Frequency of Instantiation as Determinants of Graded Structure in Categories.”</span> <em>Journal of Experimental Psychology: Learning, Memory, and Cognition</em> 11 (4): 629.
+</div>
+<div id="ref-BEGGS19811" class="csl-entry">
+Beggs, S, S Cardell, and J Hausman. 1981. <span>“Assessing the Potential Demand for Electric Cars.”</span> <em>Journal of Econometrics</em> 17 (1): 1–19. https://doi.org/<a href="https://doi.org/10.1016/0304-4076(81)90056-7">https://doi.org/10.1016/0304-4076(81)90056-7</a>.
+</div>
+<div id="ref-gakisetal2018" class="csl-entry">
+Gakis, Konstantinos, Panos Pardalos, Chang-Hwan Choi, Jae-Hyeon Park, and Jiwun Yoon. 2018. <span>“Simulation of a Probabilistic Model for Multi-Contestant Races.”</span> <em>Athens Journal of Sports</em> 5 (2): 95–114.
+</div>
+<div id="ref-Johnson2013" class="csl-entry">
+Johnson, Timothy R., and Kristine M. Kuhn. 2013. <span>“Bayesian <span>Thurstonian</span> Models for Ranking Data Using <span>JAGS</span>.”</span> <em>Behavior Research Methods</em> 45 (3): 857–72. <a href="https://doi.org/10.3758/s13428-012-0300-3">https://doi.org/10.3758/s13428-012-0300-3</a>.
+</div>
+<div id="ref-Lee2014" class="csl-entry">
+Lee, Michael D., Mark Steyvers, and Brent Miller. 2014. <span>“A Cognitive Model for Aggregating People’s Rankings.”</span> <em>PLOS ONE</em> 9 (5): e96431. <a href="https://doi.org/10.1371/journal.pone.0096431">https://doi.org/10.1371/journal.pone.0096431</a>.
+</div>
+<div id="ref-Luce1959" class="csl-entry">
+Luce, R. Duncan. 1959. <em>Individual Choice Behavior : A Theoretical Analysis</em>. Book. Wiley N.Y.
+</div>
+<div id="ref-Plackett" class="csl-entry">
+Plackett, R. L. 1975. <span>“The Analysis of Permutations.”</span> <em>Journal of the Royal Statistical Society. Series C (Applied Statistics)</em> 24 (2): 193–202. <a href="http://www.jstor.org/stable/2346567">http://www.jstor.org/stable/2346567</a>.
+</div>
+<div id="ref-taltsValidatingBayesianInference2018" class="csl-entry">
+Talts, Sean, Michael Betancourt, Daniel Simpson, Aki Vehtari, and Andrew Gelman. 2018. <span>“Validating <span>Bayesian Inference Algorithms</span> with <span>Simulation</span>-<span>Based Calibration</span>,”</span> April. <a href="http://arxiv.org/abs/1804.06788">http://arxiv.org/abs/1804.06788</a>.
+</div>
+<div id="ref-thurstone1927law" class="csl-entry">
+Thurstone, Louis L. 1927. <span>“A Law of Comparative Judgement.”</span> <em>Psychological Reviews</em> 34: 273–86.
+</div>
+<div id="ref-thurstone1931rank" class="csl-entry">
+———. 1931. <span>“Rank Order as a Psycho-Physical Method.”</span> <em>Journal of Experimental Psychology</em> 14 (3): 187.
+</div>
+</div>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>This model is also called the <em>rank ordered logit model</em> <span class="citation" data-cites="BEGGS19811">(Beggs, Cardell, and Hausman 1981)</span> or Plackett–Luce model due to <span class="citation" data-cites="Plackett">Plackett (1975)</span> and <span class="citation" data-cites="Luce1959">Luce (1959)</span>, but I liked the explosion part more.↩︎</p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div>MIT</div></div></section></div> ]]></description>
+  <category>Stan</category>
+  <category>Bayesian</category>
+  <category>R</category>
+  <category>Citable</category>
+  <guid>https://bruno.nicenboim.me/posts/posts/2026-01-06-a-simple-way-to-model-rankings-with-stan/</guid>
+  <pubDate>Tue, 06 Jan 2026 23:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Welcome to my new Quarto site</title>
   <dc:creator>Bruno Nicenboim</dc:creator>

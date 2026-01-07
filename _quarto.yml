@@ -23,6 +23,14 @@ website:
       - icon: rss
         href: posts/index.xml
         aria-label: RSS Feed
+  
+  page-footer:
+    left: |
+      Licensed under [MIT](https://github.com/bnicenboim/bnicenboim.github.io/blob/master/LICENSE)
+    center: "© 2021-2026 Bruno Nicenboim"
+    right: 
+      - text: "License"
+        href: LICENSE.qmd
 
 format:
   html:
@@ -33,8 +41,8 @@ format:
     css: styles.css
     toc: true
     toc-location: right
-    include-after-body: recent-posts.html
+    include-after-body: 
+      - recent-posts.html
+      - goatcounter.html
     
-editor: visual
-
-
+editor: source

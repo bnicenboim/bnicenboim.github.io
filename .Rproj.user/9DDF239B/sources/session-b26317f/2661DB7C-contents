@@ -54,8 +54,6 @@ I am also interested in broader aspects of computational modeling:
 
 I also work with EEG in psycholinguistics:
 
--   I'm currently finishing a project focusing on self-paced EEG data for benchmarks and computational modeling in the context of an [NWO Open Competition SGW XS grant](https://www.nwo.nl/en/researchprogrammes/open-competition-ssh/granted-projects).
-
 -   K. Stone, B. Nicenboim, S. Vasishth, et al. "Understanding the effects of constraint and predictability in ERP." In: *Neurobiology of Language* (Dec. 2022), pp. 1-71. DOI: 10.1162/nol_a_00094. [\[read\]](https://direct.mit.edu/nol/article-pdf/doi/10.1162/nol/_a/_00094/2062866/nol/_a/_00094.pdf)
 
 -   B. Nicenboim, S. Vasishth, and F. Rösler. "Are words pre-activated probabilistically during sentence comprehension? Evidence from new data and a Bayesian random-effects meta-analysis using publicly available data." In: *Neuropsychologia*, 142 (2020), p. 107427. DOI: 10.1016/j.neuropsychologia.2020.107427. [\[read\]](https://psyarxiv.com/2atrh/)
@@ -68,7 +66,6 @@ Bayesian statistics provides a powerful framework for cognitive science by allow
 
 -   [Introduction to Bayesian Data Analysis for Cognitive Science](https://bruno.nicenboim.me/bayescogsci) , co-authored with [Shravan Vasishth](http://www.ling.uni-potsdam.de/~vasishth/) and [Daniel Schad](https://danielschad.github.io/). You can [[buy it]](https://www.taylorfrancis.com/books/mono/10.1201/9780429342646/introduction-bayesian-data-analysis-cognitive-science-shravan-vasishth-bruno-nicenboim-daniel-schad) or [[read it for free]](https://bruno.nicenboim.me/bayescogsci).
 
--   [Stan for Cognitive Science](https://cognitive-science-stan.github.io/): A resource hub for Bayesian modeling with Stan.
 
 ## Data and Code
 
@@ -84,10 +81,5 @@ Most of the data and code from my published papers are available on the [OSF web
 
 <!-- -   A new recurring meeting on computational psycholinguistics, co-organized with [Jakub Dotlačil](https://www.jakubdotlacil.com/), [Lena Jäger](https://www.cl.uzh.ch/en/research-groups/digital-linguistics/people/group-leader/jaeger.html), and me, will take place in Utrecht on December 18–19, 2025. **Deadline is over**, but you can still register for the conference. More details on the [official website](https://cpl2025.sites.uu.nl/). -->
 
-
-
------
-
-<!-- quarto::quarto_add_extension("mcanouil/quarto-iconify") -->
 
 

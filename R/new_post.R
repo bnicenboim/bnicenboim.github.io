@@ -9,6 +9,7 @@
 #' @param draft Logical. Whether to mark the post as a draft. Default is FALSE.
 #' @param date Date or character string. Publication date. Defaults to today's date.
 #' @param description Character string. Short description of the post. Default is empty.
+#' @param citable Logical. Whether to add citation info. (Adding Citable as a category has the same effect).
 #' @param open Logical. Whether to open the file in RStudio after creation. Default is TRUE.
 #'
 #' @return Invisibly returns the path to the created index.qmd file.
@@ -20,7 +21,8 @@
 #'
 #' # Create a post with categories
 #' new_post("Bayesian Regression in Stan",
-#'          categories = c("R", "Stan", "Bayesian"))
+#'          categories = c("R", "Stan", "Bayesian"),
+#'          citable = TRUE)
 #'
 #' # Create a draft post
 #' new_post("Work in Progress",
@@ -45,12 +47,14 @@ new_post <- function(title,
                      draft = FALSE,
                      date = Sys.Date(),
                      description = "",
+                     citable = FALSE,
                      open = TRUE) {
   
   # Validate inputs
   if (!is.character(title) || length(title) != 1 || nchar(title) == 0) {
     stop("title must be a non-empty character string")
   }
+  citation_info <- citable || (!is.null(categories) && "Citable" %in% categories)
   
   # Create slug from title
   slug <- tolower(title)
@@ -65,7 +69,7 @@ new_post <- function(title,
   
   # Create folder name: YYYY-MM-DD-slug
   folder_name <- paste0(date_string, "-", slug)
-  folder_path <- file.path("blog", "posts", folder_name)
+  folder_path <- file.path("posts", "posts", folder_name)
   
   # Check if folder already exists
   if (dir.exists(folder_path)) {
@@ -89,6 +93,7 @@ new_post <- function(title,
   
   yaml_lines <- c(yaml_lines, paste0('author: "', author, '"'))
   yaml_lines <- c(yaml_lines, paste0('date: "', date_string, '"'))
+  yaml_lines <- c(yaml_lines, paste0('license: "MIT"'))
   
   if (!is.null(categories) && length(categories) > 0) {
     # Properly format categories
@@ -98,6 +103,10 @@ new_post <- function(title,
   
   if (draft) {
     yaml_lines <- c(yaml_lines, 'draft: true')
+  }
+  if (citation_info) {
+    yaml_lines <- c(yaml_lines, paste0('doi: ""'))
+    yaml_lines <- c(yaml_lines, paste0('bibliography: references.bib'))
   }
   
   yaml_lines <- c(yaml_lines, "---", "")
@@ -157,6 +166,93 @@ new_post <- function(title,
     "Summarize your findings.",
     ""
   )
+  
+  # Add dynamic citation block if citable or has "Citable" category
+  if (citation_info) {
+    content <- c(
+      content,
+      "",
+      "## How to cite this post",
+      "",
+      "```{r}",
+      "#| echo: false",
+      "#| results: asis",
+      "",
+      "# Read YAML metadata from this file",
+      "yaml_data <- rmarkdown::yaml_front_matter(knitr::current_input())",
+      "",
+      "# Create slug from title",
+      "slug <- tolower(yaml_data$title)",
+      "slug <- gsub(\"[^a-z0-9]+\", \"-\", slug)",
+      "slug <- gsub(\"^-|-$\", \"\", slug)",
+      "",
+      "# Extract year and month",
+      "post_date <- as.Date(yaml_data$date)",
+      "year <- format(post_date, \"%Y\")",
+      "month <- format(post_date, \"%B\")",
+      "full_date <- format(post_date, \"%Y, %B %d\")",
+      "",
+      "# Build URL",
+      "post_url <- paste0(",
+      "  \"https://bruno.nicenboim.me/posts/posts/\",",
+      "  yaml_data$date, \"-\", slug, \"/\"",
+      ")",
+      "",
+      "# BibTeX entry",
+      "bibtex_key <- paste0(\"nicenboim\", year, gsub(\"-\", \"\", slug))",
+      "",
+      "cat(\"::: {.callout-tip collapse=\\\"true\\\"}\\n\")",
+      "cat(\"## Citation\\n\\n\")",
+      "cat(\"**BibTeX:**\\n\\n\")",
+      "cat(\"```bibtex\\n\")",
+      "cat(paste0(\"@misc{\", bibtex_key, \",\\n\"))",
+      "cat(\"  author = {Nicenboim, Bruno},\\n\")",
+      "cat(paste0(\"  title = {\", yaml_data$title, \"},\\n\"))",
+      "cat(paste0(\"  year = {\", year, \"},\\n\"))",
+      "cat(paste0(\"  month = {\", month, \"},\\n\"))",
+      "cat(paste0(\"  url = {\", post_url, \"}\"))",
+      "if (!is.null(yaml_data$doi) && nchar(yaml_data$doi) > 0) {",
+      "  cat(\",\\n\")",
+      "  cat(paste0(\"  doi = {\", yaml_data$doi, \"}\"))",
+      "}",
+      "cat(\"\\n}\\n\")",
+      "cat(\"```\\n\\n\")",
+      "",
+      "# APA citation",
+      "cat(\"**APA:**\\n\\n\")",
+      "apa <- paste0(",
+      "  \"Nicenboim, B. (\", full_date, \"). *\",",
+      "  yaml_data$title, \"*. \"",
+      ")",
+      "if (!is.null(yaml_data$doi) && nchar(yaml_data$doi) > 0) {",
+      "  apa <- paste0(apa, \"https://doi.org/\", yaml_data$doi)",
+      "} else {",
+      "  apa <- paste0(apa, post_url)",
+      "}",
+      "cat(apa)",
+      "cat(\"\\n\\n\")",
+      "cat(\":::\")",
+      "```",
+      "",
+      "## Session info",
+      "",
+      "```{r}",
+      "#| echo: false",
+      "sessionInfo()",
+      "```",
+      "",
+      "## References",
+      "",
+      "::: {#refs}",
+      ":::",
+      ""
+    )
+    
+    # Create empty references.bib file
+    bib_path <- file.path(folder_path, "references.bib")
+    writeLines("", bib_path)
+    message("✓ Created bibliography file: ", bib_path)
+  }
   
   # Write to index.qmd
   file_path <- file.path(folder_path, "index.qmd")
