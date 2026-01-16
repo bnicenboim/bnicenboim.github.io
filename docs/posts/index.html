@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.31">
+<meta name="generator" content="quarto-1.8.27">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -34,14 +34,15 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-e1a5c8363afafaef2c763b6775fbf3ca.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-6702ebd02cba8b53d0df9107bd4fc31d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-b95dfa6f66e18e1d2bf1b631702b15ee.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -113,7 +114,7 @@ const typesetMath = (el) => {
     var macros = [];
     for (var i = 0; i < mathElements.length; i++) {
       var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
         window.katex.render(texText.data, mathElements[i], {
           displayMode: mathElements[i].classList.contains('display'),
           throwOnError: false,
@@ -209,7 +210,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(2)</span></div><div class="category" data-category="QmF5ZXNpYW4=">Bayesian <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Q2l0YWJsZQ==">Citable <span class="quarto-category-count">(1)</span></div><div class="category" data-category="TWV0YQ==">Meta <span class="quarto-category-count">(1)</span></div><div class="category" data-category="UXVhcnRv">Quarto <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Ug==">R <span class="quarto-category-count">(1)</span></div><div class="category" data-category="U3Rhbg==">Stan <span class="quarto-category-count">(1)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(4)</span></div><div class="category" data-category="QmF5ZXNpYW4=">Bayesian <span class="quarto-category-count">(3)</span></div><div class="category" data-category="YnJtcw==">brms <span class="quarto-category-count">(2)</span></div><div class="category" data-category="Q2l0YWJsZQ==">Citable <span class="quarto-category-count">(1)</span></div><div class="category" data-category="TWV0YQ==">Meta <span class="quarto-category-count">(1)</span></div><div class="category" data-category="UXVhcnRv">Quarto <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Ug==">R <span class="quarto-category-count">(3)</span></div><div class="category" data-category="U3Rhbg==">Stan <span class="quarto-category-count">(3)</span></div><div class="category" data-category="VHV0b3JpYWw=">Tutorial <span class="quarto-category-count">(2)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -223,7 +224,83 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="U3RhbiUyQ0JheWVzaWFuJTJDUiUyQ0NpdGFibGU=" data-listing-date-sort="1767740400000" data-listing-file-modified-sort="1767789771293" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="14" data-listing-word-count-sort="2607">
+<div class="quarto-post image-right" data-index="0" data-categories="U3RhbiUyQ0JheWVzaWFuJTJDVHV0b3JpYWwlMkNSJTJDYnJtcw==" data-listing-date-sort="1767913200000" data-listing-file-modified-sort="1768570304167" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="19" data-listing-word-count-sort="3795">
+<div class="thumbnail"><a href="../posts/posts/2026-01-09-ordinal-models/index.html" class="no-external">
+
+<p class="card-img-top"><img src="posts/2026-01-09-ordinal-models/index_files/figure-html/parameter-recovery-1.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../posts/posts/2026-01-09-ordinal-models/index.html" class="no-external">Bayesian ordinal models: A very short practical guide</a>
+</h3>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('U3Rhbg=='); return false;">Stan</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('QmF5ZXNpYW4='); return false;">Bayesian</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('VHV0b3JpYWw='); return false;">Tutorial</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Ug=='); return false;">R</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('YnJtcw=='); return false;">brms</div>
+
+</div>
+<div class="delink listing-description"><a href="../posts/posts/2026-01-09-ordinal-models/index.html" class="no-external">
+<p>Understanding and setting priors in Bayesian ordinal models with cumulative links</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../posts/posts/2026-01-09-ordinal-models/index.html" class="no-external">
+<div class="listing-date">
+Jan 9, 2026
+</div>
+<div class="listing-author">
+Bruno Nicenboim
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="U3RhbiUyQ0JheWVzaWFuJTJDVHV0b3JpYWwlMkNSJTJDYnJtcw==" data-listing-date-sort="1767913200000" data-listing-file-modified-sort="1768567840000" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="19" data-listing-word-count-sort="3646">
+<div class="thumbnail"><a href="../posts/posts/2026-01-09-ordinal-models/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide-archive/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide/index.html" class="no-external">
+
+<p class="card-img-top"><img src="posts/2026-01-09-ordinal-models/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide-archive/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide/index_files/figure-html/parameter-recovery-1.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="../posts/posts/2026-01-09-ordinal-models/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide-archive/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide/index.html" class="no-external">Bayesian ordinal models: A very short practical guide</a>
+</h3>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('U3Rhbg=='); return false;">Stan</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('QmF5ZXNpYW4='); return false;">Bayesian</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('VHV0b3JpYWw='); return false;">Tutorial</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Ug=='); return false;">R</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('YnJtcw=='); return false;">brms</div>
+
+</div>
+<div class="delink listing-description"><a href="../posts/posts/2026-01-09-ordinal-models/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide-archive/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide/index.html" class="no-external">
+<p>Understanding and setting priors in Bayesian ordinal models with cumulative links</p>
+</a></div>
+</div>
+<div class="metadata">
+<a href="../posts/posts/2026-01-09-ordinal-models/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide-archive/2026-01-09-bayesian-ordinal-models-a-very-short-practical-guide/index.html" class="no-external">
+<div class="listing-date">
+Jan 9, 2026
+</div>
+<div class="listing-author">
+Bruno Nicenboim
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="2" data-categories="U3RhbiUyQ0JheWVzaWFuJTJDUiUyQ0NpdGFibGU=" data-listing-date-sort="1767740400000" data-listing-file-modified-sort="1767789771293" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="14" data-listing-word-count-sort="2607">
 <div class="thumbnail"><a href="../posts/posts/2026-01-06-a-simple-way-to-model-rankings-with-stan/index.html" class="no-external">
 
 <p class="card-img-top"><img src="posts/2026-01-06-a-simple-way-to-model-rankings-with-stan/index_files/figure-html/recovery-plot-1.png"  class="thumbnail-image card-img"/></p>
@@ -259,7 +336,7 @@ Bruno Nicenboim
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="TWV0YSUyQ1F1YXJ0bw==" data-listing-date-sort="1767654000000" data-listing-file-modified-sort="1767698638348" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="45">
+<div class="quarto-post image-right" data-index="3" data-categories="TWV0YSUyQ1F1YXJ0bw==" data-listing-date-sort="1767654000000" data-listing-file-modified-sort="1767698638348" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="45">
 <div class="thumbnail"><a href="../posts/posts/2026-01-06-welcome-to-my-new-quarto-site/index.html" class="no-external">
 
 <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
@@ -417,13 +494,14 @@ async function fetchRecentPosts() {
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
