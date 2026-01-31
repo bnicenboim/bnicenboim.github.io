@@ -1,7 +1,8 @@
 project:
   type: website
   output-dir: docs  
-
+  resources:
+    - www/
 website:
   title: "Bruno Nicenboim"
   site-url: "https://bruno.nicenboim.me"

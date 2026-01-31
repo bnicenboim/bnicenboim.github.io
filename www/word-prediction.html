@@ -298,14 +298,6 @@ button:disabled {
   color: #764ba2;
 }
 
-.lives-container {
-  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-  border-radius: 12px;
-  padding: 1.5rem;
-  min-width: 160px;
-  text-align: center;
-}
-
 .lives-display {
   color: #fff;
   font-size: 0.9rem;
@@ -316,7 +308,17 @@ button:disabled {
   letter-spacing: 2px;
   margin-bottom: 0.5rem;
 }
+.player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
 
+.player-lives {
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+}
 .section-title {
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -947,7 +949,18 @@ function shuffleArray(array) {
   }
   return arr;
 }
-
+function renderPlayers() {
+  const container = document.getElementById("playersDisplay");
+  container.innerHTML = game.players.map((p, i) => `
+    <div class="player ${i === game.turn ? 'active' : ''} ${p.isAI ? 'ai' : ''}">
+      <span class="avatar">${p.avatar}</span>
+      <div class="player-info">
+        <div class="player-name">${p.name} — ${p.score} pts</div>
+        <div class="player-lives">${renderLives(p.lives, game.maxLives)}</div>
+      </div>
+    </div>
+  `).join("");
+}
 function renderPlayerInputs() {
   const n = Number(numPlayersSel.value);
   playerInputsDiv.innerHTML = "";
@@ -1261,21 +1274,35 @@ function maybeTriggerAITurn() {
   }
 }
 document.getElementById("skipBtn").onclick = () => {
-  const p = game.players[game.currentPlayer];
+  if (game.finished) return;
 
-  p.lives--;
+  const currentPlayer = game.players[game.turn];
+  currentPlayer.lives--;  // Lose 1 life
 
-  log(`${p.name} skipped the turn and lost 1 life.`);
+  addLogEntry({
+    timeFormatted: formatTime(new Date()),
+    player: currentPlayer.name,
+    playerAvatar: currentPlayer.avatar,
+    isAI: currentPlayer.isAI,
+    guess: "(skipped turn)",
+    target: game.sentence[game.revealed],
+    correct: false
+  });
 
-  if (p.lives <= 0) {
-    log(`${p.name} is out for this round.`);
-    nextPlayer();   // or whatever you already use
-  } else {
-    nextPlayer();
+  // If player lost all lives, treat as failing the word
+  if (currentPlayer.lives <= 0) {
+    currentPlayer.score -= 10;
+    addScoreLog(currentPlayer, "-10 (failed word)");
+    failCurrentWord();
+    resetLivesForAllPlayers();
   }
 
+  // Advance to the next player
+  game.turn = (game.turn + 1) % game.players.length;
   render();
+  maybeTriggerAITurn();
 };
+
 
 document.getElementById("discloseBtn").onclick = () => {
   if (game.finished) return;
@@ -1304,7 +1331,7 @@ function discloseWord(penalty = 10) {
     game.finished = true;
     showGameOver(true);
   } else {
-    game.turn = (game.turn + 1) % game.players.length;
+    game.turn = 0;  // Move to the first player
     render();
     maybeTriggerAITurn();
   }
@@ -1487,8 +1514,9 @@ function render() {
 
  // Render hearts/lives (current player only)
 const livesLeft = game.players[game.turn].lives;
-document.getElementById("hearts").textContent =
-  renderLives(livesLeft, game.maxLives);
+//document.getElementById("hearts").textContent =
+//  renderLives(livesLeft, game.maxLives);
+  renderPlayers(); // ← add this
 
 // Optional: you said 5 / 5 is ugly — so remove this if you want
 document.getElementById("livesText").textContent = "";
