@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Prediction Game</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 2rem;
+  margin: 0;
+}
+
+h1 {
+  text-align: center;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  margin-bottom: 2rem;
+  font-weight: 300;
+  font-size: 2.5rem;
+}
+
+.panel {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  max-width: 900px;
+  margin: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.row {
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.row label {
+  color: #555;
+  font-weight: 500;
+  min-width: 160px;
+}
+
+input, select, textarea {
+  font-size: 1rem;
+  padding: 0.6rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+button {
+  font-size: 1rem;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  padding: 0.8rem 2rem;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+}
+
+.btn-icon {
+  background: #f0f0f0;
+  padding: 0.6rem 0.8rem;
+}
+
+.section-box {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin: 1.5rem 0;
+}
+
+.section-box h3 {
+  margin: 0 0 1rem 0;
+  color: #555;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.players-setup {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  flex-wrap: wrap;
+}
+
+.player-row input {
+  flex: 1;
+  min-width: 150px;
+}
+
+.player-row .player-type {
+  min-width: 80px;
+}
+
+.player-row .robot-avatar {
+  padding: 0 0.5rem;
+}
+
+.player-row .ai-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.players {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.player {
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.player.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.player.ai {
+  border: 2px dashed #667eea;
+}
+
+.player .avatar {
+  font-size: 1.5rem;
+}
+
+.sentence {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sentence .word {
+  font-size: 1.4rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  transition: background 0.3s;
+}
+
+.sentence .word.revealed {
+  background: rgba(102, 126, 234, 0.15);
+  color: #333;
+  font-weight: 500;
+}
+
+.sentence .word.hidden {
+  color: #999;
+  font-style: italic;
+}
+
+.sentence .word.current {
+  background: rgba(255, 193, 7, 0.3);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.game-area {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 700px) {
+  .game-area {
+    grid-template-columns: 1fr;
+  }
+}
+
+.input-area {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.input-area input {
+  flex: 1;
+  font-size: 1.1rem;
+}
+
+.game-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+
+.game-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.game-options select {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.back {
+  cursor: pointer;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  color: #667eea;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: color 0.2s;
+}
+
+.back:hover {
+  color: #764ba2;
+}
+
+.lives-container {
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-width: 160px;
+  text-align: center;
+}
+
+.lives-display {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.lives-display .hearts {
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.section-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888;
+  margin-bottom: 0.8rem;
+  font-weight: 600;
+}
+
+.game-over {
+  text-align: center;
+  padding: 2rem;
+}
+
+.game-over h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.game-over.win h2 {
+  color: #48bb78;
+}
+
+.game-over.lose h2 {
+  color: #e53e3e;
+}
+
+.game-over .final-sentence {
+  font-size: 1.2rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.difficulty-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.difficulty-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.difficulty-btn:hover {
+  border-color: #667eea;
+}
+
+.difficulty-btn.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.game-log {
+  background: #1a202c;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
+.game-log .log-entry {
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #2d3748;
+  display: flex;
+  gap: 1rem;
+}
+
+.game-log .log-entry:last-child {
+  border-bottom: none;
+}
+
+.game-log .log-time {
+  color: #718096;
+  min-width: 80px;
+}
+
+.game-log .log-player {
+  color: #667eea;
+  min-width: 100px;
+}
+
+.game-log .log-guess {
+  color: #e2e8f0;
+}
+
+.game-log .log-result {
+  margin-left: auto;
+}
+
+.game-log .log-result.correct {
+  color: #48bb78;
+}
+
+.game-log .log-result.wrong {
+  color: #fc8181;
+}
+
+.api-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  margin-left: 0.5rem;
+}
+
+.api-status.connected {
+  background: #c6f6d5;
+  color: #276749;
+}
+
+.api-status.disconnected {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.api-status.connecting, .api-status.loading {
+  background: #fefcbf;
+  color: #975a16;
+}
+
+.ai-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #667eea;
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.ai-thinking .dots {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.ai-thinking .dots span {
+  animation: blink 1.4s infinite both;
+  width: 6px;
+  height: 6px;
+  background: #667eea;
+  border-radius: 50%;
+}
+
+.ai-thinking .dots span:nth-child(2) { animation-delay: 0.2s; }
+.ai-thinking .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0; }
+  40% { opacity: 1; }
+}
+
+.inline-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.word-count-input {
+  width: 70px;
+  text-align: center;
+}
+
+.model-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.or-divider {
+  color: #999;
+  font-style: italic;
+  margin: 0 0.5rem;
+}
+
+.generate-status {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Word Prediction Game</h1>
+
+<!-- SETUP -->
+<div id="setup" class="panel">
+  <h2 style="margin-top:0; color:#333;">Game Setup</h2>
+
+  <!-- LLM Settings -->
+  <div class="section-box">
+    <h3>🤖 AI Settings (Hugging Face)</h3>
+    <div class="row">
+      <label>HF API Token:</label>
+      <input id="hfToken" type="password" placeholder="hf_xxxx..." style="flex:1; min-width:200px;">
+      <button class="btn-icon" id="tokenEyeBtn">👁</button>
+      <span id="apiStatus" class="api-status disconnected">AI disabled</span>
+    </div>
+    <div class="row">
+      <label>Model:</label>
+      <select id="modelPreset" style="min-width:220px;">
+        <optgroup label="Free / Small Models">
+          <option value="HuggingFaceTB/SmolLM3-3B" selected>SmolLM3-3B (free, recommended)</option>
+          <option value="Qwen/Qwen2.5-7B-Instruct-1M">Qwen2.5-7B-Instruct</option>
+        </optgroup>
+        <optgroup label="Larger Models (may need credits)">
+          <option value="deepseek-ai/DeepSeek-R1">DeepSeek-R1 (reasoning)</option>
+          <option value="openai/gpt-oss-120b">GPT-OSS-120B</option>
+        </optgroup>
+        <option value="custom">-- Custom model --</option>
+      </select>
+    </div>
+    <div class="row" id="customModelRow" style="display:none;">
+      <label>Model name:</label>
+      <input id="modelCustom" class="model-input" placeholder="e.g. username/model-name">
+    </div>
+    <div style="font-size:0.85rem; color:#666; margin-top:0.5rem;">
+      Get a free token at <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>.
+      <button type="button" id="testConnBtn" style="margin-left:1rem; font-size:0.8rem; padding:0.2rem 0.5rem;">Test Connection</button>
+      <br><span style="font-size:0.8rem; color:#888;">Note: Only models supported by HF Inference are available. Use "Custom" to try other models.</span>
+    </div>
+  </div>
+
+  <!-- Sentence Input -->
+  <div class="section-box">
+    <h3>📝 Secret Sentence</h3>
+    <div class="row">
+      <label>Enter manually:</label>
+      <input id="sentenceInput" type="password" style="flex:1; min-width:200px;">
+      <button class="btn-icon" id="eyeBtn">👁</button>
+    </div>
+    <div class="row">
+      <span class="or-divider">— OR —</span>
+    </div>
+    <div class="row">
+      <label>Generate with AI:</label>
+      <div class="inline-input">
+        <input id="wordCount" type="number" class="word-count-input" min="3" max="20" placeholder="5-10">
+        <span style="color:#666;">words</span>
+        <span style="color:#999; font-size:0.85rem;">(leave empty for random)</span>
+      </div>
+      <button class="btn-secondary" id="generateBtn">Generate Sentence</button>
+    </div>
+    <div id="generateStatus" class="generate-status"></div>
+  </div>
+
+  <div class="row">
+    <label>Difficulty (lives):</label>
+    <div class="difficulty-buttons" id="difficultyBtns">
+      <button class="difficulty-btn" data-lives="6">Easy (6)</button>
+      <button class="difficulty-btn selected" data-lives="8">Normal (8)</button>
+      <button class="difficulty-btn" data-lives="10">Hard (10)</button>
+      <button class="difficulty-btn" data-lives="12">Expert (12)</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <label>Number of players:</label>
+    <select id="numPlayers">
+      <option>1</option><option selected>2</option><option>3</option>
+      <option>4</option><option>5</option><option>6</option><option>7</option>
+    </select>
+  </div>
+
+  <div class="players-setup" id="playerInputs"></div>
+
+  <button class="btn-primary" id="startBtn">Start Game</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="panel" style="display:none;">
+  <div class="back" id="backBtn">← Back to Setup</div>
+
+  <div class="section-title">Sentence</div>
+  <div id="sentenceDisplay" class="sentence"></div>
+
+  <div class="section-title">Players</div>
+  <div id="playersDisplay" class="players"></div>
+
+  <div class="game-area">
+    <div>
+      <div class="section-title">Your Guess</div>
+      <div class="input-area">
+        <input id="guessInput" placeholder="Type the next word...">
+        <button class="btn-primary" id="guessBtn">Guess</button>
+      </div>
+      <div id="aiThinking" class="ai-thinking" style="display:none;">
+        <span>AI is thinking</span>
+        <span class="dots"><span></span><span></span><span></span></span>
+      </div>
+    </div>
+
+    <div class="lives-container">
+      <div class="lives-display">
+        <div class="hearts" id="hearts"></div>
+        <div id="livesText"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-options">
+    <label><input type="checkbox" id="optCase" checked> Case insensitive</label>
+    <label><input type="checkbox" id="optPunct" checked> Ignore punctuation</label>
+    <label>Tolerance: <input type="number" id="optLev" value="0" min="0" max="10" style="width:45px; font-size:0.75rem; padding:0.2rem;"></label>
+  </div>
+
+  <div class="section-title">Game Log</div>
+  <div id="gameLog" class="game-log"></div>
+
+  <div id="gameOver" class="game-over" style="display:none;"></div>
+</div>
+
+<script>
+/* ======================
+   Constants
+====================== */
+
+const AVATARS = ["🦊","🐸","🐶","🐱","👻","🦄","🐼","🦁","🐵","🐰"];
+const AI_AVATAR = "🤖";
+
+let currentModel = "HuggingFaceTB/SmolLM3-3B";
+
+/* ======================
+   State
+====================== */
+
+let game = null;
+let maxLives = 8;
+let hfToken = "";
+let aiEnabled = false;
+
+const opts = {
+  caseInsensitive: true,
+  ignorePunctuation: true,
+  levenshtein: 0
+};
+
+/* ======================
+   DOM references
+====================== */
+
+const setupDiv = document.getElementById("setup");
+const gameDiv = document.getElementById("game");
+const sentenceInput = document.getElementById("sentenceInput");
+const numPlayersSel = document.getElementById("numPlayers");
+const playerInputsDiv = document.getElementById("playerInputs");
+const difficultyBtns = document.querySelectorAll(".difficulty-btn");
+const hfTokenInput = document.getElementById("hfToken");
+const apiStatusEl = document.getElementById("apiStatus");
+
+/* ======================
+   Hugging Face API
+====================== */
+
+async function callHuggingFace(prompt, maxTokens = 100) {
+  if (!hfToken) {
+    throw new Error("No API token");
+  }
+
+  // HuggingFace now uses OpenAI-compatible chat completions API
+  const apiUrl = "https://router.huggingface.co/v1/chat/completions";
+
+  let response;
+  try {
+    response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${hfToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: currentModel,  // Let HuggingFace auto-select the provider
+        messages: [
+          {
+            role: "user",
+            content: prompt || "Complete this sentence: Once upon a time"
+          }
+        ],
+        max_tokens: maxTokens,
+        temperature: 0.8
+      })
+    });
+  } catch (networkError) {
+    throw new Error("Network error");
+  }
+
+  if (!response.ok) {
+    let errorMsg = `HTTP ${response.status}`;
+    try {
+      const error = await response.json();
+      errorMsg = error.error?.message || error.error || errorMsg;
+    } catch (e) {}
+    throw new Error(errorMsg);
+  }
+
+  const data = await response.json();
+
+  // OpenAI-compatible response format
+  if (data.choices && data.choices[0]?.message?.content) {
+    return data.choices[0].message.content;
+  }
+
+  return "";
+}
+
+async function testConnection() {
+  if (!hfToken) {
+    apiStatusEl.textContent = "AI disabled";
+    apiStatusEl.className = "api-status disconnected";
+    return false;
+  }
+
+  apiStatusEl.textContent = "Connecting...";
+  apiStatusEl.className = "api-status connecting";
+
+  try {
+    await callHuggingFace("Say hi", 5);
+    const modelName = currentModel.split("/").pop();
+    apiStatusEl.textContent = `OK (${modelName})`;
+    apiStatusEl.className = "api-status connected";
+    return true;
+  } catch (e) {
+    const msg = e.message.toLowerCase();
+    if (msg.includes("loading") || msg.includes("currently loading") || msg.includes("warming")) {
+      apiStatusEl.textContent = "Model loading...";
+      apiStatusEl.className = "api-status loading";
+      // Auto-retry after 10 seconds
+      setTimeout(() => { if (hfToken) testConnection(); }, 10000);
+    } else if (msg.includes("not exist") || msg.includes("not found") || msg.includes("404")) {
+      apiStatusEl.textContent = "Model not found";
+      apiStatusEl.className = "api-status disconnected";
+    } else if (msg.includes("network") || msg.includes("failed to fetch")) {
+      apiStatusEl.textContent = "Network error";
+      apiStatusEl.className = "api-status disconnected";
+    } else if (msg.includes("401") || msg.includes("unauthorized") || msg.includes("invalid")) {
+      apiStatusEl.textContent = "Invalid token";
+      apiStatusEl.className = "api-status disconnected";
+    } else if (msg.includes("no provider") || msg.includes("not supported")) {
+      apiStatusEl.textContent = "Model not supported";
+      apiStatusEl.className = "api-status disconnected";
+    } else {
+      apiStatusEl.textContent = e.message.slice(0, 30);
+      apiStatusEl.className = "api-status disconnected";
+    }
+    return false;
+  }
+}
+
+// DOM elements for model selection
+const modelPresetSelect = document.getElementById("modelPreset");
+const modelCustomInput = document.getElementById("modelCustom");
+const customModelRow = document.getElementById("customModelRow");
+
+// Load saved token and model from localStorage
+const savedToken = localStorage.getItem("hf_token");
+const savedModel = localStorage.getItem("hf_model");
+
+function updateCustomRowVisibility() {
+  customModelRow.style.display = modelPresetSelect.value === "custom" ? "flex" : "none";
+}
+
+if (savedModel) {
+  currentModel = savedModel;
+  // Try to match preset
+  let found = false;
+  for (let opt of modelPresetSelect.options) {
+    if (opt.value === savedModel) {
+      modelPresetSelect.value = savedModel;
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    modelPresetSelect.value = "custom";
+    modelCustomInput.value = savedModel;
+  }
+  updateCustomRowVisibility();
+}
+
+if (savedToken) {
+  hfToken = savedToken;
+  hfTokenInput.value = savedToken;
+  testConnection();
+}
+
+hfTokenInput.addEventListener("change", () => {
+  // Clean up token - remove any whitespace or quotes
+  hfToken = hfTokenInput.value.trim().replace(/['"]/g, '');
+  hfTokenInput.value = hfToken;  // Update the field with cleaned value
+
+  if (hfToken) {
+    // Validate token format (should start with hf_)
+    if (!hfToken.startsWith("hf_")) {
+      apiStatusEl.textContent = "Token should start with hf_";
+      apiStatusEl.className = "api-status disconnected";
+      return;
+    }
+    localStorage.setItem("hf_token", hfToken);
+    testConnection();
+  } else {
+    localStorage.removeItem("hf_token");
+    apiStatusEl.textContent = "AI disabled";
+    apiStatusEl.className = "api-status disconnected";
+  }
+});
+
+document.getElementById("tokenEyeBtn").onclick = () => {
+  hfTokenInput.type = hfTokenInput.type === "password" ? "text" : "password";
+};
+
+document.getElementById("testConnBtn").onclick = () => {
+  if (hfToken) {
+    testConnection();
+  } else {
+    apiStatusEl.textContent = "Enter token first";
+    apiStatusEl.className = "api-status disconnected";
+  }
+};
+
+// Model preset selection
+modelPresetSelect.addEventListener("change", (e) => {
+  updateCustomRowVisibility();
+
+  if (e.target.value && e.target.value !== "custom") {
+    currentModel = e.target.value;
+    localStorage.setItem("hf_model", currentModel);
+    if (hfToken) testConnection();
+  }
+});
+
+// Custom model input
+modelCustomInput.addEventListener("change", (e) => {
+  if (e.target.value.trim()) {
+    currentModel = e.target.value.trim();
+    localStorage.setItem("hf_model", currentModel);
+    if (hfToken) testConnection();
+  }
+});
+
+/* ======================
+   Generate Sentence
+====================== */
+
+document.getElementById("generateBtn").onclick = async () => {
+  const statusEl = document.getElementById("generateStatus");
+  const wordCountInput = document.getElementById("wordCount");
+
+  if (!hfToken) {
+    statusEl.textContent = "Please enter your Hugging Face API token first.";
+    statusEl.style.color = "#c53030";
+    return;
+  }
+
+  const wordCount = wordCountInput.value
+    ? parseInt(wordCountInput.value)
+    : Math.floor(Math.random() * 8) + 5; // 5-12 words random
+
+  statusEl.textContent = "Generating sentence...";
+  statusEl.style.color = "#666";
+
+  try {
+    // Generate text using chat format - ask for a simple sentence
+    let result = await callHuggingFace(
+      `Generate a simple, random sentence with exactly ${wordCount} words. Only output the sentence, nothing else. No quotes, no explanation.`,
+      80
+    );
+
+    // Clean up: get usable text
+    result = result
+      .replace(/\n/g, ' ')              // Replace newlines with spaces
+      .replace(/\s+/g, ' ')             // Normalize whitespace
+      .replace(/^["']|["']$/g, '')      // Remove surrounding quotes
+      .trim();
+
+    // Remove any remaining punctuation at the end
+    result = result.replace(/[.!?,;:]+$/, '').trim();
+
+    // Trim to target word count if too long
+    let words = result.split(/\s+/).filter(w => w.length > 0);
+    if (words.length > wordCount) {
+      words = words.slice(0, wordCount);
+    }
+    result = words.join(" ");
+
+    if (result && words.length >= 2) {
+      sentenceInput.value = result;
+      sentenceInput.type = "text"; // Show it temporarily
+      statusEl.textContent = `Generated ${words.length} words`;
+      statusEl.style.color = "#276749";
+
+      // Hide after 3 seconds
+      setTimeout(() => {
+        sentenceInput.type = "password";
+      }, 3000);
+    } else {
+      throw new Error("Could not generate - try again");
+    }
+  } catch (e) {
+    statusEl.textContent = `Error: ${e.message}`;
+    statusEl.style.color = "#c53030";
+  }
+};
+
+/* ======================
+   Setup logic
+====================== */
+
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function renderPlayerInputs() {
+  const n = Number(numPlayersSel.value);
+  playerInputsDiv.innerHTML = "";
+
+  const shuffledAvatars = shuffleArray(AVATARS);
+
+  for (let i = 0; i < n; i++) {
+    const row = document.createElement("div");
+    row.className = "player-row";
+    row.dataset.index = i;
+
+    const defaultAvatar = shuffledAvatars[i % shuffledAvatars.length];
+
+    row.innerHTML = `
+      <select class="player-type" style="font-size:0.9rem;">
+        <option value="human" selected>Human</option>
+        <option value="ai">AI</option>
+      </select>
+      <input class="player-name" placeholder="Player ${i+1} name">
+      <select class="player-avatar" style="font-size:1.3rem;">
+        ${AVATARS.map(a => `<option ${a === defaultAvatar ? 'selected' : ''}>${a}</option>`).join("")}
+      </select>
+    `;
+
+    // Handle type change
+    const typeSelect = row.querySelector(".player-type");
+    const nameInput = row.querySelector(".player-name");
+    const avatarSelect = row.querySelector(".player-avatar");
+
+    typeSelect.addEventListener("change", () => {
+      if (typeSelect.value === "ai") {
+        nameInput.value = "AI Player";
+        nameInput.disabled = true;
+        nameInput.style.background = "#f0f0f0";
+        avatarSelect.style.display = "none";
+        // Add robot display
+        let robotSpan = row.querySelector(".robot-avatar");
+        if (!robotSpan) {
+          robotSpan = document.createElement("span");
+          robotSpan.className = "robot-avatar";
+          robotSpan.style.fontSize = "1.3rem";
+          robotSpan.textContent = AI_AVATAR;
+          avatarSelect.parentNode.insertBefore(robotSpan, avatarSelect.nextSibling);
+        }
+      } else {
+        nameInput.value = "";
+        nameInput.disabled = false;
+        nameInput.style.background = "";
+        nameInput.placeholder = `Player ${i+1} name`;
+        avatarSelect.style.display = "";
+        const robotSpan = row.querySelector(".robot-avatar");
+        if (robotSpan) robotSpan.remove();
+      }
+    });
+
+    playerInputsDiv.appendChild(row);
+  }
+}
+
+renderPlayerInputs();
+numPlayersSel.addEventListener("change", renderPlayerInputs);
+
+difficultyBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    difficultyBtns.forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    maxLives = Number(btn.dataset.lives);
+  });
+});
+
+document.getElementById("eyeBtn").onclick = () => {
+  sentenceInput.type = sentenceInput.type === "password" ? "text" : "password";
+};
+
+/* ======================
+   Start game
+====================== */
+
+document.getElementById("startBtn").onclick = () => {
+  const text = sentenceInput.value.trim();
+  if (!text) return alert("Please enter a sentence or generate one with AI.");
+
+  const sentence = text.split(/\s+/);
+
+  if (sentence.length < 2) {
+    return alert("The sentence must have at least 2 words.");
+  }
+
+  const rows = [...playerInputsDiv.querySelectorAll(".player-row")];
+  const players = [];
+
+  rows.forEach((r, i) => {
+    const typeSelect = r.querySelector(".player-type");
+    const nameInput = r.querySelector(".player-name");
+    const avatarSelect = r.querySelector(".player-avatar");
+    const isAI = typeSelect.value === "ai";
+
+    if (isAI) {
+      players.push({ name: "AI Player", avatar: AI_AVATAR, isAI: true });
+    } else {
+      const name = nameInput.value || `Player ${i+1}`;
+      const avatar = avatarSelect.value;
+      players.push({ name, avatar, isAI: false });
+    }
+  });
+
+  // Check if any AI player exists and token is needed
+  const hasAI = players.some(p => p.isAI);
+  if (hasAI && !hfToken) {
+    return alert("Please enter your Hugging Face API token to use AI players.");
+  }
+
+  aiEnabled = hasAI;
+
+  game = {
+    sentence,
+    revealed: 1,
+    mistakes: 0,
+    maxLives: maxLives,
+    players,
+    turn: 0,
+    log: [],
+    finished: false,
+    startTime: new Date()
+  };
+
+  setupDiv.style.display = "none";
+  gameDiv.style.display = "block";
+  document.getElementById("gameOver").style.display = "none";
+  document.getElementById("gameLog").innerHTML = "";
+  render();
+
+  // Check if first player is AI
+  if (game.players[game.turn].isAI && !game.finished) {
+    setTimeout(doAITurn, 1000);
+  } else {
+    document.getElementById("guessInput").focus();
+  }
+};
+
+/* ======================
+   Prediction logic
+====================== */
+
+function normalize(w) {
+  if (opts.caseInsensitive) w = w.toLowerCase();
+  if (opts.ignorePunctuation) w = w.replace(/[^\w]/g,"");
+  return w;
+}
+
+function levenshtein(a, b) {
+  const dp = Array.from({length: a.length + 1}, (_, i) => Array(b.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      dp[i][j] = Math.min(
+        dp[i-1][j] + 1,
+        dp[i][j-1] + 1,
+        dp[i-1][j-1] + (a[i-1] !== b[j-1])
+      );
+  return dp[a.length][b.length];
+}
+
+const guessInput = document.getElementById("guessInput");
+guessInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") submitGuess();
+});
+
+document.getElementById("guessBtn").onclick = () => submitGuess();
+
+function submitGuess(guessOverride = null) {
+  if (game.finished) return;
+  if (!game) return;
+
+  const currentPlayer = game.players[game.turn];
+  if (currentPlayer.isAI && guessOverride === null) return; // Block human input during AI turn
+
+  const guess = (typeof guessOverride === 'string' && guessOverride) ? guessOverride : guessInput.value.trim();
+  if (!guess) return;
+
+  const target = game.sentence[game.revealed];
+  const ok = levenshtein(normalize(guess), normalize(target)) <= opts.levenshtein;
+
+  const timestamp = new Date();
+  const logEntry = {
+    time: timestamp.toISOString(),
+    timeFormatted: formatTime(timestamp),
+    player: currentPlayer.name,
+    playerAvatar: currentPlayer.avatar,
+    isAI: currentPlayer.isAI,
+    guess,
+    target,
+    correct: ok
+  };
+
+  game.log.push(logEntry);
+  addLogEntry(logEntry);
+
+  if (ok) game.revealed++;
+  else game.mistakes++;
+
+  game.turn = (game.turn + 1) % game.players.length;
+  guessInput.value = "";
+
+  // Check win/lose conditions
+  if (game.revealed >= game.sentence.length) {
+    game.finished = true;
+    showGameOver(true);
+  } else if (game.mistakes >= game.maxLives) {
+    game.finished = true;
+    showGameOver(false);
+  }
+
+  render();
+
+  // If next player is AI, trigger AI turn
+  if (!game.finished && game.players[game.turn].isAI) {
+    setTimeout(doAITurn, 1500);
+  } else if (!game.finished) {
+    document.getElementById("guessInput").focus();
+  }
+}
+
+function formatTime(date) {
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+}
+
+function addLogEntry(entry) {
+  const logEl = document.getElementById("gameLog");
+  const div = document.createElement("div");
+  div.className = "log-entry";
+  div.innerHTML = `
+    <span class="log-time">${entry.timeFormatted}</span>
+    <span class="log-player">${entry.playerAvatar} ${entry.player}${entry.isAI ? ' (AI)' : ''}</span>
+    <span class="log-guess">"${entry.guess}"</span>
+    <span class="log-result ${entry.correct ? 'correct' : 'wrong'}">${entry.correct ? '✓' : '✗'}</span>
+  `;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+/* ======================
+   AI Turn
+====================== */
+
+async function doAITurn() {
+  if (game.finished) return;
+
+  const thinkingEl = document.getElementById("aiThinking");
+  thinkingEl.style.display = "flex";
+  guessInput.disabled = true;
+  document.getElementById("guessBtn").disabled = true;
+
+  try {
+    // Build context for AI - chat format for word prediction
+    const revealedWords = game.sentence.slice(0, game.revealed).join(" ");
+
+    // Ask the model to predict the next word
+    const prompt = `I'm playing a word guessing game. The sentence starts with: "${revealedWords}"
+What is the most likely next word? Reply with ONLY a single word, nothing else.`;
+
+    let guess = await callHuggingFace(prompt, 20);
+
+    // Clean up - take only first word
+    guess = guess.trim().split(/\s+/)[0].replace(/[^\w'-]/g, '');
+
+    if (!guess) {
+      guess = "the"; // Fallback
+    }
+
+    thinkingEl.style.display = "none";
+    guessInput.disabled = false;
+    document.getElementById("guessBtn").disabled = false;
+
+    submitGuess(guess);
+
+  } catch (e) {
+    console.error("AI error:", e);
+    thinkingEl.style.display = "none";
+    guessInput.disabled = false;
+    document.getElementById("guessBtn").disabled = false;
+
+    // Make a random common word guess as fallback
+    const fallbacks = ["the", "a", "is", "to", "and", "of", "in", "that", "it", "was"];
+    const guess = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    submitGuess(guess);
+  }
+}
+
+/* ======================
+   Game Over
+====================== */
+
+function showGameOver(won) {
+  const goEl = document.getElementById("gameOver");
+  goEl.style.display = "block";
+  goEl.className = "game-over " + (won ? "win" : "lose");
+
+  // Calculate stats
+  const duration = Math.floor((new Date() - game.startTime) / 1000);
+  const minutes = Math.floor(duration / 60);
+  const seconds = duration % 60;
+
+  goEl.innerHTML = `
+    <h2>${won ? "🎉 Congratulations!" : "💀 Game Over!"}</h2>
+    <div class="final-sentence">
+      ${won ? "You guessed the sentence:" : "The sentence was:"}
+      <br><br>
+      <strong>${game.sentence.join(" ")}</strong>
+    </div>
+    <div style="margin-bottom:1rem; color:#666;">
+      Time: ${minutes}m ${seconds}s | Mistakes: ${game.mistakes} | Turns: ${game.log.length}
+    </div>
+    <button class="btn-primary" onclick="location.reload()">Play Again</button>
+    <button class="btn-secondary" style="margin-left:0.5rem;" onclick="downloadLog()">Download Log</button>
+  `;
+
+  document.getElementById("guessInput").disabled = true;
+}
+
+function downloadLog() {
+  const logData = {
+    sentence: game.sentence.join(" "),
+    startTime: game.startTime.toISOString(),
+    endTime: new Date().toISOString(),
+    players: game.players.map(p => ({ name: p.name, isAI: p.isAI })),
+    maxLives: game.maxLives,
+    mistakes: game.mistakes,
+    won: game.revealed >= game.sentence.length,
+    turns: game.log
+  };
+
+  const blob = new Blob([JSON.stringify(logData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `word-game-log-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ======================
+   Rendering
+====================== */
+
+function render() {
+  const sEl = document.getElementById("sentenceDisplay");
+  sEl.innerHTML = "";
+
+  // Show only revealed words + one "?" for the next word (no word count hints)
+  for (let i = 0; i < game.revealed; i++) {
+    const span = document.createElement("span");
+    span.className = "word revealed";
+    span.textContent = game.sentence[i];
+    sEl.appendChild(span);
+  }
+
+  // Show "?" for next word to guess (if game not finished)
+  if (game.revealed < game.sentence.length && !game.finished) {
+    const span = document.createElement("span");
+    span.className = "word hidden current";
+    span.textContent = "?";
+    sEl.appendChild(span);
+  }
+
+  const pEl = document.getElementById("playersDisplay");
+  pEl.innerHTML = "";
+  game.players.forEach((p, i) => {
+    const d = document.createElement("div");
+    d.className = "player" + (i === game.turn && !game.finished ? " active" : "") + (p.isAI ? " ai" : "");
+    d.innerHTML = `<span class="avatar">${p.avatar}</span> ${p.name}`;
+    pEl.appendChild(d);
+  });
+
+  // Render hearts/lives
+  const livesLeft = game.maxLives - game.mistakes;
+  const hearts = "❤️".repeat(Math.max(0, livesLeft)) + "🖤".repeat(game.mistakes);
+  document.getElementById("hearts").textContent = hearts;
+  document.getElementById("livesText").textContent = `${livesLeft} / ${game.maxLives} lives`;
+}
+
+/* ======================
+   Options + back
+====================== */
+
+document.getElementById("optCase").onchange = e => opts.caseInsensitive = e.target.checked;
+document.getElementById("optPunct").onchange = e => opts.ignorePunctuation = e.target.checked;
+document.getElementById("optLev").oninput = e => opts.levenshtein = Number(e.target.value) || 0;
+
+document.getElementById("backBtn").onclick = () => {
+  gameDiv.style.display = "none";
+  setupDiv.style.display = "block";
+  document.getElementById("guessInput").disabled = false;
+};
+</script>
+
+</body>
+</html>
