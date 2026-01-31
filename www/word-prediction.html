@@ -615,6 +615,9 @@ button:disabled {
       <div class="input-area">
         <input id="guessInput" placeholder="Type the next word...">
         <button class="btn-primary" id="guessBtn">Guess</button>
+<button class="btn-secondary" id="discloseBtn">
+  Disclose word (-10 pts)
+</button>
       </div>
       <div id="aiThinking" class="ai-thinking" style="display:none;">
         <span>AI is thinking</span>
@@ -657,7 +660,7 @@ let currentModel = "HuggingFaceTB/SmolLM3-3B";
 ====================== */
 
 let game = null;
-let maxLives = 8;
+let maxLives = 5;
 let hfToken = "";
 let aiEnabled = false;
 
@@ -1044,11 +1047,24 @@ document.getElementById("startBtn").onclick = () => {
     const isAI = typeSelect.value === "ai";
 
     if (isAI) {
-      players.push({ name: "AI Player", avatar: AI_AVATAR, isAI: true });
+      players.push({
+        name: "AI Player",
+        avatar: AI_AVATAR,
+        isAI: true,
+        lives: maxLives,
+        score: 0
+      });
     } else {
       const name = nameInput.value || `Player ${i+1}`;
       const avatar = avatarSelect.value;
-      players.push({ name, avatar, isAI: false });
+      players.push({
+        name,
+        avatar,
+        isAI: false,
+        lives: maxLives,
+        score: 0
+      });
+
     }
   });
 
@@ -1118,28 +1134,47 @@ guessInput.addEventListener("keydown", e => {
 document.getElementById("guessBtn").onclick = () => submitGuess();
 
 function failCurrentWord() {
-  // Reveal the correct word
   game.revealed++;
 
-  // Reset lives
-  game.mistakes = 0;
-
-  // Log event (optional but useful)
   addLogEntry({
     timeFormatted: formatTime(new Date()),
     player: "SYSTEM",
-    playerAvatar: "⚠️",
+    playerAvatar: "💥",
     isAI: false,
-    guess: "(out of lives)",
+    guess: "(word revealed)",
     target: game.sentence[game.revealed - 1],
-    correct: true
+    correct: false
   });
 
-  // Check win condition
   if (game.revealed >= game.sentence.length) {
     game.finished = true;
     showGameOver(true);
   }
+}
+
+function resetLivesForAllPlayers() {
+  game.players.forEach(p => {
+    p.lives = game.maxLives;
+  });
+}
+function renderLives(livesLeft, maxLives) {
+  const lost = maxLives - livesLeft;
+  return "❤️".repeat(livesLeft) + "🖤".repeat(lost);
+}
+function addScoreLog(player, text) {
+  const logEl = document.getElementById("gameLog");
+  const div = document.createElement("div");
+  div.className = "log-entry";
+  div.innerHTML = `
+    <span class="log-time">${formatTime(new Date())}</span>
+    <span class="log-player">${player.avatar} ${player.name}</span>
+    <span class="log-guess">Score</span>
+    <span class="log-result ${text.startsWith('+') ? 'correct' : 'wrong'}">
+      ${text}
+    </span>
+  `;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
 }
 
 
@@ -1171,8 +1206,19 @@ function submitGuess(guessOverride = null) {
   game.log.push(logEntry);
   addLogEntry(logEntry);
 
-  if (ok) game.revealed++;
-  else game.mistakes++;
+if (ok) {
+  const livesLost = game.maxLives - currentPlayer.lives;
+  const points = Math.max(0, 10 - livesLost);
+
+  currentPlayer.score += points;
+  game.revealed++;
+
+  addScoreLog(currentPlayer, `+${points}`);
+  resetLivesForAllPlayers();
+} else {
+  currentPlayer.lives--;
+}
+
 
   game.turn = (game.turn + 1) % game.players.length;
   guessInput.value = "";
@@ -1181,9 +1227,14 @@ function submitGuess(guessOverride = null) {
   if (game.revealed >= game.sentence.length) {
     game.finished = true;
     showGameOver(true);
-  } else if (game.mistakes >= game.maxLives) {
-   failCurrentWord();
-  }
+  } else if (currentPlayer.lives <= 0) {
+  currentPlayer.score -= 10;
+  addScoreLog(currentPlayer, "-10 (failed word)");
+
+  failCurrentWord();
+  resetLivesForAllPlayers();
+}
+
 
   render();
 
@@ -1203,6 +1254,46 @@ function formatTime(date) {
     hour12: false
   });
 }
+function maybeTriggerAITurn() {
+  if (!game.finished && game.players[game.turn].isAI) {
+    setTimeout(doAITurn, 1200);
+  } else {
+    document.getElementById("guessInput").focus();
+  }
+}
+document.getElementById("discloseBtn").onclick = () => {
+  if (game.finished) return;
+  discloseWord(10);
+};
+function discloseWord(penalty = 10) {
+  game.players.forEach(p => {
+    p.score -= penalty;
+    addScoreLog(p, `-${penalty} (disclosed)`);
+  });
+
+  game.revealed++;
+  resetLivesForAllPlayers();
+
+  addLogEntry({
+    timeFormatted: formatTime(new Date()),
+    player: "SYSTEM",
+    playerAvatar: "📢",
+    isAI: false,
+    guess: "(word disclosed)",
+    target: game.sentence[game.revealed - 1],
+    correct: false
+  });
+
+  if (game.revealed >= game.sentence.length) {
+    game.finished = true;
+    showGameOver(true);
+  } else {
+    game.turn = (game.turn + 1) % game.players.length;
+    render();
+    maybeTriggerAITurn();
+  }
+}
+
 
 function addLogEntry(entry) {
   const logEl = document.getElementById("gameLog");
@@ -1279,22 +1370,43 @@ function showGameOver(won) {
   const duration = Math.floor((new Date() - game.startTime) / 1000);
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
-
+  const leaderboard = [...game.players]
+  .sort((a, b) => b.score - a.score)
+  .map((p, i) => `
+    <div style="display:flex; justify-content:space-between; padding:0.3rem 0;">
+      <span>${i + 1}. ${p.avatar} ${p.name}</span>
+      <strong>${p.score} pts</strong>
+    </div>
+  `)
+  .join("");
   goEl.innerHTML = `
-    <h2>${won ? "🎉 Congratulations!" : "💀 Game Over!"}</h2>
-    <div class="final-sentence">
-       "You guessed the sentence." 
-      <br><br>
-      <strong>${game.sentence.join(" ")}</strong>
-    </div>
-    <div style="margin-bottom:1rem; color:#666;">
-      Time: ${minutes}m ${seconds}s | Mistakes: ${game.mistakes} | Turns: ${game.log.length}
-    </div>
-    <button class="btn-primary" onclick="location.reload()">Play Again</button>
-    <button class="btn-secondary" style="margin-left:0.5rem;" onclick="downloadLog()">Download Log</button>
+    <h2>🏁 Game Finished</h2>
+
+<div class="final-sentence">
+  <strong>${game.sentence.join(" ")}</strong>
+</div>
+
+<div style="margin:1rem 0;">
+  <h3 style="margin-bottom:0.5rem;">🏆 Leaderboard</h3>
+ <div id="leaderboard" style="background:#f5f7fa; padding:0.8rem; border-radius:8px;">
+    ${leaderboard}
+  </div>
+</div>
+
+<button class="btn-primary" onclick="location.reload()">Play Again</button>
+<button class="btn-secondary" style="margin-left:0.5rem;" onclick="downloadLog()">Download Log</button>
+
   `;
 
-  document.getElementById("guessInput").disabled = true;
+  document.getElementById("guessInput").disabled = true; 
+   render(); // ← force final render without "?"
+const lb = document.getElementById("leaderboard");
+if (lb) {
+  lb.scrollIntoView({ behavior: "smooth", block: "center" });
+  lb.setAttribute("tabindex", "-1");
+  lb.focus();
+}
+
 }
 
 function downloadLog() {
@@ -1347,15 +1459,23 @@ function render() {
   game.players.forEach((p, i) => {
     const d = document.createElement("div");
     d.className = "player" + (i === game.turn && !game.finished ? " active" : "") + (p.isAI ? " ai" : "");
-    d.innerHTML = `<span class="avatar">${p.avatar}</span> ${p.name}`;
+    d.innerHTML = `
+  <span class="avatar">${p.avatar}</span>
+  ${p.name}
+  <span style="font-size:0.8rem; opacity:0.8;">(${p.score} pts)</span>
+`;
+
+    
     pEl.appendChild(d);
   });
 
-  // Render hearts/lives
-  const livesLeft = game.maxLives - game.mistakes;
-  const hearts = "❤️".repeat(Math.max(0, livesLeft)) + "🖤".repeat(game.mistakes);
-  document.getElementById("hearts").textContent = hearts;
-  document.getElementById("livesText").textContent = `${livesLeft} / ${game.maxLives} lives`;
+ // Render hearts/lives (current player only)
+const livesLeft = game.players[game.turn].lives;
+document.getElementById("hearts").textContent =
+  renderLives(livesLeft, game.maxLives);
+
+// Optional: you said 5 / 5 is ugly — so remove this if you want
+document.getElementById("livesText").textContent = "";
 }
 
 /* ======================
@@ -1375,3 +1495,4 @@ document.getElementById("backBtn").onclick = () => {
 
 </body>
 </html>
+
