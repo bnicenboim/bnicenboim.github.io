@@ -143,24 +143,16 @@ button:disabled {
 
 .player-row input {
   flex: 1;
-  min-width: 150px;
+  min-width: 120px;
 }
 
 .player-row .player-type {
   min-width: 80px;
 }
 
-.player-row .robot-avatar {
-  padding: 0 0.5rem;
-}
-
-.player-row .ai-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 0.3rem 0.6rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+.player-row .ai-model-select {
+  min-width: 140px;
+  font-size: 0.9rem;
 }
 
 .players {
@@ -308,6 +300,7 @@ button:disabled {
   letter-spacing: 2px;
   margin-bottom: 0.5rem;
 }
+
 .player-info {
   display: flex;
   flex-direction: column;
@@ -319,6 +312,7 @@ button:disabled {
   font-size: 1.2rem;
   letter-spacing: 1px;
 }
+
 .section-title {
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -428,7 +422,7 @@ button:disabled {
   color: #fc8181;
 }
 
-.api-status {
+.model-status {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -438,17 +432,17 @@ button:disabled {
   margin-left: 0.5rem;
 }
 
-.api-status.connected {
+.model-status.ready {
   background: #c6f6d5;
   color: #276749;
 }
 
-.api-status.disconnected {
+.model-status.not-loaded {
   background: #fed7d7;
   color: #c53030;
 }
 
-.api-status.connecting, .api-status.loading {
+.model-status.loading {
   background: #fefcbf;
   color: #975a16;
 }
@@ -494,11 +488,6 @@ button:disabled {
   text-align: center;
 }
 
-.model-input {
-  flex: 1;
-  min-width: 200px;
-}
-
 .or-divider {
   color: #999;
   font-style: italic;
@@ -510,6 +499,27 @@ button:disabled {
   font-size: 0.9rem;
   color: #666;
 }
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.progress-bar .progress {
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s;
+}
+
+.model-info {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.3rem;
+}
 </style>
 </head>
 
@@ -520,40 +530,6 @@ button:disabled {
 <!-- SETUP -->
 <div id="setup" class="panel">
   <h2 style="margin-top:0; color:#333;">Game Setup</h2>
-
-  <!-- LLM Settings -->
-  <div class="section-box">
-    <h3>🤖 AI Settings (Hugging Face)</h3>
-    <div class="row">
-      <label>HF API Token:</label>
-      <input id="hfToken" type="password" placeholder="hf_xxxx..." style="flex:1; min-width:200px;">
-      <button class="btn-icon" id="tokenEyeBtn">👁</button>
-      <span id="apiStatus" class="api-status disconnected">AI disabled</span>
-    </div>
-    <div class="row">
-      <label>Model:</label>
-      <select id="modelPreset" style="min-width:220px;">
-        <optgroup label="Free / Small Models">
-          <option value="HuggingFaceTB/SmolLM3-3B" selected>SmolLM3-3B (free, recommended)</option>
-          <option value="Qwen/Qwen2.5-7B-Instruct-1M">Qwen2.5-7B-Instruct</option>
-        </optgroup>
-        <optgroup label="Larger Models (may need credits)">
-          <option value="deepseek-ai/DeepSeek-R1">DeepSeek-R1 (reasoning)</option>
-          <option value="openai/gpt-oss-120b">GPT-OSS-120B</option>
-        </optgroup>
-        <option value="custom">-- Custom model --</option>
-      </select>
-    </div>
-    <div class="row" id="customModelRow" style="display:none;">
-      <label>Model name:</label>
-      <input id="modelCustom" class="model-input" placeholder="e.g. username/model-name">
-    </div>
-    <div style="font-size:0.85rem; color:#666; margin-top:0.5rem;">
-      Get a free token at <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>.
-      <button type="button" id="testConnBtn" style="margin-left:1rem; font-size:0.8rem; padding:0.2rem 0.5rem;">Test Connection</button>
-      <br><span style="font-size:0.8rem; color:#888;">Note: Only models supported by HF Inference are available. Use "Custom" to try other models.</span>
-    </div>
-  </div>
 
   <!-- Sentence Input -->
   <div class="section-box">
@@ -574,6 +550,31 @@ button:disabled {
         <span style="color:#999; font-size:0.85rem;">(leave empty for random)</span>
       </div>
       <button class="btn-secondary" id="generateBtn">Generate Sentence</button>
+    </div>
+    <div class="row" style="margin-top:0.8rem;">
+      <label>Language / Model:</label>
+      <select id="sentenceModelSelect" style="min-width:180px;">
+        <option value="Xenova/distilgpt2">🇬🇧 English - DistilGPT-2 (~85MB)</option>
+        <option value="Xenova/gpt-neo-125M">🇬🇧 English - GPT-Neo 125M (~250MB)</option>
+        <option value="Xenova/bloom-560m">🇪🇸 Spanish/Multi - BLOOM (~1.1GB)</option>
+        <option value="GroNLP/gpt2-small-dutch">🇳🇱 Dutch - GPT-2 Dutch (~500MB)*</option>
+        <option value="custom">🔧 Custom model...</option>
+      </select>
+      <div style="font-size:0.75rem; color:#999; margin-top:0.3rem;">* Dutch model may need conversion - try at your own risk</div>
+      <span id="sentenceModelStatus" class="model-status not-loaded">Not loaded</span>
+    </div>
+    <div id="customModelRow" class="row" style="display:none; margin-top:0.5rem;">
+      <label>Custom model ID:</label>
+      <input id="customModelInput" type="text" placeholder="e.g., Xenova/gpt2" style="flex:1; min-width:200px;">
+      <a href="https://huggingface.co/models?pipeline_tag=text-generation&library=transformers.js" target="_blank" style="font-size:0.85rem; color:#667eea;">Browse models ↗</a>
+    </div>
+    <div id="sentenceModelProgress" style="display:none;">
+      <div class="progress-bar"><div class="progress" style="width:0%"></div></div>
+      <div class="model-info">Downloading model... (first time only, may be 50-500MB)</div>
+    </div>
+    <div style="font-size:0.85rem; color:#666; margin-top:0.5rem;">
+      Models run locally in your browser using <a href="https://huggingface.co/docs/transformers.js" target="_blank" style="color:#667eea;">Transformers.js</a>.
+      <button type="button" id="loadSentenceModelBtn" style="margin-left:1rem; font-size:0.8rem; padding:0.3rem 0.6rem;">Load Model</button>
     </div>
     <div id="generateStatus" class="generate-status"></div>
   </div>
@@ -598,7 +599,10 @@ button:disabled {
 
   <div class="players-setup" id="playerInputs"></div>
 
-  <button class="btn-primary" id="startBtn">Start Game</button>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem;">
+    <button class="btn-primary" id="startBtn">Start Game</button>
+    <button id="clearCacheBtn" style="font-size:0.85rem; padding:0.4rem 0.8rem; background:#f0f0f0; color:#666;">🗑️ Clear Downloaded Models</button>
+  </div>
 </div>
 
 <!-- GAME -->
@@ -617,11 +621,11 @@ button:disabled {
       <div class="input-area">
         <input id="guessInput" placeholder="Type the next word...">
         <button class="btn-primary" id="guessBtn">Guess</button>
-       <button id="skipBtn">Skip</button>
-       <button class="btn-secondary" id="discloseBtn">Disclose</button>
+        <button id="skipBtn">Skip</button>
+        <button class="btn-secondary" id="discloseBtn">Disclose</button>
       </div>
       <div id="aiThinking" class="ai-thinking" style="display:none;">
-        <span>AI is thinking</span>
+        <span id="aiThinkingText">AI is thinking</span>
         <span class="dots"><span></span><span></span><span></span></span>
       </div>
     </div>
@@ -646,15 +650,28 @@ button:disabled {
   <div id="gameOver" class="game-over" style="display:none;"></div>
 </div>
 
-<script>
+<!-- Transformers.js CDN -->
+<script type="module">
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1';
+
+// Configure cache
+env.cacheDir = './.cache';
+env.allowLocalModels = false;
+
 /* ======================
-   Constants
+   Available Models (text generation, not chat/reasoning)
 ====================== */
 
-const AVATARS = ["🦊","🐸","🐶","🐱","👻","🦄","🐼","🦁","🐵","🐰"];
-const AI_AVATAR = "🤖";
+// Models for text generation (some may require conversion)
+const AVAILABLE_MODELS = [
+  { id: "Xenova/distilgpt2", name: "🇬🇧 English - DistilGPT-2", avatar: "🤖" },
+  { id: "Xenova/gpt-neo-125M", name: "🇬🇧 English - GPT-Neo 125M", avatar: "🧠" },
+  { id: "Xenova/bloom-560m", name: "🇪🇸 Spanish/Multi - BLOOM", avatar: "🌻" },
+  { id: "GroNLP/gpt2-small-dutch", name: "🇳🇱 Dutch - GPT-2 Dutch*", avatar: "🌷" }
+];
 
-let currentModel = "HuggingFaceTB/SmolLM3-3B";
+const AVATARS = ["🦊","🐸","🐶","🐱","👻","🦄","🐼","🦁","🐵","🐰"];
+const AI_AVATARS = ["🤖", "🧠", "🌷", "🌞", "💻", "🔮", "⚡", "🎯"];
 
 /* ======================
    State
@@ -662,8 +679,9 @@ let currentModel = "HuggingFaceTB/SmolLM3-3B";
 
 let game = null;
 let maxLives = 5;
-let hfToken = "";
-let aiEnabled = false;
+let sentenceGenerator = null;
+let aiGenerators = {}; // model_id -> pipeline
+let aiGuessHistory = []; // Track recent AI guesses to avoid repetition
 
 const opts = {
   caseInsensitive: true,
@@ -672,7 +690,7 @@ const opts = {
 };
 
 /* ======================
-   DOM references
+   DOM Setup
 ====================== */
 
 const setupDiv = document.getElementById("setup");
@@ -681,197 +699,174 @@ const sentenceInput = document.getElementById("sentenceInput");
 const numPlayersSel = document.getElementById("numPlayers");
 const playerInputsDiv = document.getElementById("playerInputs");
 const difficultyBtns = document.querySelectorAll(".difficulty-btn");
-const hfTokenInput = document.getElementById("hfToken");
-const apiStatusEl = document.getElementById("apiStatus");
+
+// Model selector elements
+const sentenceModelSelect = document.getElementById("sentenceModelSelect");
+const customModelRow = document.getElementById("customModelRow");
+const customModelInput = document.getElementById("customModelInput");
+
+// Get the actual model ID (handles custom option)
+function getSentenceModelId() {
+  if (sentenceModelSelect.value === "custom") {
+    return customModelInput.value.trim() || "Xenova/distilgpt2";
+  }
+  return sentenceModelSelect.value;
+}
 
 /* ======================
-   Hugging Face API
+   Model Loading
 ====================== */
 
-async function callHuggingFace(prompt, maxTokens = 100) {
-  if (!hfToken) {
-    throw new Error("No API token");
-  }
+async function loadModel(modelId, progressCallback) {
+  console.log(`Loading model: ${modelId}`);
 
-  // HuggingFace now uses OpenAI-compatible chat completions API
-  const apiUrl = "https://router.huggingface.co/v1/chat/completions";
-
-  let response;
   try {
-    response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${hfToken}`,
-        "Content-Type": "application/json"
+    const generator = await pipeline('text-generation', modelId, {
+      progress_callback: (progress) => {
+        console.log('Progress:', progress);
+        if (progressCallback) progressCallback(progress);
       },
-      body: JSON.stringify({
-        model: currentModel,  // Let HuggingFace auto-select the provider
-        messages: [
-          {
-            role: "user",
-            content: prompt || "Complete this sentence: Once upon a time"
-          }
-        ],
-        max_tokens: maxTokens,
-        temperature: 0.8
-      })
+      // Use quantized version if available for faster loading
+      dtype: 'fp32',
     });
-  } catch (networkError) {
-    throw new Error("Network error");
-  }
+    console.log(`Model loaded successfully: ${modelId}`);
+    return generator;
+  } catch (error) {
+    console.error(`Failed to load model ${modelId}:`, error);
 
-  if (!response.ok) {
-    let errorMsg = `HTTP ${response.status}`;
-    try {
-      const error = await response.json();
-      errorMsg = error.error?.message || error.error || errorMsg;
-    } catch (e) {}
+    // Provide more helpful error messages
+    let errorMsg = error.message;
+    if (errorMsg.includes('Could not locate file')) {
+      errorMsg = `Model "${modelId}" is not available in ONNX format for Transformers.js. Try a model from the Xenova namespace.`;
+    } else if (errorMsg.includes('fetch')) {
+      errorMsg = `Network error loading "${modelId}". Check your internet connection.`;
+    }
+
     throw new Error(errorMsg);
   }
-
-  const data = await response.json();
-
-  // OpenAI-compatible response format
-  if (data.choices && data.choices[0]?.message?.content) {
-    return data.choices[0].message.content;
-  }
-
-  return "";
 }
 
-async function testConnection() {
-  if (!hfToken) {
-    apiStatusEl.textContent = "AI disabled";
-    apiStatusEl.className = "api-status disconnected";
-    return false;
+document.getElementById("loadSentenceModelBtn").onclick = async () => {
+  const modelId = getSentenceModelId();
+  if (!modelId) {
+    alert("Please enter a model ID or select a language.");
+    return;
   }
 
-  apiStatusEl.textContent = "Connecting...";
-  apiStatusEl.className = "api-status connecting";
+  const statusEl = document.getElementById("sentenceModelStatus");
+  const progressEl = document.getElementById("sentenceModelProgress");
+  const progressBar = progressEl.querySelector(".progress");
+
+  statusEl.textContent = "Loading...";
+  statusEl.className = "model-status loading";
+  progressEl.style.display = "block";
+  progressBar.style.width = "0%";
 
   try {
-    await callHuggingFace("Say hi", 5);
-    const modelName = currentModel.split("/").pop();
-    apiStatusEl.textContent = `OK (${modelName})`;
-    apiStatusEl.className = "api-status connected";
-    return true;
+    sentenceGenerator = await loadModel(modelId, (progress) => {
+      if (progress.status === "progress" && progress.progress) {
+        progressBar.style.width = `${progress.progress}%`;
+      } else if (progress.status === "initiate") {
+        document.querySelector("#sentenceModelProgress .model-info").textContent =
+          `Loading ${progress.file || 'model files'}...`;
+      } else if (progress.status === "download") {
+        document.querySelector("#sentenceModelProgress .model-info").textContent =
+          `Downloading ${progress.file || 'model'}... (${Math.round((progress.loaded || 0) / 1024 / 1024)}MB)`;
+      }
+    });
+
+    const shortName = modelId.split("/").pop();
+    statusEl.textContent = `✓ ${shortName}`;
+    statusEl.className = "model-status ready";
+    progressEl.style.display = "none";
   } catch (e) {
-    const msg = e.message.toLowerCase();
-    if (msg.includes("loading") || msg.includes("currently loading") || msg.includes("warming")) {
-      apiStatusEl.textContent = "Model loading...";
-      apiStatusEl.className = "api-status loading";
-      // Auto-retry after 10 seconds
-      setTimeout(() => { if (hfToken) testConnection(); }, 10000);
-    } else if (msg.includes("not exist") || msg.includes("not found") || msg.includes("404")) {
-      apiStatusEl.textContent = "Model not found";
-      apiStatusEl.className = "api-status disconnected";
-    } else if (msg.includes("network") || msg.includes("failed to fetch")) {
-      apiStatusEl.textContent = "Network error";
-      apiStatusEl.className = "api-status disconnected";
-    } else if (msg.includes("401") || msg.includes("unauthorized") || msg.includes("invalid")) {
-      apiStatusEl.textContent = "Invalid token";
-      apiStatusEl.className = "api-status disconnected";
-    } else if (msg.includes("no provider") || msg.includes("not supported")) {
-      apiStatusEl.textContent = "Model not supported";
-      apiStatusEl.className = "api-status disconnected";
-    } else {
-      apiStatusEl.textContent = e.message.slice(0, 30);
-      apiStatusEl.className = "api-status disconnected";
-    }
-    return false;
-  }
-}
-
-// DOM elements for model selection
-const modelPresetSelect = document.getElementById("modelPreset");
-const modelCustomInput = document.getElementById("modelCustom");
-const customModelRow = document.getElementById("customModelRow");
-
-// Load saved token and model from localStorage
-const savedToken = localStorage.getItem("hf_token");
-const savedModel = localStorage.getItem("hf_model");
-
-function updateCustomRowVisibility() {
-  customModelRow.style.display = modelPresetSelect.value === "custom" ? "flex" : "none";
-}
-
-if (savedModel) {
-  currentModel = savedModel;
-  // Try to match preset
-  let found = false;
-  for (let opt of modelPresetSelect.options) {
-    if (opt.value === savedModel) {
-      modelPresetSelect.value = savedModel;
-      found = true;
-      break;
-    }
-  }
-  if (!found) {
-    modelPresetSelect.value = "custom";
-    modelCustomInput.value = savedModel;
-  }
-  updateCustomRowVisibility();
-}
-
-if (savedToken) {
-  hfToken = savedToken;
-  hfTokenInput.value = savedToken;
-  testConnection();
-}
-
-hfTokenInput.addEventListener("change", () => {
-  // Clean up token - remove any whitespace or quotes
-  hfToken = hfTokenInput.value.trim().replace(/['"]/g, '');
-  hfTokenInput.value = hfToken;  // Update the field with cleaned value
-
-  if (hfToken) {
-    // Validate token format (should start with hf_)
-    if (!hfToken.startsWith("hf_")) {
-      apiStatusEl.textContent = "Token should start with hf_";
-      apiStatusEl.className = "api-status disconnected";
-      return;
-    }
-    localStorage.setItem("hf_token", hfToken);
-    testConnection();
-  } else {
-    localStorage.removeItem("hf_token");
-    apiStatusEl.textContent = "AI disabled";
-    apiStatusEl.className = "api-status disconnected";
-  }
-});
-
-document.getElementById("tokenEyeBtn").onclick = () => {
-  hfTokenInput.type = hfTokenInput.type === "password" ? "text" : "password";
-};
-
-document.getElementById("testConnBtn").onclick = () => {
-  if (hfToken) {
-    testConnection();
-  } else {
-    apiStatusEl.textContent = "Enter token first";
-    apiStatusEl.className = "api-status disconnected";
+    console.error("Model load error:", e);
+    statusEl.textContent = "Error!";
+    statusEl.className = "model-status not-loaded";
+    progressEl.style.display = "none";
+    alert(`Failed to load model:\n\n${e.message}\n\nTip: Models from the Xenova namespace are most reliable.`);
   }
 };
 
-// Model preset selection
-modelPresetSelect.addEventListener("change", (e) => {
-  updateCustomRowVisibility();
-
-  if (e.target.value && e.target.value !== "custom") {
-    currentModel = e.target.value;
-    localStorage.setItem("hf_model", currentModel);
-    if (hfToken) testConnection();
+// Clear all downloaded models from cache
+document.getElementById("clearCacheBtn").onclick = async () => {
+  if (!confirm("This will delete all downloaded models from your browser. You'll need to re-download them next time. Continue?")) {
+    return;
   }
-});
 
-// Custom model input
-modelCustomInput.addEventListener("change", (e) => {
-  if (e.target.value.trim()) {
-    currentModel = e.target.value.trim();
-    localStorage.setItem("hf_model", currentModel);
-    if (hfToken) testConnection();
+  try {
+    // Clear IndexedDB (used by Transformers.js for model storage)
+    const databases = await indexedDB.databases();
+    for (const db of databases) {
+      if (db.name && (db.name.includes('transformers') || db.name.includes('onnx'))) {
+        indexedDB.deleteDatabase(db.name);
+      }
+    }
+
+    // Clear Cache API entries
+    const cacheNames = await caches.keys();
+    for (const name of cacheNames) {
+      if (name.includes('transformers') || name.includes('onnx')) {
+        await caches.delete(name);
+      }
+    }
+
+    // Reset loaded generators
+    sentenceGenerator = null;
+    aiGenerators = {};
+
+    // Update status
+    document.getElementById("sentenceModelStatus").textContent = "Not loaded";
+    document.getElementById("sentenceModelStatus").className = "model-status not-loaded";
+
+    alert("All downloaded models have been cleared.");
+  } catch (e) {
+    console.error("Error clearing cache:", e);
+    alert("Error clearing cache: " + e.message);
   }
-});
+};
+
+async function ensureAIModel(modelId) {
+  if (aiGenerators[modelId]) return aiGenerators[modelId];
+
+  // Show loading indicator with progress
+  const thinkingEl = document.getElementById("aiThinking");
+  const thinkingText = document.getElementById("aiThinkingText");
+  thinkingText.textContent = `Downloading model ${modelId.split("/").pop()}... 0%`;
+  thinkingEl.style.display = "flex";
+
+  try {
+    aiGenerators[modelId] = await loadModel(modelId, (progress) => {
+      if (progress.status === "progress" && progress.progress) {
+        thinkingText.textContent = `Downloading model ${modelId.split("/").pop()}... ${Math.round(progress.progress)}%`;
+      }
+    });
+    return aiGenerators[modelId];
+  } catch (e) {
+    console.error("AI model load error:", e);
+    thinkingEl.style.display = "none";
+    alert(`Failed to load AI model "${modelId}".\n\nError: ${e.message}\n\nThe AI will make random guesses instead.`);
+    throw e;
+  }
+}
+
+/* ======================
+   Text Generation
+====================== */
+
+async function generateText(generator, prompt, maxTokens = 50) {
+  const result = await generator(prompt, {
+    max_new_tokens: maxTokens,
+    temperature: 0.7,      // Lower = more coherent
+    do_sample: true,
+    top_k: 40,             // Limit vocabulary for coherence
+    top_p: 0.9,            // Nucleus sampling
+    repetition_penalty: 1.2, // Avoid repetition
+    return_full_text: false
+  });
+
+  return result[0].generated_text;
+}
 
 /* ======================
    Generate Sentence
@@ -881,55 +876,74 @@ document.getElementById("generateBtn").onclick = async () => {
   const statusEl = document.getElementById("generateStatus");
   const wordCountInput = document.getElementById("wordCount");
 
-  if (!hfToken) {
-    statusEl.textContent = "Please enter your Hugging Face API token first.";
+  if (!sentenceGenerator) {
+    statusEl.textContent = "Please load a model first (click 'Load Model').";
     statusEl.style.color = "#c53030";
     return;
   }
 
   const wordCount = wordCountInput.value
     ? parseInt(wordCountInput.value)
-    : Math.floor(Math.random() * 8) + 5; // 5-12 words random
+    : Math.floor(Math.random() * 8) + 5;
 
   statusEl.textContent = "Generating sentence...";
   statusEl.style.color = "#666";
 
   try {
-    // Generate text using chat format - ask for a simple sentence
-    let result = await callHuggingFace(
-      `Generate a simple, random sentence with exactly ${wordCount} words. Only output the sentence, nothing else. No quotes, no explanation.`,
-      80
-    );
+    // Better prompts for more coherent sentences
+    const prompts = [
+      "The cat sat on",
+      "Yesterday I went to",
+      "My friend told me",
+      "The weather was",
+      "She decided to",
+      "In the morning",
+      "The book was about",
+      "He walked into",
+      "They found a",
+      "It was a beautiful"
+    ];
+    const prompt = prompts[Math.floor(Math.random() * prompts.length)];
 
-    // Clean up: get usable text
-    result = result
-      .replace(/\n/g, ' ')              // Replace newlines with spaces
-      .replace(/\s+/g, ' ')             // Normalize whitespace
-      .replace(/^["']|["']$/g, '')      // Remove surrounding quotes
+    let result = await generateText(sentenceGenerator, prompt, 80);
+
+    result = (prompt + " " + result)
+      .replace(/\n/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim();
 
-    // Remove any remaining punctuation at the end
-    result = result.replace(/[.!?,;:]+$/, '').trim();
+    // Try to end at a natural sentence boundary
+    const sentenceEnd = result.search(/[.!?]/);
+    if (sentenceEnd > 15) {
+      result = result.substring(0, sentenceEnd);
+    }
 
-    // Trim to target word count if too long
-    let words = result.split(/\s+/).filter(w => w.length > 0);
+    // Clean up punctuation at the end
+    result = result.replace(/[.!?,;:'"]+$/, '').trim();
+
+    // Remove incomplete words at the end
+    let words = result.split(/\s+/).filter(w => w.length > 0 && /^[a-zA-Z]/.test(w));
+
+    // Trim to target word count
     if (words.length > wordCount) {
       words = words.slice(0, wordCount);
     }
+
+    // Remove trailing articles/prepositions for cleaner ending
+    const trailingWords = ['the', 'a', 'an', 'to', 'of', 'in', 'on', 'at', 'for', 'and', 'or', 'but'];
+    while (words.length > 3 && trailingWords.includes(words[words.length - 1].toLowerCase())) {
+      words.pop();
+    }
+
     result = words.join(" ");
 
-    if (result && words.length >= 2) {
+    if (result && words.length >= 3) {
+      // Keep it hidden - don't change type to "text"
       sentenceInput.value = result;
-      sentenceInput.type = "text"; // Show it temporarily
-      statusEl.textContent = `Generated ${words.length} words`;
+      statusEl.textContent = `Generated ${words.length} words. Click 👁 to reveal.`;
       statusEl.style.color = "#276749";
-
-      // Hide after 3 seconds
-      setTimeout(() => {
-        sentenceInput.type = "password";
-      }, 3000);
     } else {
-      throw new Error("Could not generate - try again");
+      throw new Error("Generated text too short - try again");
     }
   } catch (e) {
     statusEl.textContent = `Error: ${e.message}`;
@@ -949,23 +963,31 @@ function shuffleArray(array) {
   }
   return arr;
 }
-function renderPlayers() {
-  const container = document.getElementById("playersDisplay");
-  container.innerHTML = game.players.map((p, i) => `
-    <div class="player ${i === game.turn ? 'active' : ''} ${p.isAI ? 'ai' : ''}">
-      <span class="avatar">${p.avatar}</span>
-      <div class="player-info">
-        <div class="player-name">${p.name} — ${p.score} pts</div>
-        <div class="player-lives">${renderLives(p.lives, game.maxLives)}</div>
-      </div>
-    </div>
-  `).join("");
+
+function getModelAvatar(modelId) {
+  const model = AVAILABLE_MODELS.find(m => m.id === modelId);
+  if (model) return model.avatar;
+  // For custom models, assign a unique avatar
+  const hash = modelId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return AI_AVATARS[hash % AI_AVATARS.length];
 }
+
+function getModelShortName(modelId) {
+  // Get the model name part after the slash
+  const name = modelId.split("/").pop();
+  // Shorten it for display (max 12 chars)
+  if (name.length > 12) {
+    return name.substring(0, 10) + "..";
+  }
+  return name;
+}
+
 function renderPlayerInputs() {
   const n = Number(numPlayersSel.value);
   playerInputsDiv.innerHTML = "";
 
   const shuffledAvatars = shuffleArray(AVATARS);
+  const defaultSentenceModel = getSentenceModelId();
 
   for (let i = 0; i < n; i++) {
     const row = document.createElement("div");
@@ -973,6 +995,11 @@ function renderPlayerInputs() {
     row.dataset.index = i;
 
     const defaultAvatar = shuffledAvatars[i % shuffledAvatars.length];
+
+    // Create model options HTML (same as sentence model + custom)
+    const modelOptionsHtml = AVAILABLE_MODELS.map(m =>
+      `<option value="${m.id}" ${m.id === defaultSentenceModel ? 'selected' : ''}>${m.name}</option>`
+    ).join("") + `<option value="custom">🔧 Custom model...</option>`;
 
     row.innerHTML = `
       <select class="player-type" style="font-size:0.9rem;">
@@ -983,37 +1010,100 @@ function renderPlayerInputs() {
       <select class="player-avatar" style="font-size:1.3rem;">
         ${AVATARS.map(a => `<option ${a === defaultAvatar ? 'selected' : ''}>${a}</option>`).join("")}
       </select>
+      <div class="ai-options" style="display:none; flex-wrap:wrap; align-items:center;">
+        <select class="ai-model-select" style="min-width:160px;">
+          ${modelOptionsHtml}
+        </select>
+        <input class="ai-custom-model" type="text" placeholder="Model ID" style="display:none; width:120px; font-size:0.85rem;">
+        <button type="button" class="ai-load-btn" style="font-size:0.8rem; padding:0.3rem 0.5rem;">Load</button>
+        <span class="ai-model-status model-status not-loaded" style="font-size:0.8rem;">Not loaded</span>
+      </div>
     `;
 
-    // Handle type change
     const typeSelect = row.querySelector(".player-type");
     const nameInput = row.querySelector(".player-name");
     const avatarSelect = row.querySelector(".player-avatar");
+    const aiOptions = row.querySelector(".ai-options");
+    const aiModelSelect = row.querySelector(".ai-model-select");
+    const aiCustomModel = row.querySelector(".ai-custom-model");
+    const aiLoadBtn = row.querySelector(".ai-load-btn");
+    const aiStatusEl = row.querySelector(".ai-model-status");
+
+    function getAIModelId() {
+      if (aiModelSelect.value === "custom") {
+        return aiCustomModel.value.trim() || "Xenova/distilgpt2";
+      }
+      return aiModelSelect.value;
+    }
+
+    function updateAIPlayerName() {
+      const modelId = getAIModelId();
+      const shortName = getModelShortName(modelId);
+      nameInput.value = `AI-${shortName}`;
+    }
+
+    function updateAIStatus() {
+      const modelId = getAIModelId();
+      if (aiGenerators[modelId]) {
+        aiStatusEl.textContent = "✓ Ready";
+        aiStatusEl.className = "ai-model-status model-status ready";
+      } else {
+        aiStatusEl.textContent = "Not loaded";
+        aiStatusEl.className = "ai-model-status model-status not-loaded";
+      }
+    }
+
+    aiLoadBtn.onclick = async () => {
+      const modelId = getAIModelId();
+      aiStatusEl.textContent = "Loading...";
+      aiStatusEl.className = "ai-model-status model-status loading";
+      aiLoadBtn.disabled = true;
+
+      try {
+        aiGenerators[modelId] = await loadModel(modelId, (progress) => {
+          if (progress.status === "progress" && progress.progress) {
+            aiStatusEl.textContent = `${Math.round(progress.progress)}%`;
+          }
+        });
+        aiStatusEl.textContent = "✓ Ready";
+        aiStatusEl.className = "ai-model-status model-status ready";
+      } catch (e) {
+        console.error("AI model load error:", e);
+        aiStatusEl.textContent = "Error!";
+        aiStatusEl.className = "ai-model-status model-status not-loaded";
+        alert(`Failed to load model: ${e.message}\n\nMake sure the model exists and is compatible with Transformers.js.`);
+      }
+      aiLoadBtn.disabled = false;
+    };
 
     typeSelect.addEventListener("change", () => {
       if (typeSelect.value === "ai") {
-        nameInput.value = "AI Player";
+        updateAIPlayerName();
+        updateAIStatus();
         nameInput.disabled = true;
         nameInput.style.background = "#f0f0f0";
         avatarSelect.style.display = "none";
-        // Add robot display
-        let robotSpan = row.querySelector(".robot-avatar");
-        if (!robotSpan) {
-          robotSpan = document.createElement("span");
-          robotSpan.className = "robot-avatar";
-          robotSpan.style.fontSize = "1.3rem";
-          robotSpan.textContent = AI_AVATAR;
-          avatarSelect.parentNode.insertBefore(robotSpan, avatarSelect.nextSibling);
-        }
+        aiOptions.style.display = "flex";
+        aiOptions.style.gap = "0.5rem";
       } else {
         nameInput.value = "";
         nameInput.disabled = false;
         nameInput.style.background = "";
         nameInput.placeholder = `Player ${i+1} name`;
         avatarSelect.style.display = "";
-        const robotSpan = row.querySelector(".robot-avatar");
-        if (robotSpan) robotSpan.remove();
+        aiOptions.style.display = "none";
       }
+    });
+
+    aiModelSelect.addEventListener("change", () => {
+      aiCustomModel.style.display = aiModelSelect.value === "custom" ? "" : "none";
+      updateAIPlayerName();
+      updateAIStatus();
+    });
+
+    aiCustomModel.addEventListener("input", () => {
+      updateAIPlayerName();
+      updateAIStatus();
     });
 
     playerInputsDiv.appendChild(row);
@@ -1022,6 +1112,12 @@ function renderPlayerInputs() {
 
 renderPlayerInputs();
 numPlayersSel.addEventListener("change", renderPlayerInputs);
+// Re-render players when sentence model changes (to update AI default model)
+sentenceModelSelect.addEventListener("change", () => {
+  customModelRow.style.display = sentenceModelSelect.value === "custom" ? "flex" : "none";
+  renderPlayerInputs();
+});
+customModelInput.addEventListener("change", renderPlayerInputs);
 
 difficultyBtns.forEach(btn => {
   btn.addEventListener("click", () => {
@@ -1051,18 +1147,37 @@ document.getElementById("startBtn").onclick = () => {
 
   const rows = [...playerInputsDiv.querySelectorAll(".player-row")];
   const players = [];
+  const unloadedModels = [];
 
   rows.forEach((r, i) => {
     const typeSelect = r.querySelector(".player-type");
     const nameInput = r.querySelector(".player-name");
     const avatarSelect = r.querySelector(".player-avatar");
+    const aiModelSelect = r.querySelector(".ai-model-select");
+    const aiCustomModel = r.querySelector(".ai-custom-model");
     const isAI = typeSelect.value === "ai";
 
     if (isAI) {
+      // Get model ID (from dropdown or custom input)
+      let modelId;
+      if (aiModelSelect.value === "custom") {
+        modelId = aiCustomModel.value.trim() || "Xenova/distilgpt2";
+      } else {
+        modelId = aiModelSelect.value;
+      }
+
+      // Check if model is loaded
+      if (!aiGenerators[modelId]) {
+        unloadedModels.push({ player: i + 1, modelId });
+      }
+
+      const avatar = getModelAvatar(modelId);
+      const shortName = getModelShortName(modelId);
       players.push({
-        name: "AI Player",
-        avatar: AI_AVATAR,
+        name: `AI-${shortName}`,
+        avatar: avatar,
         isAI: true,
+        modelId: modelId,
         lives: maxLives,
         score: 0
       });
@@ -1076,17 +1191,19 @@ document.getElementById("startBtn").onclick = () => {
         lives: maxLives,
         score: 0
       });
-
     }
   });
 
-  // Check if any AI player exists and token is needed
-  const hasAI = players.some(p => p.isAI);
-  if (hasAI && !hfToken) {
-    return alert("Please enter your Hugging Face API token to use AI players.");
+  // Warn about unloaded AI models
+  if (unloadedModels.length > 0) {
+    const modelList = unloadedModels.map(m => `Player ${m.player}: ${m.modelId}`).join("\n");
+    const proceed = confirm(
+      `The following AI players have models that are not loaded:\n\n${modelList}\n\n` +
+      `The models will be downloaded when it's their turn (this may take time).\n\n` +
+      `Do you want to continue anyway?`
+    );
+    if (!proceed) return;
   }
-
-  aiEnabled = hasAI;
 
   game = {
     sentence,
@@ -1106,7 +1223,6 @@ document.getElementById("startBtn").onclick = () => {
   document.getElementById("gameLog").innerHTML = "";
   render();
 
-  // Check if first player is AI
   if (game.players[game.turn].isAI && !game.finished) {
     setTimeout(doAITurn, 1000);
   } else {
@@ -1147,6 +1263,7 @@ document.getElementById("guessBtn").onclick = () => submitGuess();
 
 function failCurrentWord() {
   game.revealed++;
+  aiGuessHistory = []; // Clear AI guess history for new word
 
   addLogEntry({
     timeFormatted: formatTime(new Date()),
@@ -1169,10 +1286,12 @@ function resetLivesForAllPlayers() {
     p.lives = game.maxLives;
   });
 }
+
 function renderLives(livesLeft, maxLives) {
   const lost = maxLives - livesLeft;
   return "❤️".repeat(livesLeft) + "🖤".repeat(lost);
 }
+
 function addScoreLog(player, text) {
   const logEl = document.getElementById("gameLog");
   const div = document.createElement("div");
@@ -1189,13 +1308,12 @@ function addScoreLog(player, text) {
   logEl.scrollTop = logEl.scrollHeight;
 }
 
-
 function submitGuess(guessOverride = null) {
   if (game.finished) return;
   if (!game) return;
 
   const currentPlayer = game.players[game.turn];
-  if (currentPlayer.isAI && guessOverride === null) return; // Block human input during AI turn
+  if (currentPlayer.isAI && guessOverride === null) return;
 
   const guess = (typeof guessOverride === 'string' && guessOverride) ? guessOverride : guessInput.value.trim();
   if (!guess) return;
@@ -1218,39 +1336,36 @@ function submitGuess(guessOverride = null) {
   game.log.push(logEntry);
   addLogEntry(logEntry);
 
-if (ok) {
-  const livesLost = game.maxLives - currentPlayer.lives;
-  const points = Math.max(0, 10 - livesLost);
+  if (ok) {
+    const livesLost = game.maxLives - currentPlayer.lives;
+    const points = Math.max(0, 10 - livesLost);
 
-  currentPlayer.score += points;
-  game.revealed++;
+    currentPlayer.score += points;
+    game.revealed++;
+    aiGuessHistory = []; // Clear AI guess history for new word
 
-  addScoreLog(currentPlayer, `+${points}`);
-  resetLivesForAllPlayers();
-} else {
-  currentPlayer.lives--;
-}
-
+    addScoreLog(currentPlayer, `+${points}`);
+    resetLivesForAllPlayers();
+  } else {
+    currentPlayer.lives--;
+  }
 
   game.turn = (game.turn + 1) % game.players.length;
   guessInput.value = "";
 
-  // Check win/lose conditions
   if (game.revealed >= game.sentence.length) {
     game.finished = true;
     showGameOver(true);
   } else if (currentPlayer.lives <= 0) {
-  currentPlayer.score -= 10;
-  addScoreLog(currentPlayer, "-10 (failed word)");
+    currentPlayer.score -= 10;
+    addScoreLog(currentPlayer, "-10 (failed word)");
 
-  failCurrentWord();
-  resetLivesForAllPlayers();
-}
-
+    failCurrentWord();
+    resetLivesForAllPlayers();
+  }
 
   render();
 
-  // If next player is AI, trigger AI turn
   if (!game.finished && game.players[game.turn].isAI) {
     setTimeout(doAITurn, 1500);
   } else if (!game.finished) {
@@ -1266,6 +1381,7 @@ function formatTime(date) {
     hour12: false
   });
 }
+
 function maybeTriggerAITurn() {
   if (!game.finished && game.players[game.turn].isAI) {
     setTimeout(doAITurn, 1200);
@@ -1273,11 +1389,12 @@ function maybeTriggerAITurn() {
     document.getElementById("guessInput").focus();
   }
 }
+
 document.getElementById("skipBtn").onclick = () => {
   if (game.finished) return;
 
   const currentPlayer = game.players[game.turn];
-  currentPlayer.lives--;  // Lose 1 life
+  currentPlayer.lives--;
 
   addLogEntry({
     timeFormatted: formatTime(new Date()),
@@ -1289,7 +1406,6 @@ document.getElementById("skipBtn").onclick = () => {
     correct: false
   });
 
-  // If player lost all lives, treat as failing the word
   if (currentPlayer.lives <= 0) {
     currentPlayer.score -= 10;
     addScoreLog(currentPlayer, "-10 (failed word)");
@@ -1297,17 +1413,16 @@ document.getElementById("skipBtn").onclick = () => {
     resetLivesForAllPlayers();
   }
 
-  // Advance to the next player
   game.turn = (game.turn + 1) % game.players.length;
   render();
   maybeTriggerAITurn();
 };
 
-
 document.getElementById("discloseBtn").onclick = () => {
   if (game.finished) return;
   discloseWord(10);
 };
+
 function discloseWord(penalty = 10) {
   game.players.forEach(p => {
     p.score -= penalty;
@@ -1315,6 +1430,7 @@ function discloseWord(penalty = 10) {
   });
 
   game.revealed++;
+  aiGuessHistory = []; // Clear AI guess history for new word
   resetLivesForAllPlayers();
 
   addLogEntry({
@@ -1331,12 +1447,11 @@ function discloseWord(penalty = 10) {
     game.finished = true;
     showGameOver(true);
   } else {
-    game.turn = 0;  // Move to the first player
+    game.turn = 0;
     render();
     maybeTriggerAITurn();
   }
 }
-
 
 function addLogEntry(entry) {
   const logEl = document.getElementById("gameLog");
@@ -1359,27 +1474,71 @@ function addLogEntry(entry) {
 async function doAITurn() {
   if (game.finished) return;
 
+  const currentPlayer = game.players[game.turn];
   const thinkingEl = document.getElementById("aiThinking");
+  const thinkingText = document.getElementById("aiThinkingText");
+
+  thinkingText.textContent = `${currentPlayer.name} is thinking`;
   thinkingEl.style.display = "flex";
   guessInput.disabled = true;
   document.getElementById("guessBtn").disabled = true;
 
   try {
-    // Build context for AI - chat format for word prediction
+    const generator = await ensureAIModel(currentPlayer.modelId);
+
+    thinkingText.textContent = `${currentPlayer.name} is thinking`;
+
     const revealedWords = game.sentence.slice(0, game.revealed).join(" ");
+    const prompt = revealedWords + " ";
 
-    // Ask the model to predict the next word
-    const prompt = `I'm playing a word guessing game. The sentence starts with: "${revealedWords}"
-What is the most likely next word? Reply with ONLY a single word, nothing else.`;
+    // Generate more tokens to ensure we get a complete word
+    // (tokens ≠ words due to BPE tokenization)
+    let result = await generateText(generator, prompt, 30);
 
-    let guess = await callHuggingFace(prompt, 20);
+    // Find the first complete word:
+    // A complete word is followed by a space, punctuation, or end of text
+    result = result.trim();
 
-    // Clean up - take only first word
-    guess = guess.trim().split(/\s+/)[0].replace(/[^\w'-]/g, '');
+    // Split into potential words
+    const words = result.split(/\s+/);
 
-    if (!guess) {
-      guess = "the"; // Fallback
+    let guess = "";
+
+    // Take the first word that looks complete (has a following space in original)
+    // Or just take the first word if we have multiple
+    if (words.length >= 2) {
+      // First word is complete (there's a space after it)
+      guess = words[0];
+    } else if (words.length === 1) {
+      // Only one "word" - might be incomplete, but use it
+      guess = words[0];
     }
+
+    // Clean up: remove punctuation, keep only word characters
+    guess = guess.replace(/[^\w'-]/g, '').toLowerCase();
+
+    // Avoid empty guesses or very short fragments
+    if (!guess || guess.length < 2) {
+      // Fallback: use a common word
+      const fallbacks = ["the", "a", "is", "to", "and", "of", "in", "that", "it", "was"];
+      guess = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+
+    // Avoid repeating recent guesses by trying alternatives
+    if (aiGuessHistory.includes(guess.toLowerCase()) && words.length > 1) {
+      // Try the second word instead
+      const altGuess = words[1].replace(/[^\w'-]/g, '').toLowerCase();
+      if (altGuess && altGuess.length >= 2 && !aiGuessHistory.includes(altGuess)) {
+        console.log(`AI avoiding repeat "${guess}", using "${altGuess}" instead`);
+        guess = altGuess;
+      }
+    }
+
+    // Track this guess (keep last 5)
+    aiGuessHistory.push(guess.toLowerCase());
+    if (aiGuessHistory.length > 5) aiGuessHistory.shift();
+
+    console.log(`AI generated: "${result}" -> guess: "${guess}"`);
 
     thinkingEl.style.display = "none";
     guessInput.disabled = false;
@@ -1393,7 +1552,6 @@ What is the most likely next word? Reply with ONLY a single word, nothing else.`
     guessInput.disabled = false;
     document.getElementById("guessBtn").disabled = false;
 
-    // Make a random common word guess as fallback
     const fallbacks = ["the", "a", "is", "to", "and", "of", "in", "that", "it", "was"];
     const guess = fallbacks[Math.floor(Math.random() * fallbacks.length)];
     submitGuess(guess);
@@ -1409,55 +1567,55 @@ function showGameOver(won) {
   goEl.style.display = "block";
   goEl.className = "game-over " + (won ? "win" : "lose");
 
-  // Calculate stats
   const duration = Math.floor((new Date() - game.startTime) / 1000);
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
+
   const leaderboard = [...game.players]
-  .sort((a, b) => b.score - a.score)
-  .map((p, i) => `
-    <div style="display:flex; justify-content:space-between; padding:0.3rem 0;">
-      <span>${i + 1}. ${p.avatar} ${p.name}</span>
-      <strong>${p.score} pts</strong>
-    </div>
-  `)
-  .join("");
+    .sort((a, b) => b.score - a.score)
+    .map((p, i) => `
+      <div style="display:flex; justify-content:space-between; padding:0.3rem 0;">
+        <span>${i + 1}. ${p.avatar} ${p.name}</span>
+        <strong>${p.score} pts</strong>
+      </div>
+    `)
+    .join("");
+
   goEl.innerHTML = `
     <h2>🏁 Game Finished</h2>
 
-<div class="final-sentence">
-  <strong>${game.sentence.join(" ")}</strong>
-</div>
+    <div class="final-sentence">
+      <strong>${game.sentence.join(" ")}</strong>
+    </div>
 
-<div style="margin:1rem 0;">
-  <h3 style="margin-bottom:0.5rem;">🏆 Leaderboard</h3>
- <div id="leaderboard" style="background:#f5f7fa; padding:0.8rem; border-radius:8px;">
-    ${leaderboard}
-  </div>
-</div>
+    <div style="margin:1rem 0;">
+      <h3 style="margin-bottom:0.5rem;">🏆 Leaderboard</h3>
+      <div id="leaderboard" style="background:#f5f7fa; padding:0.8rem; border-radius:8px;">
+        ${leaderboard}
+      </div>
+    </div>
 
-<button class="btn-primary" onclick="location.reload()">Play Again</button>
-<button class="btn-secondary" style="margin-left:0.5rem;" onclick="downloadLog()">Download Log</button>
-
+    <button class="btn-primary" onclick="location.reload()">Play Again</button>
+    <button class="btn-secondary" style="margin-left:0.5rem;" onclick="downloadLog()">Download Log</button>
   `;
 
-  document.getElementById("guessInput").disabled = true; 
-   render(); // ← force final render without "?"
-const lb = document.getElementById("leaderboard");
-if (lb) {
-  lb.scrollIntoView({ behavior: "smooth", block: "center" });
-  lb.setAttribute("tabindex", "-1");
-  lb.focus();
+  document.getElementById("guessInput").disabled = true;
+  render();
+
+  const lb = document.getElementById("leaderboard");
+  if (lb) {
+    lb.scrollIntoView({ behavior: "smooth", block: "center" });
+    lb.setAttribute("tabindex", "-1");
+    lb.focus();
+  }
 }
 
-}
-
-function downloadLog() {
+window.downloadLog = function() {
   const logData = {
     sentence: game.sentence.join(" "),
     startTime: game.startTime.toISOString(),
     endTime: new Date().toISOString(),
-    players: game.players.map(p => ({ name: p.name, isAI: p.isAI })),
+    players: game.players.map(p => ({ name: p.name, isAI: p.isAI, modelId: p.modelId })),
     maxLives: game.maxLives,
     mistakes: game.mistakes,
     won: game.revealed >= game.sentence.length,
@@ -1471,17 +1629,29 @@ function downloadLog() {
   a.download = `word-game-log-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-}
+};
 
 /* ======================
    Rendering
 ====================== */
 
+function renderPlayers() {
+  const container = document.getElementById("playersDisplay");
+  container.innerHTML = game.players.map((p, i) => `
+    <div class="player ${i === game.turn ? 'active' : ''} ${p.isAI ? 'ai' : ''}">
+      <span class="avatar">${p.avatar}</span>
+      <div class="player-info">
+        <div class="player-name">${p.name} — ${p.score} pts</div>
+        <div class="player-lives">${renderLives(p.lives, game.maxLives)}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
 function render() {
   const sEl = document.getElementById("sentenceDisplay");
   sEl.innerHTML = "";
 
-  // Show only revealed words + one "?" for the next word (no word count hints)
   for (let i = 0; i < game.revealed; i++) {
     const span = document.createElement("span");
     span.className = "word revealed";
@@ -1489,7 +1659,6 @@ function render() {
     sEl.appendChild(span);
   }
 
-  // Show "?" for next word to guess (if game not finished)
   if (game.revealed < game.sentence.length && !game.finished) {
     const span = document.createElement("span");
     span.className = "word hidden current";
@@ -1497,29 +1666,8 @@ function render() {
     sEl.appendChild(span);
   }
 
-  const pEl = document.getElementById("playersDisplay");
-  pEl.innerHTML = "";
-  game.players.forEach((p, i) => {
-    const d = document.createElement("div");
-    d.className = "player" + (i === game.turn && !game.finished ? " active" : "") + (p.isAI ? " ai" : "");
-    d.innerHTML = `
-  <span class="avatar">${p.avatar}</span>
-  ${p.name}
-  <span style="font-size:0.8rem; opacity:0.8;">(${p.score} pts)</span>
-`;
-
-    
-    pEl.appendChild(d);
-  });
-
- // Render hearts/lives (current player only)
-const livesLeft = game.players[game.turn].lives;
-//document.getElementById("hearts").textContent =
-//  renderLives(livesLeft, game.maxLives);
-  renderPlayers(); // ← add this
-
-// Optional: you said 5 / 5 is ugly — so remove this if you want
-document.getElementById("livesText").textContent = "";
+  renderPlayers();
+  document.getElementById("livesText").textContent = "";
 }
 
 /* ======================
@@ -1535,8 +1683,8 @@ document.getElementById("backBtn").onclick = () => {
   setupDiv.style.display = "block";
   document.getElementById("guessInput").disabled = false;
 };
+
 </script>
 
 </body>
 </html>
-
