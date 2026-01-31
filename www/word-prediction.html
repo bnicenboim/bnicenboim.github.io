@@ -615,9 +615,8 @@ button:disabled {
       <div class="input-area">
         <input id="guessInput" placeholder="Type the next word...">
         <button class="btn-primary" id="guessBtn">Guess</button>
-<button class="btn-secondary" id="discloseBtn">
-  Disclose word (-10 pts)
-</button>
+       <button id="skipBtn">Skip</button>
+       <button class="btn-secondary" id="discloseBtn">Disclose</button>
       </div>
       <div id="aiThinking" class="ai-thinking" style="display:none;">
         <span>AI is thinking</span>
@@ -1261,6 +1260,23 @@ function maybeTriggerAITurn() {
     document.getElementById("guessInput").focus();
   }
 }
+document.getElementById("skipBtn").onclick = () => {
+  const p = game.players[game.currentPlayer];
+
+  p.lives--;
+
+  log(`${p.name} skipped the turn and lost 1 life.`);
+
+  if (p.lives <= 0) {
+    log(`${p.name} is out for this round.`);
+    nextPlayer();   // or whatever you already use
+  } else {
+    nextPlayer();
+  }
+
+  render();
+};
+
 document.getElementById("discloseBtn").onclick = () => {
   if (game.finished) return;
   discloseWord(10);
