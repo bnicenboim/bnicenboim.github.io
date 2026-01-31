@@ -579,10 +579,10 @@ button:disabled {
   <div class="row">
     <label>Difficulty (lives):</label>
     <div class="difficulty-buttons" id="difficultyBtns">
-      <button class="difficulty-btn" data-lives="6">Easy (6)</button>
-      <button class="difficulty-btn selected" data-lives="8">Normal (8)</button>
-      <button class="difficulty-btn" data-lives="10">Hard (10)</button>
-      <button class="difficulty-btn" data-lives="12">Expert (12)</button>
+      <button class="difficulty-btn" data-lives="10">Easy (10)</button>
+      <button class="difficulty-btn selected" data-lives="5">Normal (5)</button>
+      <button class="difficulty-btn" data-lives="3">Hard (3)</button>
+      <button class="difficulty-btn" data-lives="1">Expert (1)</button>
     </div>
   </div>
 
@@ -1117,6 +1117,32 @@ guessInput.addEventListener("keydown", e => {
 
 document.getElementById("guessBtn").onclick = () => submitGuess();
 
+function failCurrentWord() {
+  // Reveal the correct word
+  game.revealed++;
+
+  // Reset lives
+  game.mistakes = 0;
+
+  // Log event (optional but useful)
+  addLogEntry({
+    timeFormatted: formatTime(new Date()),
+    player: "SYSTEM",
+    playerAvatar: "⚠️",
+    isAI: false,
+    guess: "(out of lives)",
+    target: game.sentence[game.revealed - 1],
+    correct: true
+  });
+
+  // Check win condition
+  if (game.revealed >= game.sentence.length) {
+    game.finished = true;
+    showGameOver(true);
+  }
+}
+
+
 function submitGuess(guessOverride = null) {
   if (game.finished) return;
   if (!game) return;
@@ -1156,8 +1182,7 @@ function submitGuess(guessOverride = null) {
     game.finished = true;
     showGameOver(true);
   } else if (game.mistakes >= game.maxLives) {
-    game.finished = true;
-    showGameOver(false);
+   failCurrentWord();
   }
 
   render();
@@ -1258,7 +1283,7 @@ function showGameOver(won) {
   goEl.innerHTML = `
     <h2>${won ? "🎉 Congratulations!" : "💀 Game Over!"}</h2>
     <div class="final-sentence">
-      ${won ? "You guessed the sentence:" : "The sentence was:"}
+       "You guessed the sentence." 
       <br><br>
       <strong>${game.sentence.join(" ")}</strong>
     </div>
