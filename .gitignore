@@ -1,4 +1,9 @@
 /.quarto/
 .Rproj.user
+<<<<<<< HEAD
 
 **/*.quarto_ipynb
+=======
+index_cache
+
+>>>>>>> 71d03b4d07801f8dd918ce738ef733622b3e150a
