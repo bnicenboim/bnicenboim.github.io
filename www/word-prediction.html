@@ -421,6 +421,29 @@ button:disabled {
   color: #fc8181;
 }
 
+.game-log .log-context {
+  color: #a0aec0;
+  font-style: italic;
+  font-size: 0.85em;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.player .player-name {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player .player-score {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
 .model-status {
   display: inline-flex;
   align-items: center;
@@ -537,12 +560,46 @@ button:disabled {
 .ai-avatar-yellow { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); }
 .ai-avatar-red { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
 .ai-avatar-purple { background: linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%); }
+
+/* Language switcher */
+#lang-switcher {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.4rem;
+  z-index: 1000;
+}
+#lang-switcher button {
+  font-size: 1.6rem;
+  padding: 0.1rem 0.2rem;
+  background: rgba(255,255,255,0.25);
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color 0.2s, background 0.2s;
+}
+#lang-switcher button:hover {
+  background: rgba(255,255,255,0.45);
+  transform: none;
+}
+#lang-switcher button.active {
+  border-color: white;
+  background: rgba(255,255,255,0.5);
+}
 </style>
 </head>
 
 <body>
 
-<h1>Next Word Showdown</h1>
+<div id="lang-switcher">
+  <button id="lang-en" title="English" onclick="setLang('en')">🇬🇧</button>
+  <button id="lang-nl" title="Nederlands" onclick="setLang('nl')">🇳🇱</button>
+  <button id="lang-es" title="Español" onclick="setLang('es')">🇪🇸</button>
+</div>
+
+<h1 data-i18n="title">Next Word Showdown</h1>
 
 <!-- SETUP -->
 <div id="setup" class="panel">
@@ -550,60 +607,61 @@ button:disabled {
 
   <!-- Sentence Input -->
   <div class="section-box">
-    <h3>📝 Secret Sentence</h3>
+    <h3>📝 <span data-i18n="secretSentence">Secret Sentence</span></h3>
     <div class="row">
-      <label>Enter manually:</label>
+      <label data-i18n="enterManually">Enter manually:</label>
       <input id="sentenceInput" type="password" style="flex:1; min-width:200px;">
       <button class="btn-icon" id="eyeBtn">👁</button>
     </div>
     <div class="row">
       <span class="or-divider">— OR —</span>
     </div>
-    <div class="row">
-      <label>Generate with AI:</label>
-      <div class="inline-input">
-        <input id="wordCount" type="number" class="word-count-input" min="3" max="20" placeholder="5-10">
-        <span style="color:#666;">words</span>
-        <span style="color:#999; font-size:0.85rem;">(leave empty for random)</span>
-      </div>
-      <button class="btn-secondary" id="generateBtn">Generate Sentence</button>
-    </div>
+	    <div class="row">
+	      <label data-i18n="generateWithAI">Generate with AI:</label>
+	      <div class="inline-input">
+	        <input id="wordCount" type="number" class="word-count-input" min="3" max="20" placeholder="5-10" style="width:90px;">
+	        <span style="color:#666;" data-i18n="words">words</span>
+	        <span style="color:#999; font-size:0.85rem;"></span>
+	      </div>
+		        <label style="margin-left:0.75rem;" data-i18n="temp">Temp:</label>
+		      <div class="inline-input">
+		        <input id="sentenceTemp" type="number" min="0" max="2" step="0.1" value="0.4" style="width:80px;">
+		      </div>
+	      <button class="btn-secondary" id="generateBtn" data-i18n="generateSentence">Generate Sentence</button>
+	    </div>
     <div class="row" style="margin-top:0.8rem;">
-      <label>Language / Model:</label>
-      <select id="sentenceModelSelect" style="min-width:180px;">
-        <option value="Xenova/gpt-neo-125M">🇬🇧 English - GPT-Neo 125M (~250MB)</option>
-        <option value="custom">🔧 Custom model...</option>
-      </select>
-      <span id="sentenceModelStatus" class="model-status not-loaded">Not loaded</span>
+      <label data-i18n="languageModel">Language / Model:</label>
+      <select id="sentenceModelSelect" style="min-width:180px;"></select>
+      <span id="sentenceModelStatus" class="model-status not-loaded" data-i18n="notLoaded">Not loaded</span>
     </div>
     <div id="customModelRow" class="row" style="display:none; margin-top:0.5rem;">
-      <label>Custom model ID:</label>
+      <label data-i18n="customModelId">Custom model ID:</label>
       <input id="customModelInput" type="text" placeholder="e.g., Xenova/gpt2" style="flex:1; min-width:200px;">
-      <a href="https://huggingface.co/models?pipeline_tag=text-generation&library=transformers.js" target="_blank" style="font-size:0.85rem; color:#667eea;">Browse models ↗</a>
+      <a href="https://huggingface.co/models?pipeline_tag=text-generation&library=transformers.js" target="_blank" style="font-size:0.85rem; color:#667eea;" data-i18n="browseModels">Browse models ↗</a>
     </div>
     <div id="sentenceModelProgress" style="display:none;">
       <div class="progress-bar"><div class="progress" style="width:0%"></div></div>
-      <div class="model-info">Downloading model... (first time only, may be 50-500MB)</div>
+      <div class="model-info" data-i18n="downloadingModel">Downloading model... (first time only, may be 50-500MB)</div>
     </div>
     <div style="font-size:0.85rem; color:#666; margin-top:0.5rem;">
-      Models run locally in your browser using <a href="https://huggingface.co/docs/transformers.js" target="_blank" style="color:#667eea;">Transformers.js</a>.
-      <button type="button" id="loadSentenceModelBtn" style="margin-left:1rem; font-size:0.8rem; padding:0.3rem 0.6rem;">Load Model</button>
+      <span data-i18n="modelsRunLocally">Models run locally in your browser using</span> <a href="https://huggingface.co/docs/transformers.js" target="_blank" style="color:#667eea;">Transformers.js</a>.
+      <button type="button" id="loadSentenceModelBtn" style="margin-left:1rem; font-size:0.8rem; padding:0.3rem 0.6rem;" data-i18n="loadModel">Load Model</button>
     </div>
     <div id="generateStatus" class="generate-status"></div>
   </div>
 
   <div class="row">
-    <label>Difficulty (lives):</label>
+    <label data-i18n="difficulty">Difficulty (lives):</label>
     <div class="difficulty-buttons" id="difficultyBtns">
-      <button class="difficulty-btn" data-lives="10">Easy (10)</button>
-      <button class="difficulty-btn selected" data-lives="5">Normal (5)</button>
-      <button class="difficulty-btn" data-lives="3">Hard (3)</button>
-      <button class="difficulty-btn" data-lives="1">Expert (1)</button>
+      <button class="difficulty-btn" data-lives="10" data-i18n="easy">Easy (10)</button>
+      <button class="difficulty-btn selected" data-lives="5" data-i18n="normal">Normal (5)</button>
+      <button class="difficulty-btn" data-lives="3" data-i18n="hard">Hard (3)</button>
+      <button class="difficulty-btn" data-lives="1" data-i18n="expert">Expert (1)</button>
     </div>
   </div>
 
   <div class="row">
-    <label>Number of players:</label>
+    <label data-i18n="numberOfPlayers">Number of players:</label>
     <select id="numPlayers">
       <option>1</option><option selected>2</option><option>3</option>
       <option>4</option><option>5</option><option>6</option><option>7</option>
@@ -613,32 +671,37 @@ button:disabled {
   <div class="players-setup" id="playerInputs"></div>
 
   <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem;">
-    <button class="btn-primary" id="startBtn">Start Game</button>
-    <button id="clearCacheBtn" style="font-size:0.85rem; padding:0.4rem 0.8rem; background:#f0f0f0; color:#666;">🗑️ Clear Downloaded Models</button>
+    <button class="btn-primary" id="startBtn" data-i18n="startGame">Start Game</button>
+    <button id="clearCacheBtn" style="font-size:0.85rem; padding:0.4rem 0.8rem; background:#f0f0f0; color:#666;" data-i18n="clearCache">🗑️ Clear Downloaded Models</button>
   </div>
+
+  <details id="howToPlayDetails" style="margin-top:1.2rem; background:#f5f7fa; border-radius:10px; padding:0.8rem 1rem;">
+    <summary style="cursor:pointer; font-weight:600;" data-i18n="howToPlay">How to play</summary>
+    <div id="howToPlayBody" style="margin-top:0.6rem; font-size:0.92rem; line-height:1.6;"></div>
+  </details>
 </div>
 
 <!-- GAME -->
 <div id="game" class="panel" style="display:none;">
-  <div class="back" id="backBtn">← Back to Setup</div>
+  <div class="back" id="backBtn">← <span data-i18n="backToSetup">Back to Setup</span></div>
 
-  <div class="section-title">Sentence</div>
+  <div class="section-title" data-i18n="sentenceTitle">Sentence</div>
   <div id="sentenceDisplay" class="sentence"></div>
 
-  <div class="section-title">Players</div>
+  <div class="section-title" data-i18n="playersTitle">Players</div>
   <div id="playersDisplay" class="players"></div>
 
   <div class="game-area">
     <div>
-      <div class="section-title">Your Guess</div>
+      <div class="section-title" data-i18n="yourGuess">Your Guess</div>
       <div class="input-area">
-        <input id="guessInput" placeholder="Type the next word...">
-        <button class="btn-primary" id="guessBtn">Guess</button>
-        <button id="skipBtn">Skip</button>
-        <button class="btn-secondary" id="discloseBtn">Disclose</button>
+        <input id="guessInput" data-i18n-placeholder="typeNextWord" placeholder="Type the next word...">
+        <button class="btn-primary" id="guessBtn" data-i18n="guess">Guess</button>
+        <button id="skipBtn" data-i18n="skip">Skip</button>
+        <button class="btn-secondary" id="discloseBtn" data-i18n="disclose">Disclose</button>
       </div>
       <div id="aiThinking" class="ai-thinking" style="display:none;">
-        <span id="aiThinkingText">AI is thinking</span>
+        <span id="aiThinkingText" data-i18n="aiIsThinking">AI is thinking</span>
         <span class="dots"><span></span><span></span><span></span></span>
       </div>
     </div>
@@ -652,35 +715,424 @@ button:disabled {
   </div>
 
   <div class="game-options">
-    <label><input type="checkbox" id="optCase" checked> Case insensitive</label>
-    <label><input type="checkbox" id="optPunct" checked> Ignore punctuation</label>
-    <label>Tolerance: <input type="number" id="optLev" value="0" min="0" max="10" style="width:45px; font-size:0.75rem; padding:0.2rem;"></label>
+    <label><input type="checkbox" id="optCase" checked> <span data-i18n="caseInsensitive">Case insensitive</span></label>
+    <label><input type="checkbox" id="optPunct" checked> <span data-i18n="ignorePunct">Ignore punctuation</span></label>
+    <label><span data-i18n="tolerance">Tolerance:</span> <input type="number" id="optLev" value="0" min="0" max="10" style="width:45px; font-size:0.75rem; padding:0.2rem;"></label>
   </div>
 
-  <div class="section-title">Game Log</div>
+  <div class="section-title" data-i18n="gameLog">Game Log</div>
   <div id="gameLog" class="game-log"></div>
 
   <div id="gameOver" class="game-over" style="display:none;"></div>
 </div>
 
-<!-- Transformers.js CDN -->
-<script type="module">
-import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1';
-
-// Configure cache
-env.cacheDir = './.cache';
-env.allowLocalModels = false;
+	<!-- Transformers.js CDN -->
+	<script type="module">
 
 /* ======================
-   Available Models (text generation, not chat/reasoning)
+   i18n
 ====================== */
+
+const TRANSLATIONS = {
+  en: {
+    defaultSentence: "You will never guess this sentence.",
+    title: "Next Word Showdown",
+    secretSentence: "Secret Sentence",
+    enterManually: "Enter manually:",
+    generateWithAI: "Generate with AI:",
+    words: "words",
+    temp: "Temp:",
+    generateSentence: "Generate Sentence",
+    languageModel: "Language / Model:",
+    notLoaded: "Not loaded",
+    customModelId: "Custom model ID:",
+    browseModels: "Browse models ↗",
+    downloadingModel: "Downloading model... (first time only, may be 50-500MB)",
+    modelsRunLocally: "Models run locally in your browser using",
+    loadModel: "Load Model",
+    difficulty: "Difficulty (lives):",
+    easy: "Easy (10)",
+    normal: "Normal (5)",
+    hard: "Hard (3)",
+    expert: "Expert (1)",
+    numberOfPlayers: "Number of players:",
+    startGame: "Start Game",
+    clearCache: "🗑️ Clear Downloaded Models",
+    backToSetup: "Back to Setup",
+    sentenceTitle: "Sentence",
+    playersTitle: "Players",
+    yourGuess: "Your Guess",
+    typeNextWord: "Type the next word...",
+    guess: "Guess",
+    skip: "Skip",
+    disclose: "Disclose",
+    aiIsThinking: "AI is thinking",
+    caseInsensitive: "Case insensitive",
+    ignorePunct: "Ignore punctuation",
+    tolerance: "Tolerance:",
+    gameLog: "Game Log",
+    // JS-only strings
+    humanOption: "👤 Human",
+    customModelOption: "🔧 Custom model...",
+    loadBtn: "Load",
+    ready: "✓ Ready",
+    loading: "Loading...",
+    error: "Error!",
+    playerNamePlaceholder: (n) => `Player ${n} name`,
+    pleaseEnterModelId: "Please enter a model ID or select a language.",
+    modelsCleared: "All downloaded models have been cleared.",
+    errorClearingCache: (msg) => "Error clearing cache: " + msg,
+    pleaseLoadModel: "Please load a model first (click 'Load Model').",
+    generatingSentence: "Generating sentence...",
+    generatedWords: (n) => `Generated ${n} words. Click 👁 to reveal.`,
+    generatedTooShort: "Generated text too short - try again",
+    pleaseEnterSentence: "Please enter a sentence or generate one with AI.",
+    atLeastTwoWords: "The sentence must have at least 2 words.",
+    unloadedModelsConfirm: (list) =>
+      `The following AI players have models that are not loaded:\n\n${list}\n\n` +
+      `The models will be downloaded when it's their turn (this may take time).\n\n` +
+      `Do you want to continue anyway?`,
+    wordRevealed: "(word revealed)",
+    skippedTurn: "(skipped turn)",
+    wordDisclosed: "(word disclosed)",
+    score: "Score",
+    aiLabel: " (AI)",
+    downloadingModelPct: (name, pct) => `Downloading model ${name}... ${pct}%`,
+    thinkingPlayer: (name) => `${name} is thinking`,
+    failedToLoadModel: (msg) => `Failed to load model:\n\n${msg}\n\nTip: Models from the Xenova namespace are most reliable.`,
+    failedToLoadModelAI: (msg) => `Failed to load model: ${msg}\n\nMake sure the model exists and is compatible with Transformers.js.`,
+    gameFinished: "🏁 Game Finished",
+    leaderboard: "🏆 Leaderboard",
+    playAgain: "Play Again",
+    downloadLog: "Download Log",
+    pts: "pts",
+    clearCacheConfirm: "This will delete all downloaded models from your browser. You'll need to re-download them next time. Continue?",
+    unloadedPlayer: (i, id) => `Player ${i}: ${id}`,
+    wordsGuessed: (n) => `${n} word${n !== 1 ? 's' : ''}`,
+    howToPlay: "How to play",
+    howToPlayBody: `Each round, one word of the secret sentence is hidden. Players take turns guessing it.
+<ul>
+<li><strong>Correct guess</strong>: +10 pts minus the number of lives already lost on that word.</li>
+<li><strong>Wrong guess / Skip</strong>: lose 1 life ❤️. When all lives are gone you are out for that word.</li>
+<li><strong>All players exhausted</strong>: the word is revealed automatically and everyone loses <strong>-10 pts</strong>.</li>
+<li><strong>Disclose</strong>: reveals the word immediately — <strong>-10 pts</strong> for every player.</li>
+<li>The game ends when all words are revealed.</li>
+</ul>`,
+  },
+  nl: {
+    defaultSentence: "Je zult deze zin nooit raden.",
+    title: "Volgend Woord Duel",
+    secretSentence: "Geheime Zin",
+    enterManually: "Handmatig invoeren:",
+    generateWithAI: "Genereren met AI:",
+    words: "woorden",
+    temp: "Temp:",
+    generateSentence: "Zin genereren",
+    languageModel: "Taal / Model:",
+    notLoaded: "Niet geladen",
+    customModelId: "Aangepast model-ID:",
+    browseModels: "Modellen bekijken ↗",
+    downloadingModel: "Model downloaden... (eerste keer, kan 50-500MB zijn)",
+    modelsRunLocally: "Modellen draaien lokaal in uw browser met",
+    loadModel: "Model laden",
+    difficulty: "Moeilijkheid (levens):",
+    easy: "Makkelijk (10)",
+    normal: "Normaal (5)",
+    hard: "Moeilijk (3)",
+    expert: "Expert (1)",
+    numberOfPlayers: "Aantal spelers:",
+    startGame: "Spel starten",
+    clearCache: "🗑️ Gedownloade modellen wissen",
+    backToSetup: "Terug naar instellingen",
+    sentenceTitle: "Zin",
+    playersTitle: "Spelers",
+    yourGuess: "Jouw gok",
+    typeNextWord: "Typ het volgende woord...",
+    guess: "Gok",
+    skip: "Sla over",
+    disclose: "Onthullen",
+    aiIsThinking: "AI denkt na",
+    caseInsensitive: "Hoofdletterongevoelig",
+    ignorePunct: "Leestekens negeren",
+    tolerance: "Tolerantie:",
+    gameLog: "Spellog",
+    humanOption: "👤 Mens",
+    customModelOption: "🔧 Aangepast model...",
+    loadBtn: "Laden",
+    ready: "✓ Klaar",
+    loading: "Laden...",
+    error: "Fout!",
+    playerNamePlaceholder: (n) => `Naam speler ${n}`,
+    pleaseEnterModelId: "Voer een model-ID in of selecteer een taal.",
+    modelsCleared: "Alle gedownloade modellen zijn gewist.",
+    errorClearingCache: (msg) => "Fout bij wissen: " + msg,
+    pleaseLoadModel: "Laad eerst een model (klik op 'Model laden').",
+    generatingSentence: "Zin genereren...",
+    generatedWords: (n) => `${n} woorden gegenereerd. Klik op 👁 om te zien.`,
+    generatedTooShort: "Gegenereerde tekst te kort – probeer opnieuw",
+    pleaseEnterSentence: "Voer een zin in of genereer er een met AI.",
+    atLeastTwoWords: "De zin moet minimaal 2 woorden bevatten.",
+    unloadedModelsConfirm: (list) =>
+      `De volgende AI-spelers hebben modellen die niet geladen zijn:\n\n${list}\n\n` +
+      `De modellen worden gedownload zodra zij aan de beurt zijn (dit kan even duren).\n\n` +
+      `Wilt u toch doorgaan?`,
+    wordRevealed: "(woord onthuld)",
+    skippedTurn: "(beurt overgeslagen)",
+    wordDisclosed: "(woord vrijgegeven)",
+    score: "Score",
+    aiLabel: " (AI)",
+    downloadingModelPct: (name, pct) => `Model downloaden ${name}... ${pct}%`,
+    thinkingPlayer: (name) => `${name} denkt na`,
+    failedToLoadModel: (msg) => `Model laden mislukt:\n\n${msg}\n\nTip: Modellen uit de Xenova-naamruimte zijn het betrouwbaarst.`,
+    failedToLoadModelAI: (msg) => `Model laden mislukt: ${msg}\n\nZorg dat het model bestaat en compatibel is met Transformers.js.`,
+    gameFinished: "🏁 Spel afgelopen",
+    leaderboard: "🏆 Ranglijst",
+    playAgain: "Opnieuw spelen",
+    downloadLog: "Log downloaden",
+    pts: "ptn",
+    clearCacheConfirm: "Dit verwijdert alle gedownloade modellen uit uw browser. U moet ze de volgende keer opnieuw downloaden. Doorgaan?",
+    unloadedPlayer: (i, id) => `Speler ${i}: ${id}`,
+    wordsGuessed: (n) => `${n} woord${n !== 1 ? 'en' : ''}`,
+    howToPlay: "Speluitleg",
+    howToPlayBody: `Elke ronde is één woord van de geheime zin verborgen. Spelers raden om beurten.
+<ul>
+<li><strong>Goed geraden</strong>: +10 ptn minus het aantal reeds verloren levens voor dat woord.</li>
+<li><strong>Fout / Overgeslagen</strong>: verlies 1 leven ❤️. Bij nul levens ben je af voor dat woord.</li>
+<li><strong>Alle spelers uitgeput</strong>: het woord wordt automatisch onthuld en iedereen verliest <strong>-10 ptn</strong>.</li>
+<li><strong>Onthullen</strong>: onthult het woord direct — <strong>-10 ptn</strong> voor elke speler.</li>
+<li>Het spel eindigt wanneer alle woorden zijn onthuld.</li>
+</ul>`,
+  },
+  es: {
+    defaultSentence: "Nunca adivinarás esta frase.",
+    title: "Duelo de Siguiente Palabra",
+    secretSentence: "Frase Secreta",
+    enterManually: "Introducir manualmente:",
+    generateWithAI: "Generar con IA:",
+    words: "palabras",
+    temp: "Temp:",
+    generateSentence: "Generar frase",
+    languageModel: "Idioma / Modelo:",
+    notLoaded: "No cargado",
+    customModelId: "ID de modelo personalizado:",
+    browseModels: "Ver modelos ↗",
+    downloadingModel: "Descargando modelo... (primera vez, puede ser 50-500MB)",
+    modelsRunLocally: "Los modelos se ejecutan localmente en tu navegador con",
+    loadModel: "Cargar modelo",
+    difficulty: "Dificultad (vidas):",
+    easy: "Fácil (10)",
+    normal: "Normal (5)",
+    hard: "Difícil (3)",
+    expert: "Experto (1)",
+    numberOfPlayers: "Número de jugadores:",
+    startGame: "Iniciar juego",
+    clearCache: "🗑️ Borrar modelos descargados",
+    backToSetup: "Volver a configuración",
+    sentenceTitle: "Frase",
+    playersTitle: "Jugadores",
+    yourGuess: "Tu predicción",
+    typeNextWord: "Escribe la siguiente palabra...",
+    guess: "Adivinar",
+    skip: "Saltar",
+    disclose: "Revelar",
+    aiIsThinking: "La IA está pensando",
+    caseInsensitive: "Sin distinción de mayúsculas",
+    ignorePunct: "Ignorar puntuación",
+    tolerance: "Tolerancia:",
+    gameLog: "Registro del juego",
+    humanOption: "👤 Humano",
+    customModelOption: "🔧 Modelo personalizado...",
+    loadBtn: "Cargar",
+    ready: "✓ Listo",
+    loading: "Cargando...",
+    error: "¡Error!",
+    playerNamePlaceholder: (n) => `Nombre del jugador ${n}`,
+    pleaseEnterModelId: "Por favor, introduce un ID de modelo o selecciona un idioma.",
+    modelsCleared: "Todos los modelos descargados han sido eliminados.",
+    errorClearingCache: (msg) => "Error al limpiar caché: " + msg,
+    pleaseLoadModel: "Por favor, carga un modelo primero (clic en 'Cargar modelo').",
+    generatingSentence: "Generando frase...",
+    generatedWords: (n) => `${n} palabras generadas. Clic en 👁 para revelar.`,
+    generatedTooShort: "Texto generado demasiado corto – inténtalo de nuevo",
+    pleaseEnterSentence: "Por favor, introduce una frase o genera una con IA.",
+    atLeastTwoWords: "La frase debe tener al menos 2 palabras.",
+    unloadedModelsConfirm: (list) =>
+      `Los siguientes jugadores IA tienen modelos sin cargar:\n\n${list}\n\n` +
+      `Los modelos se descargarán cuando les toque (puede tardar).\n\n` +
+      `¿Deseas continuar de todas formas?`,
+    wordRevealed: "(palabra revelada)",
+    skippedTurn: "(turno saltado)",
+    wordDisclosed: "(palabra divulgada)",
+    score: "Puntos",
+    aiLabel: " (IA)",
+    downloadingModelPct: (name, pct) => `Descargando modelo ${name}... ${pct}%`,
+    thinkingPlayer: (name) => `${name} está pensando`,
+    failedToLoadModel: (msg) => `Error al cargar modelo:\n\n${msg}\n\nConsejo: Los modelos del espacio Xenova son los más fiables.`,
+    failedToLoadModelAI: (msg) => `Error al cargar modelo: ${msg}\n\nAsegúrate de que el modelo existe y es compatible con Transformers.js.`,
+    gameFinished: "🏁 Juego terminado",
+    leaderboard: "🏆 Clasificación",
+    playAgain: "Jugar de nuevo",
+    downloadLog: "Descargar registro",
+    pts: "pts",
+    clearCacheConfirm: "Esto eliminará todos los modelos descargados de tu navegador. Deberás volver a descargarlos la próxima vez. ¿Continuar?",
+    unloadedPlayer: (i, id) => `Jugador ${i}: ${id}`,
+    wordsGuessed: (n) => `${n} palabra${n !== 1 ? 's' : ''}`,
+    howToPlay: "Cómo jugar",
+    howToPlayBody: `Cada ronda, una palabra de la frase secreta está oculta. Los jugadores la adivinan por turnos.
+<ul>
+<li><strong>Acierto</strong>: +10 pts menos el número de vidas ya perdidas en esa palabra.</li>
+<li><strong>Fallo / Saltar</strong>: pierde 1 vida ❤️. Al quedarte sin vidas estás fuera en esa palabra.</li>
+<li><strong>Todos agotados</strong>: la palabra se revela automáticamente y todos pierden <strong>-10 pts</strong>.</li>
+<li><strong>Revelar</strong>: revela la palabra al instante — <strong>-10 pts</strong> para todos los jugadores.</li>
+<li>El juego termina cuando se revelan todas las palabras.</li>
+</ul>`,
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'en';
+
+function t(key, ...args) {
+  const val = (TRANSLATIONS[currentLang] || TRANSLATIONS.en)[key] ?? TRANSLATIONS.en[key] ?? key;
+  return typeof val === 'function' ? val(...args) : val;
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  // How-to-play body uses innerHTML (contains HTML tags)
+  const htpBody = document.getElementById('howToPlayBody');
+  if (htpBody) htpBody.innerHTML = t('howToPlayBody');
+  // Update active flag button
+  document.querySelectorAll('#lang-switcher button').forEach(btn => {
+    btn.classList.toggle('active', btn.id === 'lang-' + currentLang);
+  });
+  document.documentElement.lang = currentLang;
+}
+
+window.setLang = function(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  applyTranslations();
+  // Update default sentence if user hasn't changed it
+  const si = document.getElementById('sentenceInput');
+  if (si) {
+    const knownDefaults = Object.values(TRANSLATIONS).map(tr => tr.defaultSentence).filter(Boolean);
+    if (!si.value || knownDefaults.includes(si.value)) {
+      si.value = t('defaultSentence');
+    }
+  }
+  // Repopulate model selects for new language
+  if (typeof populateSentenceModelSelect === 'function') populateSentenceModelSelect();
+  // Re-render player inputs so Human/Custom labels and default model update
+  if (typeof renderPlayerInputs === 'function') renderPlayerInputs();
+  // Re-render game-over screen if visible so translations update
+  const goEl = document.getElementById('gameOver');
+  if (goEl && goEl.style.display !== 'none' && typeof game !== 'undefined' && game) {
+    showGameOver(game.won);
+  }
+};
+
+// Apply on load
+applyTranslations();
+
+	const TRANSFORMERS_STABLE_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1';
+	const TRANSFORMERS_LATEST_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@latest';
+	
+	let transformersStable = null;
+	let transformersLatest = null;
+	
+	function configureTransformersEnv(env) {
+	  // These settings are harmless in the browser (some are primarily used in Node),
+	  // but we keep them consistent across module versions.
+	  env.cacheDir = './.cache';
+	  env.allowLocalModels = false;
+	}
+	
+	async function getTransformersStable() {
+	  if (!transformersStable) {
+	    transformersStable = await import(TRANSFORMERS_STABLE_URL);
+	    if (transformersStable?.env) configureTransformersEnv(transformersStable.env);
+	  }
+	  return transformersStable;
+	}
+	
+	async function getTransformersLatest() {
+	  if (!transformersLatest) {
+	    transformersLatest = await import(TRANSFORMERS_LATEST_URL);
+	    if (transformersLatest?.env) configureTransformersEnv(transformersLatest.env);
+	  }
+	  return transformersLatest;
+	}
+
+	function hasWebGPU() {
+	  return (typeof navigator !== 'undefined') && !!navigator.gpu;
+	}
+
+	// Preload the stable build so everything else behaves the same as before.
+	await getTransformersStable();
+
+	/* ======================
+	   Available Models (text generation, not chat/reasoning)
+	====================== */
 
 // Models for text generation (some may require conversion)
 // Each model gets a unique colored robot avatar
-const AVAILABLE_MODELS = [
-  { id: "Xenova/gpt-neo-125M", name: "🇬🇧 English - GPT-Neo 125M", avatarColor: "green" }
-];
+		// Best (for this game) first, slow/heavy models later. Keep display names short.
+		const AVAILABLE_MODELS = [
+		  { id: "bnicenboim/gpt-neo-125m-dutch-onnx", name: "GPT-Neo 125M Dutch", avatarColor: "orange" },
+		  { id: "bnicenboim/gpt2-spanish-onnx", name: "GPT-2 Spanish", avatarColor: "blue" },
+		  { id: "Xenova/pythia-410m-deduped", name: "Pythia-410m deduped", avatarColor: "purple" },
+		  { id: "Xenova/pythia-410m", name: "Pythia-410m", avatarColor: "red" },
+		  { id: "Xenova/opt-350m", name: "OPT-350m", avatarColor: "orange" },
+		  { id: "Xenova/gpt2", name: "GPT-2", avatarColor: "blue" },
+		  { id: "Xenova/distilgpt2", name: "DistilGPT-2 (fast)", avatarColor: "green" },
+		  { id: "Xenova/gpt-neo-125M", name: "GPT-Neo 125M (fast)", avatarColor: "orange" },
+		  { id: "Xenova/phi-2", name: "Phi-2 (slow)", avatarColor: "red" },
+		  { id: "Xenova/mistral-7b", name: "Mistral-7B (slow)", avatarColor: "purple" },
+		  { id: "HuggingFaceTB/SmolLM3-3B-ONNX", name: "SmolLM3-3B (slow, instruct)", avatarColor: "yellow" },
+		  { id: "onnx-community/Qwen3-0.6B-ONNX", name: "Qwen3-0.6B (slow)", avatarColor: "yellow" },
+		  { id: "onnx-community/Qwen2.5-0.5B", name: "Qwen2.5-0.5B base (slow)", avatarColor: "blue" },
+		];
 
+		function getModelsForLang(lang) {
+		  const defaultId = getDefaultModelForLang(lang);
+		  return [...AVAILABLE_MODELS].sort((a, b) =>
+		    a.id === defaultId ? -1 : b.id === defaultId ? 1 : 0
+		  );
+		}
+
+		function getDefaultModelForLang(lang) {
+		  const map = {
+		    nl: "bnicenboim/gpt-neo-125m-dutch-onnx",
+		    es: "bnicenboim/gpt2-spanish-onnx",
+		    en: "Xenova/pythia-410m-deduped",
+		  };
+		  return map[lang] || "Xenova/pythia-410m-deduped";
+		}
+
+		function populateSentenceModelSelect() {
+		  const select = document.getElementById("sentenceModelSelect");
+		  if (!select) return;
+
+		  const prev = select.value;
+		  const langModels = getModelsForLang(currentLang);
+		  const options = langModels.map(m => `<option value="${m.id}">${m.name}</option>`).join("") +
+		    `<option value="custom">🔧 Custom model...</option>`;
+		  select.innerHTML = options;
+
+		  // Try to preserve previous selection, otherwise use language default.
+		  if (prev && (langModels.some(m => m.id === prev) || prev === "custom")) {
+		    select.value = prev;
+		  } else {
+		    select.value = getDefaultModelForLang(currentLang);
+		  }
+		}
+
+        
 // Color palette for custom models
 const AI_COLORS = ["blue", "green", "orange", "yellow", "red", "purple"];
 
@@ -722,59 +1174,157 @@ const numPlayersSel = document.getElementById("numPlayers");
 const playerInputsDiv = document.getElementById("playerInputs");
 const difficultyBtns = document.querySelectorAll(".difficulty-btn");
 
-// Default secret sentence
-sentenceInput.value = "You will never guess this sentence.";
+	// Default secret sentence
+	sentenceInput.value = t('defaultSentence');
+	
+	// Model selector elements
+	const sentenceModelSelect = document.getElementById("sentenceModelSelect");
+	const customModelRow = document.getElementById("customModelRow");
+	const customModelInput = document.getElementById("customModelInput");
 
-// Model selector elements
-const sentenceModelSelect = document.getElementById("sentenceModelSelect");
-const customModelRow = document.getElementById("customModelRow");
-const customModelInput = document.getElementById("customModelInput");
+	// Keep the model list as a single source of truth.
+	populateSentenceModelSelect();
 
 // Get the actual model ID (handles custom option)
-function getSentenceModelId() {
-  if (sentenceModelSelect.value === "custom") {
-    return customModelInput.value.trim() || "Xenova/distilgpt2";
-  }
-  return sentenceModelSelect.value;
-}
+	function getSentenceModelId() {
+	  if (sentenceModelSelect.value === "custom") {
+	    return customModelInput.value.trim() || "Xenova/pythia-410m-deduped";
+	  }
+	  return sentenceModelSelect.value;
+	}
 
 /* ======================
    Model Loading
 ====================== */
 
-async function loadModel(modelId, progressCallback) {
-  console.log(`Loading model: ${modelId}`);
+		async function loadModel(modelId, progressCallback) {
+		  console.log(`Loading model: ${modelId}`);
+		
+		  try {
+		    const baseOptions = {
+		      progress_callback: (progress) => {
+		        console.log('Progress:', progress);
+		        if (progressCallback) progressCallback(progress);
+		      },
+		    };
 
-  try {
-    const generator = await pipeline('text-generation', modelId, {
-      progress_callback: (progress) => {
-        console.log('Progress:', progress);
-        if (progressCallback) progressCallback(progress);
-      },
-      // Use quantized version if available for faster loading
-      dtype: 'fp32',
-    });
-    console.log(`Model loaded successfully: ${modelId}`);
-    return generator;
-  } catch (error) {
-    console.error(`Failed to load model ${modelId}:`, error);
+		    // Don't force a dtype up front. Many browser-ready models (including some in the Xenova
+		    // namespace) only publish specific ONNX variants; letting Transformers.js pick is safer.
+		    try {
+		      const { pipeline } = await getTransformersStable();
+		      const isQwen25 = typeof modelId === 'string' && /Qwen2\.5/i.test(modelId);
+		      const isOnnxRepo =
+		        typeof modelId === 'string' && (modelId.startsWith('onnx-community/') || /ONNX/.test(modelId));
+		      const knownModelMeta = AVAILABLE_MODELS.find(m => m.id === modelId);
+		      const forcedDtype = knownModelMeta?.dtype || null;
+		      // Qwen2.5 ONNX models are typically intended to be used quantized.
+		      const modelLoadOptions = {
+		        ...baseOptions,
+		        ...(isOnnxRepo && hasWebGPU() ? { device: 'webgpu' } : {}),
+		        ...(isQwen25 ? { dtype: 'q4' } : forcedDtype ? { dtype: forcedDtype } : {})
+		      };
+		      const generator = await pipeline('text-generation', modelId, modelLoadOptions);
+		      console.log(`Model loaded successfully: ${modelId}`);
+		      // WebGPU models often compile on first inference; do a tiny warmup so AI turns don't
+		      // appear to "hang" at the first generation call.
+		      if (isQwen25 && hasWebGPU()) {
+		        try {
+		          await generator("Hello", { max_new_tokens: 1, return_full_text: false });
+		          console.log(`Model warmed up (webgpu): ${modelId}`);
+		        } catch (warmupError) {
+		          console.warn(`Warmup failed (continuing anyway): ${modelId}`, warmupError);
+		        }
+		      }
+		      return generator;
+		    } catch (firstError) {
+		      const firstMsg = (firstError && typeof firstError === 'object' && firstError.message) ? firstError.message : String(firstError || '');
+		      // SmolLM3 support landed after some versions; auto-fallback to latest if stable can't
+		      // recognize the architecture.
+		      if (firstMsg.includes('Unsupported model type: smollm3')) {
+		        console.warn(`Stable Transformers.js doesn't support smollm3; retrying with latest: ${modelId}`, firstError);
+		        const { pipeline } = await getTransformersLatest();
+		        const preferWebGPU = (typeof navigator !== 'undefined' && !!navigator.gpu);
+		        try {
+		          const generator = await pipeline('text-generation', modelId, {
+		            ...baseOptions,
+		            dtype: 'q4f16',
+		            ...(preferWebGPU ? { device: 'webgpu' } : {})
+		          });
+		          console.log(`Model loaded successfully (latest): ${modelId}`);
+		          return generator;
+		        } catch (latestError) {
+		          // Fallback: try latest defaults if the recommended settings aren't supported.
+		          console.warn(`Latest Transformers.js load with q4f16/webgpu failed; retrying with defaults: ${modelId}`, latestError);
+		          const generator = await pipeline('text-generation', modelId, baseOptions);
+		          console.log(`Model loaded successfully (latest defaults): ${modelId}`);
+		          return generator;
+		        }
+		      }
 
-    // Provide more helpful error messages
-    let errorMsg = error.message;
-    if (errorMsg.includes('Could not locate file')) {
-      errorMsg = `Model "${modelId}" is not available in ONNX format for Transformers.js. Try a model from the Xenova namespace.`;
-    } else if (errorMsg.includes('fetch')) {
-      errorMsg = `Network error loading "${modelId}". Check your internet connection.`;
-    }
+		      // One targeted retry: some model repos only publish quantized ONNX artifacts. Let the
+		      // first attempt try the library default, then retry with q4 for Xenova and ONNX repos.
+		      const isLikelyOnnxRepo =
+		        typeof modelId === 'string' && (modelId.startsWith('Xenova/') || /ONNX/.test(modelId));
+		      if (isLikelyOnnxRepo) {
+		        console.warn(`Retrying model load with quantized dtype (q4): ${modelId}`, firstError);
+		        const { pipeline } = await getTransformersStable();
+		        const generator = await pipeline(
+		          'text-generation',
+		          modelId,
+		          {
+		            ...baseOptions,
+		            dtype: 'q4',
+		            ...(hasWebGPU() ? { device: 'webgpu' } : {}),
+		          }
+		        );
+		        console.log(`Model loaded successfully (q4): ${modelId}`);
+		        return generator;
+		      }
+		      throw firstError;
+		    }
+		  } catch (error) {
+		    console.error(`Failed to load model ${modelId}:`, error);
+	
+	    // Provide more helpful error messages
+	    let errorMsg = "Unknown error loading model";
+    
+    // Handle different error types
+    if (error && typeof error === 'object' && error.message) {
+      errorMsg = error.message;
+      if (errorMsg.includes('Could not locate file')) {
+        errorMsg = `Model "${modelId}" is not available in ONNX format for Transformers.js. Try a model from the Xenova namespace.`;
+      } else if (errorMsg.includes('fetch')) {
+        errorMsg = `Network error loading "${modelId}". Check your internet connection.`;
+      }
+	    } else if (typeof error === 'number') {
+	      errorMsg = `Failed to load model "${modelId}". This can happen if the model doesn't have a compatible ONNX export for Transformers.js, or if your browser/device can't initialize the runtime. (Error code: ${error})`;
+	    } else if (typeof error === 'string') {
+	      errorMsg = error;
+	    } else {
+	      errorMsg = `Failed to load model "${modelId}". This model may not be available in ONNX format. Error code: ${error}`;
+	    }
 
-    throw new Error(errorMsg);
-  }
-}
+	    throw new Error(errorMsg);
+	  }
+	}
+
+	// Extract a single "next-word" guess from a model completion.
+	// Rule: the completion must begin with whitespace, then an optional quote/bracket, then a word.
+	// This avoids subword fragments and preserves casing ("I" stays "I").
+	function extractWordGuessFromCompletion(completion, { requireLeadingSpace = true } = {}) {
+	  if (typeof completion !== "string") return "";
+	  if (requireLeadingSpace && !/^\s/.test(completion)) return "";
+
+	  // Require the completion to begin with whitespace (word boundary), but allow punctuation/quotes
+	  // before the actual word.
+	  const m = completion.match(/^\s+[^\p{L}\p{N}]*([\p{L}][\p{L}'-]*)/u);
+	  return m ? m[1] : "";
+	}
 
 document.getElementById("loadSentenceModelBtn").onclick = async () => {
   const modelId = getSentenceModelId();
   if (!modelId) {
-    alert("Please enter a model ID or select a language.");
+    alert(t('pleaseEnterModelId'));
     return;
   }
 
@@ -782,7 +1332,7 @@ document.getElementById("loadSentenceModelBtn").onclick = async () => {
   const progressEl = document.getElementById("sentenceModelProgress");
   const progressBar = progressEl.querySelector(".progress");
 
-  statusEl.textContent = "Loading...";
+  statusEl.textContent = t('loading');
   statusEl.className = "model-status loading";
   progressEl.style.display = "block";
   progressBar.style.width = "0%";
@@ -806,16 +1356,16 @@ document.getElementById("loadSentenceModelBtn").onclick = async () => {
     progressEl.style.display = "none";
   } catch (e) {
     console.error("Model load error:", e);
-    statusEl.textContent = "Error!";
+    statusEl.textContent = t('error');
     statusEl.className = "model-status not-loaded";
     progressEl.style.display = "none";
-    alert(`Failed to load model:\n\n${e.message}\n\nTip: Models from the Xenova namespace are most reliable.`);
+    alert(t('failedToLoadModel', e.message));
   }
 };
 
 // Clear all downloaded models from cache
 document.getElementById("clearCacheBtn").onclick = async () => {
-  if (!confirm("This will delete all downloaded models from your browser. You'll need to re-download them next time. Continue?")) {
+  if (!confirm(t('clearCacheConfirm'))) {
     return;
   }
 
@@ -841,13 +1391,13 @@ document.getElementById("clearCacheBtn").onclick = async () => {
     aiGenerators = {};
 
     // Update status
-    document.getElementById("sentenceModelStatus").textContent = "Not loaded";
+    document.getElementById("sentenceModelStatus").textContent = t('notLoaded');
     document.getElementById("sentenceModelStatus").className = "model-status not-loaded";
 
-    alert("All downloaded models have been cleared.");
+    alert(t('modelsCleared'));
   } catch (e) {
     console.error("Error clearing cache:", e);
-    alert("Error clearing cache: " + e.message);
+    alert(t('errorClearingCache', e.message));
   }
 };
 
@@ -857,52 +1407,99 @@ async function ensureAIModel(modelId) {
   // Show loading indicator with progress
   const thinkingEl = document.getElementById("aiThinking");
   const thinkingText = document.getElementById("aiThinkingText");
-  thinkingText.textContent = `Downloading model ${modelId.split("/").pop()}... 0%`;
+  thinkingText.textContent = t('downloadingModelPct', modelId.split("/").pop(), 0);
   thinkingEl.style.display = "flex";
 
   try {
     aiGenerators[modelId] = await loadModel(modelId, (progress) => {
       if (progress.status === "progress" && progress.progress) {
-        thinkingText.textContent = `Downloading model ${modelId.split("/").pop()}... ${Math.round(progress.progress)}%`;
+        thinkingText.textContent = t('downloadingModelPct', modelId.split("/").pop(), Math.round(progress.progress));
       }
     });
     return aiGenerators[modelId];
   } catch (e) {
     console.error("AI model load error:", e);
     thinkingEl.style.display = "none";
-    alert(`Failed to load AI model "${modelId}".\n\nError: ${e.message}\n\nThe AI will make random guesses instead.`);
+    // Silently skip instead of showing popup - let doAITurn catch this
     throw e;
   }
 }
 
-/* ======================
-   Text Generation
-====================== */
+	/* ======================
+	   Text Generation
+	====================== */
 
-async function generateText(generator, prompt, maxTokens = 50) {
-  const result = await generator(prompt, {
-    max_new_tokens: maxTokens,
-    temperature: 0.7,      // Lower = more coherent
-    do_sample: true,
-    top_k: 40,             // Limit vocabulary for coherence
-    top_p: 0.9,            // Nucleus sampling
-    repetition_penalty: 1.2, // Avoid repetition
-    return_full_text: false
-  });
+	function extractGeneratedText(result) {
+	  if (!result || !result[0]) return "";
+	  const gt = result[0].generated_text;
+	  if (typeof gt === "string") return gt;
+	  // Some instruct/chat pipelines return an array of messages.
+	  if (Array.isArray(gt) && gt.length > 0) {
+	    const last = gt[gt.length - 1];
+	    if (last && typeof last === "object" && typeof last.content === "string") return last.content;
+	    if (typeof last === "string") return last;
+	  }
+	  return "";
+	}
 
-  return result[0].generated_text;
+		async function generateText(generator, prompt, maxTokens = 50, genOpts = {}) {
+		  const result = await generator(prompt, {
+		    max_new_tokens: maxTokens,
+		    temperature: (typeof genOpts.temperature === "number") ? genOpts.temperature : 0.7,
+		    do_sample: (typeof genOpts.do_sample === "boolean") ? genOpts.do_sample : true,
+		    top_k: (typeof genOpts.top_k === "number") ? genOpts.top_k : 40,
+		    top_p: (typeof genOpts.top_p === "number") ? genOpts.top_p : 0.9,
+		    repetition_penalty: (typeof genOpts.repetition_penalty === "number") ? genOpts.repetition_penalty : 1.2,
+		    return_full_text: false
+		  });
+	
+	  return extractGeneratedText(result);
+	}
+
+// Generate multiple completions sequentially to avoid model session conflicts
+		async function generateMultipleTexts(generator, prompt, maxTokens = 50, numCandidates = 5, temperature = 0.7, genOpts = {}) {
+	  const top_p = (typeof genOpts.top_p === "number") ? genOpts.top_p : 0.85;
+	  const top_k = (typeof genOpts.top_k === "number") ? genOpts.top_k : 40;
+	  const repetition_penalty = (typeof genOpts.repetition_penalty === "number") ? genOpts.repetition_penalty : 1.15;
+	  const do_sample = (typeof genOpts.do_sample === "boolean") ? genOpts.do_sample : true;
+	  console.log(`[GENERATOR-CALL] Requesting ${numCandidates} candidates with max_tokens=${maxTokens}, temperature=${temperature}, top_p=${top_p}, do_sample=${do_sample}`);
+	  
+	  const texts = [];
+	  for (let i = 0; i < numCandidates; i++) {
+	    try {
+	      const result = await generator(prompt, {
+	        max_new_tokens: maxTokens,
+	        temperature: temperature,
+	        do_sample,
+	        top_k,
+	        top_p,
+		        repetition_penalty,
+	        return_full_text: false
+	      });
+	      
+	      const text = extractGeneratedText(result);
+	      if (text) texts.push(text);
+	    } catch (e) {
+	      console.log(`[GENERATOR-WARN] Candidate ${i + 1} failed: ${e.message}`);
+	    }
+	  }
+  
+  console.log(`[GENERATOR-RESULT] Received ${texts.length} results from generator (expected ${numCandidates})`);
+  
+  return texts;
 }
 
 /* ======================
    Generate Sentence
 ====================== */
 
-document.getElementById("generateBtn").onclick = async () => {
-  const statusEl = document.getElementById("generateStatus");
-  const wordCountInput = document.getElementById("wordCount");
+		document.getElementById("generateBtn").onclick = async () => {
+		  const statusEl = document.getElementById("generateStatus");
+		  const wordCountInput = document.getElementById("wordCount");
+		  const sentenceTempInput = document.getElementById("sentenceTemp");
 
   if (!sentenceGenerator) {
-    statusEl.textContent = "Please load a model first (click 'Load Model').";
+    statusEl.textContent = t('pleaseLoadModel');
     statusEl.style.color = "#c53030";
     return;
   }
@@ -911,43 +1508,65 @@ document.getElementById("generateBtn").onclick = async () => {
     ? parseInt(wordCountInput.value)
     : Math.floor(Math.random() * 8) + 5;
 
-  statusEl.textContent = "Generating sentence...";
-  statusEl.style.color = "#666";
+	  statusEl.textContent = t('generatingSentence');
+	  statusEl.style.color = "#666";
+	
+		  try {
+		    const sentenceModelId = getSentenceModelId();
+		    const isSmolLM3 = /SmolLM3/i.test(sentenceModelId);
+		    const temp = sentenceTempInput && sentenceTempInput.value !== "" ? parseFloat(sentenceTempInput.value) : 0.4;
+		
+		    let result = "";
+		    if (isSmolLM3) {
+	      // SmolLM3 is an instruct/chat model; ask for a plain sentence output.
+	      const messages = [
+	        { role: "system", content: "/no_think" },
+	        {
+	          role: "user",
+	          content:
+	            `Write ONE natural sentence of about ${wordCount} words.\n` +
+	            `Output only the sentence text (no quotes, no markdown, no list, no extra commentary).`
+	        },
+	      ];
+	      result = await generateText(sentenceGenerator, messages, 128, { temperature: temp, top_p: 0.9, do_sample: true });
+	      result = result
+	        .replace(/\n/g, ' ')
+	        .replace(/\s+/g, ' ')
+	        .trim();
+	    } else {
+	      // Better prompts for more coherent sentences (continuation style)
+	      const prompts = [
+	        "The cat sat on",
+	        "Yesterday I went to",
+	        "My friend told me",
+	        "The weather was",
+	        "She decided to",
+	        "In the morning",
+	        "The book was about",
+	        "He walked into",
+	        "They found a",
+	        "It was a beautiful"
+	      ];
+	      const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+	
+	      result = await generateText(sentenceGenerator, prompt, 80, { temperature: temp, top_p: 0.9, do_sample: true });
+	      result = (prompt + " " + result)
+	        .replace(/\n/g, ' ')
+	        .replace(/\s+/g, ' ')
+	        .trim();
+	    }
 
-  try {
-    // Better prompts for more coherent sentences
-    const prompts = [
-      "The cat sat on",
-      "Yesterday I went to",
-      "My friend told me",
-      "The weather was",
-      "She decided to",
-      "In the morning",
-      "The book was about",
-      "He walked into",
-      "They found a",
-      "It was a beautiful"
-    ];
-    const prompt = prompts[Math.floor(Math.random() * prompts.length)];
-
-    let result = await generateText(sentenceGenerator, prompt, 80);
-
-    result = (prompt + " " + result)
-      .replace(/\n/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    // Try to end at a natural sentence boundary
-    const sentenceEnd = result.search(/[.!?]/);
-    if (sentenceEnd > 15) {
-      result = result.substring(0, sentenceEnd);
+	    // Try to end at a natural sentence boundary
+	    const sentenceEnd = result.search(/[.!?]/);
+	    if (sentenceEnd > 15) {
+	      result = result.substring(0, sentenceEnd);
     }
 
     // Clean up punctuation at the end
     result = result.replace(/[.!?,;:'"]+$/, '').trim();
 
-    // Remove incomplete words at the end
-    let words = result.split(/\s+/).filter(w => w.length > 0 && /^[a-zA-Z]/.test(w));
+	    // Remove incomplete words at the end
+	    let words = result.split(/\s+/).filter(w => w.length > 0 && /^\p{L}/u.test(w));
 
     // Trim to target word count
     if (words.length > wordCount) {
@@ -965,10 +1584,10 @@ document.getElementById("generateBtn").onclick = async () => {
     if (result && words.length >= 3) {
       // Keep it hidden - don't change type to "text"
       sentenceInput.value = result;
-      statusEl.textContent = `Generated ${words.length} words. Click 👁 to reveal.`;
+      statusEl.textContent = t('generatedWords', words.length);
       statusEl.style.color = "#276749";
     } else {
-      throw new Error("Generated text too short - try again");
+      throw new Error(t('generatedTooShort'));
     }
   } catch (e) {
     statusEl.textContent = `Error: ${e.message}`;
@@ -1000,13 +1619,7 @@ function getModelAvatar(modelId) {
 }
 
 function getModelShortName(modelId) {
-  // Get the model name part after the slash
-  const name = modelId.split("/").pop();
-  // Shorten it for display (max 12 chars)
-  if (name.length > 12) {
-    return name.substring(0, 10) + "..";
-  }
-  return name;
+  return modelId.split("/").pop();
 }
 
 // Update player name fields in the setup to number duplicate model names live
@@ -1049,6 +1662,20 @@ function updateLiveModelNumbering() {
 
 function renderPlayerInputs() {
   const n = Number(numPlayersSel.value);
+  
+  // Save current player data before clearing
+  const savedPlayers = [];
+  const existingRows = [...playerInputsDiv.querySelectorAll('.player-row')];
+  existingRows.forEach((row, idx) => {
+    savedPlayers.push({
+      name: row.querySelector('.player-name').value,
+      avatar: row.querySelector('.player-avatar').value,
+      modelType: row.querySelector('.player-model').value,
+      aiCustomModel: row.querySelector('.ai-custom-model')?.value || '',
+      temperature: row.querySelector('.ai-temperature')?.value || '0.5'
+    });
+  });
+
   playerInputsDiv.innerHTML = "";
 
   const shuffledAvatars = shuffleArray(AVATARS);
@@ -1059,31 +1686,48 @@ function renderPlayerInputs() {
     row.className = "player-row";
     row.dataset.index = i;
 
-    const defaultAvatar = shuffledAvatars[i % shuffledAvatars.length];
+    // Use saved data if available, otherwise defaults
+    const saved = savedPlayers[i];
+    const defaultAvatar = saved ? saved.avatar : shuffledAvatars[i % shuffledAvatars.length];
+    const defaultName = saved ? saved.name : "";
+	    let defaultModelType = saved ? saved.modelType : 'human'; // Default all players to human unless saved
+	    if (!saved && i === 1) defaultModelType = getDefaultModelForLang(currentLang);
+	    // If saved model doesn't exist in current language's models, reset to language default
+	    const langModelsCheck = getModelsForLang(currentLang);
+	    if (defaultModelType && defaultModelType !== 'human' && defaultModelType !== 'custom' &&
+	        !langModelsCheck.some(m => m.id === defaultModelType)) {
+	      defaultModelType = i === 1 ? getDefaultModelForLang(currentLang) : 'human';
+	    }
+    const defaultCustomModel = saved ? saved.aiCustomModel : "";
+	    const defaultTemperature = saved ? saved.temperature : "0.4";
 
     // Create model options HTML (include a 'human' option + available models + custom)
-    const modelOptionsHtml = `<option value="human">👤 Human</option>` +
-      AVAILABLE_MODELS.map(m =>
-        `<option value="${m.id}" ${m.id === defaultSentenceModel ? 'selected' : ''}>${m.name}</option>`
-      ).join("") + `<option value="custom">🔧 Custom model...</option>`;
+    const langModels = getModelsForLang(currentLang);
+    const modelOptionsHtml = `<option value="human">${t('humanOption')}</option>` +
+      langModels.map(m =>
+        `<option value="${m.id}">${m.name}</option>`
+      ).join("") + `<option value="custom">${t('customModelOption')}</option>`;
     // AI-only options (no human option)
-    const aiModelOptionsHtml = AVAILABLE_MODELS.map(m =>
-      `<option value="${m.id}" ${m.id === defaultSentenceModel ? 'selected' : ''}>${m.name}</option>`
-    ).join("") + `<option value="custom">🔧 Custom model...</option>`;
+    const aiModelOptionsHtml = langModels.map(m =>
+      `<option value="${m.id}">${m.name}</option>`
+    ).join("") + `<option value="custom">${t('customModelOption')}</option>`;
 
     row.innerHTML = `
-      <input class="player-name" placeholder="Player ${i+1} name">
+      <input class="player-name" placeholder="${t('playerNamePlaceholder', i+1)}" value="${defaultName}">
       <select class="player-avatar" style="font-size:1.3rem;">
         ${AVATARS.map(a => `<option ${a === defaultAvatar ? 'selected' : ''}>${a}</option>`).join("")}
       </select>
-      <div class="ai-options" style="display:none; flex-wrap:wrap; align-items:center;">
+      <div class="ai-options" style="display:none; flex-wrap:wrap; align-items:center; gap:0.3rem;">
         <span class="ai-avatar-display">${createRobotAvatar(AI_COLORS[i % AI_COLORS.length])}</span>
-        <select class="ai-model-select" style="min-width:160px; display:none;">
+        <select class="ai-model-select" style="min-width:100px; display:none; font-size:0.8rem;">
           ${aiModelOptionsHtml}
         </select>
-        <input class="ai-custom-model" type="text" placeholder="Model ID" style="display:none; width:120px; font-size:0.85rem;">
-        <button type="button" class="ai-load-btn" style="font-size:0.8rem; padding:0.3rem 0.5rem;">Load</button>
-        <span class="ai-model-status model-status not-loaded" style="font-size:0.8rem;">Not loaded</span>
+        <input class="ai-custom-model" type="text" placeholder="Model ID" style="display:none; width:90px; font-size:0.8rem;" value="${defaultCustomModel}">
+	        <label style="font-size:0.8rem; display:flex; align-items:center; gap:0.35rem; margin-left:0.5rem;">
+	          Temp: <input class="ai-temperature" type="number" min="0" max="2" step="0.1" value="${defaultTemperature}" style="width:30px; padding:2px 3px; font-size:0.8rem;">
+	        </label>
+        <button type="button" class="ai-load-btn" style="font-size:0.75rem; padding:0.2rem 0.4rem;">${t('loadBtn')}</button>
+        <span class="ai-model-status model-status not-loaded" style="font-size:0.75rem;">${t('notLoaded')}</span>
       </div>
       <select class="player-model" style="font-size:0.9rem; margin-left:auto;">
         ${modelOptionsHtml}
@@ -1102,11 +1746,11 @@ function renderPlayerInputs() {
     function getAIModelId() {
       // Prefer the explicit modelSelect choice (rightmost). If it's 'custom', use the custom input.
       if (modelSelect && modelSelect.value && modelSelect.value !== 'human') {
-        return modelSelect.value === 'custom' ? (aiCustomModel.value.trim() || 'Xenova/distilgpt2') : modelSelect.value;
+        return modelSelect.value === 'custom' ? (aiCustomModel.value.trim() || 'Xenova/pythia-410m-deduped') : modelSelect.value;
       }
       // Fallback to aiModelSelect if present
       if (aiModelSelect) {
-        return aiModelSelect.value === 'custom' ? (aiCustomModel.value.trim() || 'Xenova/distilgpt2') : aiModelSelect.value;
+        return aiModelSelect.value === 'custom' ? (aiCustomModel.value.trim() || 'Xenova/pythia-410m-deduped') : aiModelSelect.value;
       }
       return null;
     }
@@ -1121,17 +1765,17 @@ function renderPlayerInputs() {
     function updateAIStatus() {
       const modelId = getAIModelId();
       if (aiGenerators[modelId]) {
-        aiStatusEl.textContent = "✓ Ready";
+        aiStatusEl.textContent = t('ready');
         aiStatusEl.className = "ai-model-status model-status ready";
       } else {
-        aiStatusEl.textContent = "Not loaded";
+        aiStatusEl.textContent = t('notLoaded');
         aiStatusEl.className = "ai-model-status model-status not-loaded";
       }
     }
 
     aiLoadBtn.onclick = async () => {
       const modelId = getAIModelId();
-      aiStatusEl.textContent = "Loading...";
+      aiStatusEl.textContent = t('loading');
       aiStatusEl.className = "ai-model-status model-status loading";
       aiLoadBtn.disabled = true;
 
@@ -1141,13 +1785,13 @@ function renderPlayerInputs() {
             aiStatusEl.textContent = `${Math.round(progress.progress)}%`;
           }
         });
-        aiStatusEl.textContent = "✓ Ready";
+        aiStatusEl.textContent = t('ready');
         aiStatusEl.className = "ai-model-status model-status ready";
       } catch (e) {
         console.error("AI model load error:", e);
-        aiStatusEl.textContent = "Error!";
+        aiStatusEl.textContent = t('error');
         aiStatusEl.className = "ai-model-status model-status not-loaded";
-        alert(`Failed to load model: ${e.message}\n\nMake sure the model exists and is compatible with Transformers.js.`);
+        alert(t('failedToLoadModelAI', e.message));
       }
       aiLoadBtn.disabled = false;
     };
@@ -1169,10 +1813,10 @@ function renderPlayerInputs() {
         updateLiveModelNumbering();
       } else {
         // Human selected
-        nameInput.value = "";
+        if (!nameInput.value) nameInput.value = ""; // Keep existing name if any
         nameInput.disabled = false;
         nameInput.style.background = "";
-        nameInput.placeholder = `Player ${i+1} name`;
+        nameInput.placeholder = t('playerNamePlaceholder', i+1);
         avatarSelect.style.display = "";
         aiOptions.style.display = "none";
       }
@@ -1193,9 +1837,11 @@ function renderPlayerInputs() {
     });
 
     playerInputsDiv.appendChild(row);
-    // Initialize row UI according to default selection (defaults second player to AI)
-    modelSelect.value = (i === 1 ? defaultSentenceModel : 'human');
+    
+    // Set the model type and trigger change event to properly initialize UI
+    modelSelect.value = defaultModelType;
     modelSelect.dispatchEvent(new Event('change'));
+    
     // Update numbering after initializing this row
     updateLiveModelNumbering();
   }
@@ -1228,12 +1874,12 @@ document.getElementById("eyeBtn").onclick = () => {
 
 document.getElementById("startBtn").onclick = () => {
   const text = sentenceInput.value.trim();
-  if (!text) return alert("Please enter a sentence or generate one with AI.");
+  if (!text) return alert(t('pleaseEnterSentence'));
 
   const sentence = text.split(/\s+/);
 
   if (sentence.length < 2) {
-    return alert("The sentence must have at least 2 words.");
+    return alert(t('atLeastTwoWords'));
   }
 
   const rows = [...playerInputsDiv.querySelectorAll(".player-row")];
@@ -1253,9 +1899,9 @@ document.getElementById("startBtn").onclick = () => {
 
     if (isAI) {
       // Determine modelId (prefer the rightmost modelSelect, but allow aiModelSelect fallback)
-      let modelId = modelValue === 'custom' ? (aiCustomModel.value.trim() || 'Xenova/distilgpt2') : modelValue;
+      let modelId = modelValue === 'custom' ? (aiCustomModel.value.trim() || 'Xenova/pythia-410m-deduped') : modelValue;
       if (!modelId && aiModelSelect) {
-        modelId = aiModelSelect.value === 'custom' ? (aiCustomModel.value.trim() || 'Xenova/distilgpt2') : aiModelSelect.value;
+        modelId = aiModelSelect.value === 'custom' ? (aiCustomModel.value.trim() || 'Xenova/pythia-410m-deduped') : aiModelSelect.value;
       }
 
       // Check if model is loaded
@@ -1272,11 +1918,17 @@ document.getElementById("startBtn").onclick = () => {
       // Update setup name input to match numbered display name for consistency
       nameInput.value = displayName;
 
+      // Get temperature setting for this AI player
+      const temperatureInput = r.querySelector(".ai-temperature");
+	      const temperature = temperatureInput ? parseFloat(temperatureInput.value) : 0.4;
+
       players.push({
+        id: i, // Unique player identifier for caching
         name: displayName,
         avatar: avatar,
         isAI: true,
         modelId: modelId,
+        temperature: temperature,
         lives: maxLives,
         score: 0
       });
@@ -1284,6 +1936,7 @@ document.getElementById("startBtn").onclick = () => {
       const name = nameInput.value || `Player ${i+1}`;
       const avatar = avatarSelect.value;
       players.push({
+        id: i, // Unique player identifier for caching
         name,
         avatar,
         isAI: false,
@@ -1295,12 +1948,8 @@ document.getElementById("startBtn").onclick = () => {
 
   // Warn about unloaded AI models
   if (unloadedModels.length > 0) {
-    const modelList = unloadedModels.map(m => `Player ${m.player}: ${m.modelId}`).join("\n");
-    const proceed = confirm(
-      `The following AI players have models that are not loaded:\n\n${modelList}\n\n` +
-      `The models will be downloaded when it's their turn (this may take time).\n\n` +
-      `Do you want to continue anyway?`
-    );
+    const modelList = unloadedModels.map(m => t('unloadedPlayer', m.player, m.modelId)).join("\n");
+    const proceed = confirm(t('unloadedModelsConfirm', modelList));
     if (!proceed) return;
   }
 
@@ -1313,7 +1962,11 @@ document.getElementById("startBtn").onclick = () => {
     turn: 0,
     log: [],
     finished: false,
-    startTime: new Date()
+    startTime: new Date(),
+    guessesForCurrentWord: [], // Track all guesses made for the word at game.revealed (from all players/models)
+    exhaustedForWord: new Set(), // Player IDs that have hit 0 lives for the current word
+    aiGuessCache: {}, // Per-player cache: { playerId: { wordIndex: [guess1, guess2, ...] } }
+    lastWordIndexCached: {} // Track which word index each player cached guesses for: { playerId: wordIndex }
   };
 
   setupDiv.style.display = "none";
@@ -1360,16 +2013,38 @@ guessInput.addEventListener("keydown", e => {
 
 document.getElementById("guessBtn").onclick = () => submitGuess();
 
+// Advance turn, skipping players who are exhausted for this word
+function advanceTurn() {
+  let next = (game.turn + 1) % game.players.length;
+  let steps = 0;
+  while (game.exhaustedForWord.has(game.players[next].id) && steps < game.players.length) {
+    next = (next + 1) % game.players.length;
+    steps++;
+  }
+  game.turn = next;
+}
+
 function failCurrentWord() {
   game.revealed++;
+  game.exhaustedForWord.clear();
   aiGuessHistory = []; // Clear AI guess history for new word
+  game.guessesForCurrentWord = []; // Reset tracker for new word
+  // Clear all players' caches for new word
+  game.players.forEach(player => {
+    if (game.aiGuessCache[player.id]) {
+      game.aiGuessCache[player.id] = {};
+    }
+    if (game.lastWordIndexCached[player.id]) {
+      game.lastWordIndexCached[player.id] = -1;
+    }
+  });
 
   addLogEntry({
     timeFormatted: formatTime(new Date()),
     player: "SYSTEM",
     playerAvatar: "💥",
     isAI: false,
-    guess: "(word revealed)",
+    guess: t('wordRevealed'),
     target: game.sentence[game.revealed - 1],
     correct: false
   });
@@ -1398,7 +2073,7 @@ function addScoreLog(player, text) {
   div.innerHTML = `
     <span class="log-time">${formatTime(new Date())}</span>
     <span class="log-player">${player.avatar} ${player.name}</span>
-    <span class="log-guess">Score</span>
+    <span class="log-guess">${t('score')}</span>
     <span class="log-result ${text.startsWith('+') ? 'correct' : 'wrong'}">
       ${text}
     </span>
@@ -1427,6 +2102,7 @@ function submitGuess(guessOverride = null) {
     player: currentPlayer.name,
     playerAvatar: currentPlayer.avatar,
     isAI: currentPlayer.isAI,
+    context: game.sentence.slice(0, game.revealed).join(" "),
     guess,
     target,
     correct: ok
@@ -1434,6 +2110,9 @@ function submitGuess(guessOverride = null) {
 
   game.log.push(logEntry);
   addLogEntry(logEntry);
+  
+  // Track this guess for the current word
+  game.guessesForCurrentWord.push(guess.toLowerCase());
 
   if (ok) {
     const livesLost = game.maxLives - currentPlayer.lives;
@@ -1442,23 +2121,37 @@ function submitGuess(guessOverride = null) {
     currentPlayer.score += points;
     game.revealed++;
     aiGuessHistory = []; // Clear AI guess history for new word
+    game.guessesForCurrentWord = []; // Reset tracker for new word
+    // Clear all players' caches for new word
+    game.players.forEach(player => {
+      if (game.aiGuessCache[player.id]) {
+        game.aiGuessCache[player.id] = {};
+      }
+      if (game.lastWordIndexCached[player.id]) {
+        game.lastWordIndexCached[player.id] = -1;
+      }
+    });
 
     addScoreLog(currentPlayer, `+${points}`);
     resetLivesForAllPlayers();
   } else {
     currentPlayer.lives--;
+    if (currentPlayer.lives <= 0) {
+      game.exhaustedForWord.add(currentPlayer.id);
+    }
   }
 
-  game.turn = (game.turn + 1) % game.players.length;
+  advanceTurn();
   guessInput.value = "";
 
   if (game.revealed >= game.sentence.length) {
     game.finished = true;
     showGameOver(true);
-  } else if (currentPlayer.lives <= 0) {
-    currentPlayer.score -= 10;
-    addScoreLog(currentPlayer, "-10 (failed word)");
-
+  } else if (currentPlayer.lives <= 0 && game.exhaustedForWord.size >= game.players.length) {
+    game.players.forEach(p => {
+      p.score -= 10;
+      addScoreLog(p, "-10 (failed word)");
+    });
     failCurrentWord();
     resetLivesForAllPlayers();
   }
@@ -1489,7 +2182,7 @@ function maybeTriggerAITurn() {
   }
 }
 
-document.getElementById("skipBtn").onclick = () => {
+function performSkip() {
   if (game.finished) return;
 
   const currentPlayer = game.players[game.turn];
@@ -1500,22 +2193,29 @@ document.getElementById("skipBtn").onclick = () => {
     player: currentPlayer.name,
     playerAvatar: currentPlayer.avatar,
     isAI: currentPlayer.isAI,
-    guess: "(skipped turn)",
+    guess: t('skippedTurn'),
     target: game.sentence[game.revealed],
     correct: false
   });
 
   if (currentPlayer.lives <= 0) {
-    currentPlayer.score -= 10;
-    addScoreLog(currentPlayer, "-10 (failed word)");
-    failCurrentWord();
-    resetLivesForAllPlayers();
+    game.exhaustedForWord.add(currentPlayer.id);
+    if (game.exhaustedForWord.size >= game.players.length) {
+      game.players.forEach(p => {
+        p.score -= 10;
+        addScoreLog(p, "-10 (failed word)");
+      });
+      failCurrentWord();
+      resetLivesForAllPlayers();
+    }
   }
 
-  game.turn = (game.turn + 1) % game.players.length;
+  advanceTurn();
   render();
   maybeTriggerAITurn();
-};
+}
+
+document.getElementById("skipBtn").onclick = performSkip;
 
 document.getElementById("discloseBtn").onclick = () => {
   if (game.finished) return;
@@ -1530,6 +2230,16 @@ function discloseWord(penalty = 10) {
 
   game.revealed++;
   aiGuessHistory = []; // Clear AI guess history for new word
+  game.guessesForCurrentWord = []; // Reset tracker for new word
+  // Clear all players' caches for new word
+  game.players.forEach(player => {
+    if (game.aiGuessCache[player.id]) {
+      game.aiGuessCache[player.id] = {};
+    }
+    if (game.lastWordIndexCached[player.id]) {
+      game.lastWordIndexCached[player.id] = -1;
+    }
+  });
   resetLivesForAllPlayers();
 
   addLogEntry({
@@ -1537,7 +2247,7 @@ function discloseWord(penalty = 10) {
     player: "SYSTEM",
     playerAvatar: "📢",
     isAI: false,
-    guess: "(word disclosed)",
+    guess: t('wordDisclosed'),
     target: game.sentence[game.revealed - 1],
     correct: false
   });
@@ -1556,9 +2266,13 @@ function addLogEntry(entry) {
   const logEl = document.getElementById("gameLog");
   const div = document.createElement("div");
   div.className = "log-entry";
+  const contextHtml = entry.context
+    ? `<span class="log-context" title="${entry.context}">${entry.context} →</span>`
+    : '';
   div.innerHTML = `
     <span class="log-time">${entry.timeFormatted}</span>
-    <span class="log-player">${entry.playerAvatar} ${entry.player}${entry.isAI ? ' (AI)' : ''}</span>
+    <span class="log-player">${entry.playerAvatar} ${entry.player}${entry.isAI ? t('aiLabel') : ''}</span>
+    ${contextHtml}
     <span class="log-guess">"${entry.guess}"</span>
     <span class="log-result ${entry.correct ? 'correct' : 'wrong'}">${entry.correct ? '✓' : '✗'}</span>
   `;
@@ -1577,83 +2291,248 @@ async function doAITurn() {
   const thinkingEl = document.getElementById("aiThinking");
   const thinkingText = document.getElementById("aiThinkingText");
 
-  thinkingText.textContent = `${currentPlayer.name} is thinking`;
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`[AI-TURN] Player ${game.turn}: ${currentPlayer.name} (ID: ${currentPlayer.id}, Model: ${currentPlayer.modelId || 'HUMAN'})`);
+  console.log(`${'='.repeat(80)}`);
+
+  thinkingText.textContent = t('thinkingPlayer', currentPlayer.name);
   thinkingEl.style.display = "flex";
   guessInput.disabled = true;
   document.getElementById("guessBtn").disabled = true;
 
   try {
     const generator = await ensureAIModel(currentPlayer.modelId);
+    const playerId = currentPlayer.id;
 
-    thinkingText.textContent = `${currentPlayer.name} is thinking`;
+    thinkingText.textContent = t('thinkingPlayer', currentPlayer.name);
 
-    const revealedWords = game.sentence.slice(0, game.revealed).join(" ");
-    const prompt = revealedWords + " ";
+	    const wordIndex = game.revealed;
+	    const alreadyGuessed = new Set(game.guessesForCurrentWord.map(g => g.toLowerCase()));
+	    const revealedWords = game.sentence.slice(0, game.revealed).join(" ");
+	    // Intentionally do not end the prompt with a space; GPT-style tokenizers tend to emit the
+	    // next word starting with a space, which we use to ensure we only accept whole-word guesses.
+	    const prompt = revealedWords;
 
-    // Generate more tokens to ensure we get a complete word
-    // (tokens ≠ words due to BPE tokenization)
-    let result = await generateText(generator, prompt, 30);
-
-    // Find the first complete word:
-    // A complete word is followed by a space, punctuation, or end of text
-    result = result.trim();
-
-    // Split into potential words
-    const words = result.split(/\s+/);
-
-    let guess = "";
-
-    // Take the first word that looks complete (has a following space in original)
-    // Or just take the first word if we have multiple
-    if (words.length >= 2) {
-      // First word is complete (there's a space after it)
-      guess = words[0];
-    } else if (words.length === 1) {
-      // Only one "word" - might be incomplete, but use it
-      guess = words[0];
+    // Initialize per-player cache if needed
+    if (!game.aiGuessCache[playerId]) {
+      game.aiGuessCache[playerId] = {};
+    }
+    if (!game.lastWordIndexCached[playerId]) {
+      game.lastWordIndexCached[playerId] = -1;
     }
 
-    // Clean up: remove punctuation, keep only word characters
-    guess = guess.replace(/[^\w'-]/g, '').toLowerCase();
+    // Check if we have cached guesses for this word from this player
+    let availableGuesses = [];
+    if (game.lastWordIndexCached[playerId] === wordIndex && game.aiGuessCache[playerId][wordIndex] && game.aiGuessCache[playerId][wordIndex].length > 0) {
+      // Reuse cached guesses for this player, filtering out anything guessed since caching
+      availableGuesses = game.aiGuessCache[playerId][wordIndex].filter(w => !alreadyGuessed.has(w.toLowerCase()));
+      game.aiGuessCache[playerId][wordIndex] = availableGuesses;
+      console.log(`\n[AI-CACHE-HIT] ${currentPlayer.name} (player ${playerId}) - Word #${wordIndex} ("${game.sentence[wordIndex]}"): Reusing ${availableGuesses.length} cached guesses (after re-filtering)`);
+      console.log(`[AI-CACHE-CONTENTS] Available guesses: ${availableGuesses.map(w => `"${w}"`).join(", ")}`);
+    } else {
+	      // Generate new guesses for this player (5 faster than 10, good initial batch)
+	      console.log(`\n[AI-GEN] ${currentPlayer.name} - Word #${wordIndex} ("${game.sentence[wordIndex]}"): Starting generation...`);
+	      console.log(`[AI-PROMPT] Context: "${prompt.trim()}"`);
+	      
+		      const modelId = currentPlayer.modelId || "";
+		      const isSmolLM3 = /SmolLM3/i.test(modelId);
+		      const isQwen25 = /Qwen2\.5/i.test(modelId);
+		      const modelMeta = AVAILABLE_MODELS.find(m => m.id === modelId);
+		      const modelDisplayName = modelMeta ? modelMeta.name : "";
+		      const isSlowModel = /\(slow\)/i.test(modelDisplayName) || /Qwen|Mistral|Phi-2|SmolLM3/i.test(modelId);
+		      const genInput = isSmolLM3
+		        ? [
+	            { role: "system", content: "/no_think" },
+	            {
+	              role: "user",
+	              content:
+	                `You are playing a next-word guessing game.\n\n` +
+	                `Text so far:\n${revealedWords}\n\n` +
+	                `Respond with EXACTLY ONE next word to continue the text.\n` +
+	                `Rules:\n` +
+	                `- Output must begin with a single leading space, then the word.\n` +
+	                `- No quotes, no punctuation, no extra words.\n` +
+	                `- Preserve correct capitalization (e.g., output " I" not " i").`
+	            },
+	          ]
+	        : prompt;
+	      const baseTemp = (typeof currentPlayer.temperature === "number") ? currentPlayer.temperature : 0.4;
+	      const maxTokens = isSmolLM3 ? 8 : (isQwen25 ? 8 : 6);
+	      const numCandidates = isSmolLM3 ? 5 : (isSlowModel ? 2 : 3);
+	      let results = await generateMultipleTexts(
+	        generator,
+	        genInput,
+	        maxTokens,
+	        numCandidates,
+	        baseTemp,
+	        { top_p: 0.85, top_k: 40, do_sample: true }
+	      );
 
-    // Avoid empty guesses or very short fragments
-    if (!guess || guess.length < 2) {
-      // Fallback: use a common word
-      const fallbacks = ["the", "a", "is", "to", "and", "of", "in", "that", "it", "was"];
-      guess = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+	      // If we couldn't extract any valid word guesses, try one quick resample with slightly
+	      // higher temperature to escape repetition, without spending lots of tokens.
+	      if (!results || results.length === 0) {
+	        results = await generateMultipleTexts(
+	          generator,
+	          genInput,
+	          maxTokens,
+	          Math.max(1, Math.floor(numCandidates / 2)),
+	          Math.min(1.2, baseTemp + 0.15),
+	          { top_p: 0.9, top_k: 40, do_sample: true }
+	        );
+	      }
+      console.log(`[AI-RESULTS-COUNT] Received ${results.length} results from model:`);
+      results.forEach((r, i) => {
+        console.log(`  ${i+1}. "${r.trim().substring(0, 60)}"`);
+      });
+
+	      // Extract valid first words with detailed logging
+	      const extractedWords = [];
+	      console.log(`[AI-EXTRACT-STEP] Extracting first words:`);
+		      for (let i = 0; i < results.length; i++) {
+	        const result = results[i];
+	        if (!result || typeof result !== "string") {
+	          console.log(`  ${i+1}. ✗ Empty result`);
+	          continue;
+	        }
+
+		        const firstWord = extractWordGuessFromCompletion(result, { requireLeadingSpace: true });
+	        if (!firstWord) {
+	          console.log(`  ${i+1}. ✗ "${result.trim().substring(0, 30)}" → No valid first word`);
+	        } else {
+	          extractedWords.push(firstWord);
+	          console.log(`  ${i+1}. ✓ "${result.trim().substring(0, 30)}" → Valid word: "${firstWord}"`);
+	        }
+		      }
+
+	      if (extractedWords.length === 0) {
+	        console.log(`[AI-RETRY] No valid word extracted; resampling once with higher temperature...`);
+	        const retryResults = await generateMultipleTexts(
+	          generator,
+	          genInput,
+	          maxTokens,
+	          Math.max(1, Math.floor(numCandidates / 2)),
+	          Math.min(1.2, baseTemp + 0.15),
+	          { top_p: 0.9, top_k: 40, do_sample: true }
+	        );
+	        if (retryResults && retryResults.length > 0) {
+	          results = retryResults;
+	          console.log(`[AI-RESULTS-COUNT] (retry) Received ${results.length} results from model:`);
+	          results.forEach((r, i) => {
+	            console.log(`  ${i+1}. "${r.trim().substring(0, 60)}"`);
+	          });
+
+	          extractedWords.length = 0;
+	          for (let i = 0; i < results.length; i++) {
+	            const result = results[i];
+	            if (!result || typeof result !== "string") continue;
+	            const firstWord = extractWordGuessFromCompletion(result, { requireLeadingSpace: true });
+	            if (firstWord) extractedWords.push(firstWord);
+	          }
+	        }
+	      }
+
+	      console.log(`[AI-EXTRACTED-COUNT] Found ${extractedWords.length} valid first words: ${extractedWords.map(w => `"${w}"`).join(", ") || "(none)"}`);
+
+	      // Deduplicate extracted words (case-insensitive), but keep original casing for display.
+	      const uniqueExtracted = [];
+	      const seenLower = new Set();
+	      const duplicatesLower = new Set();
+	      extractedWords.forEach(w => {
+	        const k = w.toLowerCase();
+	        if (seenLower.has(k)) {
+	          duplicatesLower.add(k);
+	        } else {
+	          seenLower.add(k);
+	          uniqueExtracted.push(w);
+	        }
+	      });
+	      if (duplicatesLower.size > 0) {
+	        console.log(`[AI-DEDUP] Removed duplicates (case-insensitive): ${Array.from(duplicatesLower).map(w => `"${w}"`).join(", ")}`);
+	      }
+
+      // Filter out already-guessed words (by any player/model)
+      const alreadyGuessedList = Array.from(alreadyGuessed);
+      console.log(`[AI-CHECK-DUPLICATES] Word #${wordIndex} already guessed: ${alreadyGuessedList.length > 0 ? alreadyGuessedList.map(w => `"${w}"`).join(", ") : "(none)"}`);
+      
+	      availableGuesses = uniqueExtracted.filter(w => !alreadyGuessed.has(w.toLowerCase()));
+      
+	      if (availableGuesses.length < uniqueExtracted.length) {
+	        const filtered = uniqueExtracted.filter(w => alreadyGuessed.has(w.toLowerCase()));
+	        console.log(`[AI-FILTERED] Removed (already guessed): ${filtered.map(w => `"${w}"`).join(", ")}`);
+	      }
+
+      console.log(`[AI-CACHE-STORE] Storing ${availableGuesses.length} valid guesses for player ${playerId}: ${availableGuesses.map(w => `"${w}"`).join(", ") || "(none)"}`);
+
+      // Cache these guesses for this player and word
+      game.aiGuessCache[playerId][wordIndex] = availableGuesses;
+      game.lastWordIndexCached[playerId] = wordIndex;
     }
 
-    // Avoid repeating recent guesses by trying alternatives
-    if (aiGuessHistory.includes(guess.toLowerCase()) && words.length > 1) {
-      // Try the second word instead
-      const altGuess = words[1].replace(/[^\w'-]/g, '').toLowerCase();
-      if (altGuess && altGuess.length >= 2 && !aiGuessHistory.includes(altGuess)) {
-        console.log(`AI avoiding repeat "${guess}", using "${altGuess}" instead`);
-        guess = altGuess;
+    // If cache is exhausted, escalate temperature + candidates and retry up to 3 times
+    if (availableGuesses.length === 0) {
+      const modelId = currentPlayer.modelId || "";
+      const isSmolLM3 = /SmolLM3/i.test(modelId);
+      const isSlowModel = /\(slow\)/i.test((AVAILABLE_MODELS.find(m => m.id === modelId) || {}).name || "") || /Qwen|Mistral|Phi-2|SmolLM3/i.test(modelId);
+      const baseTemp = (typeof currentPlayer.temperature === "number") ? currentPlayer.temperature : 0.4;
+      const maxTokens = isSmolLM3 ? 8 : 6;
+      const genInput = isSmolLM3
+        ? [{ role: "system", content: "/no_think" }, { role: "user", content: `You are playing a next-word guessing game.\n\nText so far:\n${revealedWords}\n\nRespond with EXACTLY ONE next word to continue the text.\nRules:\n- Output must begin with a single leading space, then the word.\n- No quotes, no punctuation, no extra words.\n- Preserve correct capitalization (e.g., output " I" not " i").` }]
+        : prompt;
+
+      for (let attempt = 1; attempt <= 3 && availableGuesses.length === 0; attempt++) {
+        const escTemp = Math.min(1.5, baseTemp + attempt * 0.3);
+        const escCandidates = isSlowModel ? attempt + 1 : (attempt === 1 ? 6 : attempt === 2 ? 10 : 15);
+        console.log(`[AI-ESCALATE] Attempt ${attempt}: temp=${escTemp.toFixed(2)}, candidates=${escCandidates}`);
+        const escResults = await generateMultipleTexts(generator, genInput, maxTokens, escCandidates, escTemp, { top_p: 0.95, top_k: 50, do_sample: true });
+        const escWords = [];
+        for (const r of escResults) {
+          const w = extractWordGuessFromCompletion(r, { requireLeadingSpace: true });
+          if (w) escWords.push(w);
+        }
+        // Deduplicate
+        const seen = new Set();
+        const unique = escWords.filter(w => { const k = w.toLowerCase(); return seen.has(k) ? false : (seen.add(k), true); });
+        availableGuesses = unique.filter(w => !alreadyGuessed.has(w.toLowerCase()));
+        console.log(`[AI-ESCALATE] Attempt ${attempt} result: ${availableGuesses.length} new candidates: ${availableGuesses.map(w => `"${w}"`).join(", ") || "(none)"}`);
+      }
+      if (availableGuesses.length > 0) {
+        game.aiGuessCache[playerId][wordIndex] = availableGuesses;
       }
     }
 
-    // Track this guess (keep last 5)
-    aiGuessHistory.push(guess.toLowerCase());
-    if (aiGuessHistory.length > 5) aiGuessHistory.shift();
-
-    console.log(`AI generated: "${result}" -> guess: "${guess}"`);
+    // Pick first available guess from this player's cache
+    let guess = "";
+    if (availableGuesses.length > 0) {
+      guess = availableGuesses.shift(); // Remove and use first
+      game.aiGuessCache[playerId][wordIndex] = availableGuesses; // Update this player's cache
+      console.log(`[AI-PICK] ${currentPlayer.name} (player ${playerId}) picks: "${guess}"`);
+      console.log(`[AI-PICK-REMAINING] ${availableGuesses.length} guesses left in cache for next turn: ${availableGuesses.map(w => `"${w}"`).join(", ") || "(none)"}`);
+    } else {
+      console.log(`\n[AI-SKIP] ${currentPlayer.name} (player ${playerId}) has NO valid guesses for word #${wordIndex} ("${game.sentence[wordIndex]}") after escalation. SKIPPING TURN.`);
+    }
 
     thinkingEl.style.display = "none";
     guessInput.disabled = false;
     document.getElementById("guessBtn").disabled = false;
 
-    submitGuess(guess);
+    if (guess) {
+      submitGuess(guess);
+    } else {
+      // No valid guess found - skip turn
+      performSkip();
+    }
 
   } catch (e) {
-    console.error("AI error:", e);
+    console.error("[AI-ERROR] Full error:", e);
+    console.error("[AI-ERROR] Message:", e.message);
+    console.error("[AI-ERROR] Stack:", e.stack);
     thinkingEl.style.display = "none";
     guessInput.disabled = false;
     document.getElementById("guessBtn").disabled = false;
 
-    const fallbacks = ["the", "a", "is", "to", "and", "of", "in", "that", "it", "was"];
-    const guess = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-    submitGuess(guess);
+    // On error, skip the turn
+    console.log("[AI-FALLBACK] Skipping turn due to model error");
+    performSkip();
   }
 }
 
@@ -1662,6 +2541,7 @@ async function doAITurn() {
 ====================== */
 
 function showGameOver(won) {
+  game.won = won;
   const goEl = document.getElementById("gameOver");
   goEl.style.display = "block";
   goEl.className = "game-over " + (won ? "win" : "lose");
@@ -1670,32 +2550,40 @@ function showGameOver(won) {
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
 
+  const correctByPlayer = {};
+  game.log.forEach(entry => {
+    if (entry.correct) correctByPlayer[entry.player] = (correctByPlayer[entry.player] || 0) + 1;
+  });
+
   const leaderboard = [...game.players]
     .sort((a, b) => b.score - a.score)
-    .map((p, i) => `
-      <div style="display:flex; justify-content:space-between; padding:0.3rem 0;">
-        <span>${i + 1}. ${p.avatar} ${p.name}</span>
-        <strong>${p.score} pts</strong>
+    .map((p, i) => {
+      const nWords = correctByPlayer[p.name] || 0;
+      return `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0.3rem 0;">
+        <span>${i + 1}. ${p.avatar} ${p.name}${p.isAI ? t('aiLabel') : ''}</span>
+        <span><strong>${p.score} ${t('pts')}</strong> <small style="opacity:0.7">· ${t('wordsGuessed', nWords)}</small></span>
       </div>
-    `)
+    `;
+    })
     .join("");
 
   goEl.innerHTML = `
-    <h2>🏁 Game Finished</h2>
+    <h2>${t('gameFinished')}</h2>
 
     <div class="final-sentence">
       <strong>${game.sentence.join(" ")}</strong>
     </div>
 
     <div style="margin:1rem 0;">
-      <h3 style="margin-bottom:0.5rem;">🏆 Leaderboard</h3>
+      <h3 style="margin-bottom:0.5rem;">${t('leaderboard')}</h3>
       <div id="leaderboard" style="background:#f5f7fa; padding:0.8rem; border-radius:8px;">
         ${leaderboard}
       </div>
     </div>
 
-    <button class="btn-primary" onclick="location.reload()">Play Again</button>
-    <button class="btn-secondary" style="margin-left:0.5rem;" onclick="downloadLog()">Download Log</button>
+    <button class="btn-primary" onclick="location.reload()">${t('playAgain')}</button>
+    <button class="btn-secondary" style="margin-left:0.5rem;" onclick="downloadLog()">${t('downloadLog')}</button>
   `;
 
   document.getElementById("guessInput").disabled = true;
@@ -1742,8 +2630,9 @@ function renderPlayers() {
       <div class="player ${i === game.turn ? 'active' : ''} ${p.isAI ? 'ai' : ''}">
         <span class="avatar">${defaultAvatar}</span>
         <div class="player-info">
-          <div class="player-name">${p.name} — ${p.score} pts</div>
+          <div class="player-name" title="${p.name}">${p.name}</div>
           <div class="player-lives">${renderLives(p.lives, game.maxLives)}</div>
+          <div class="player-score">${p.score} ${t('pts')}</div>
         </div>
       </div>
     `;
@@ -1782,6 +2671,7 @@ document.getElementById("optPunct").onchange = e => opts.ignorePunctuation = e.t
 document.getElementById("optLev").oninput = e => opts.levenshtein = Number(e.target.value) || 0;
 
 document.getElementById("backBtn").onclick = () => {
+  if (game) game.finished = true; // stop any running AI turn
   gameDiv.style.display = "none";
   setupDiv.style.display = "block";
   document.getElementById("guessInput").disabled = false;
