@@ -622,14 +622,19 @@ button:disabled {
 	      <div class="inline-input">
 	        <input id="wordCount" type="number" class="word-count-input" min="3" max="20" placeholder="5-10" style="width:90px;">
 	        <span style="color:#666;" data-i18n="words">words</span>
-	        <span style="color:#999; font-size:0.85rem;"></span>
 	      </div>
-		        <label style="margin-left:0.75rem;" data-i18n="temp">Temp:</label>
-		      <div class="inline-input">
-		        <input id="sentenceTemp" type="number" min="0" max="2" step="0.1" value="0.4" style="width:80px;">
-		      </div>
 	      <button class="btn-secondary" id="generateBtn" data-i18n="generateSentence">Generate Sentence</button>
 	    </div>
+    <div class="row">
+      <label data-i18n="sentenceDifficulty">Guess difficulty:</label>
+      <div class="difficulty-buttons" id="sentenceDifficultyBtns">
+        <button class="difficulty-btn" data-temp="0.1" data-i18n="predictableSentence">Predictable</button>
+        <button class="difficulty-btn selected" data-temp="0.4" data-i18n="balancedSentence">Balanced</button>
+        <button class="difficulty-btn" data-temp="0.9" data-i18n="surprisingSentence">Surprising</button>
+      </div>
+      <span style="color:#999; font-size:0.75rem; display:inline-flex; align-items:center; gap:0.3rem;" data-i18n="temp">Temp:</span>
+      <input id="sentenceTemp" type="number" min="0" max="2" step="0.1" value="0.4" style="width:55px; font-size:0.75rem; padding:0.2rem 0.4rem; color:#888;">
+    </div>
     <div class="row" style="margin-top:0.8rem;">
       <label data-i18n="languageModel">Language / Model:</label>
       <select id="sentenceModelSelect" style="min-width:180px;"></select>
@@ -751,6 +756,10 @@ const TRANSLATIONS = {
     downloadingModel: "Downloading model... (first time only, may be 50-500MB)",
     modelsRunLocally: "Models run locally in your browser using",
     loadModel: "Load Model",
+    sentenceDifficulty: "Guess difficulty:",
+    predictableSentence: "Predictable",
+    balancedSentence: "Balanced",
+    surprisingSentence: "Surprising",
     difficulty: "Difficulty (lives):",
     easy: "Easy (10)",
     normal: "Normal (5)",
@@ -822,7 +831,7 @@ const TRANSLATIONS = {
   },
   nl: {
     defaultSentence: "Je zult deze zin nooit raden.",
-    title: "Volgend Woord Duel",
+    title: "Woordstrijd",
     secretSentence: "Geheime Zin",
     enterManually: "Handmatig invoeren:",
     generateWithAI: "Genereren met AI:",
@@ -836,6 +845,10 @@ const TRANSLATIONS = {
     downloadingModel: "Model downloaden... (eerste keer, kan 50-500MB zijn)",
     modelsRunLocally: "Modellen draaien lokaal in uw browser met",
     loadModel: "Model laden",
+    sentenceDifficulty: "Raadmoeilijkheid:",
+    predictableSentence: "Voorspelbaar",
+    balancedSentence: "Gebalanceerd",
+    surprisingSentence: "Verrassend",
     difficulty: "Moeilijkheid (levens):",
     easy: "Makkelijk (10)",
     normal: "Normaal (5)",
@@ -906,7 +919,7 @@ const TRANSLATIONS = {
   },
   es: {
     defaultSentence: "Nunca adivinarás esta frase.",
-    title: "Duelo de Siguiente Palabra",
+    title: "Duelo de Palabras",
     secretSentence: "Frase Secreta",
     enterManually: "Introducir manualmente:",
     generateWithAI: "Generar con IA:",
@@ -920,6 +933,10 @@ const TRANSLATIONS = {
     downloadingModel: "Descargando modelo... (primera vez, puede ser 50-500MB)",
     modelsRunLocally: "Los modelos se ejecutan localmente en tu navegador con",
     loadModel: "Cargar modelo",
+    sentenceDifficulty: "Dificultad de frase:",
+    predictableSentence: "Predecible",
+    balancedSentence: "Equilibrado",
+    surprisingSentence: "Sorprendente",
     difficulty: "Dificultad (vidas):",
     easy: "Fácil (10)",
     normal: "Normal (5)",
@@ -990,7 +1007,10 @@ const TRANSLATIONS = {
   }
 };
 
-let currentLang = localStorage.getItem('lang') || 'en';
+const urlParams = new URLSearchParams(window.location.search);
+const urlLang = urlParams.get('lang');
+let currentLang = urlLang || localStorage.getItem('lang') || 'en';
+if (urlLang) localStorage.setItem('lang', urlLang);
 
 function t(key, ...args) {
   const val = (TRANSLATIONS[currentLang] || TRANSLATIONS.en)[key] ?? TRANSLATIONS.en[key] ?? key;
@@ -1497,7 +1517,6 @@ async function ensureAIModel(modelId) {
 		document.getElementById("generateBtn").onclick = async () => {
 		  const statusEl = document.getElementById("generateStatus");
 		  const wordCountInput = document.getElementById("wordCount");
-		  const sentenceTempInput = document.getElementById("sentenceTemp");
 
   if (!sentenceGenerator) {
     statusEl.textContent = t('pleaseLoadModel');
@@ -1862,6 +1881,24 @@ difficultyBtns.forEach(btn => {
     difficultyBtns.forEach(b => b.classList.remove("selected"));
     btn.classList.add("selected");
     maxLives = Number(btn.dataset.lives);
+  });
+});
+
+// Sentence difficulty presets → update temp input
+const sentenceDifficultyBtns = document.querySelectorAll("#sentenceDifficultyBtns .difficulty-btn");
+const sentenceTempInput = document.getElementById("sentenceTemp");
+sentenceDifficultyBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    sentenceDifficultyBtns.forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    sentenceTempInput.value = btn.dataset.temp;
+  });
+});
+// Deselect presets when temp is manually changed
+sentenceTempInput.addEventListener("input", () => {
+  const val = parseFloat(sentenceTempInput.value);
+  sentenceDifficultyBtns.forEach(btn => {
+    btn.classList.toggle("selected", parseFloat(btn.dataset.temp) === val);
   });
 });
 
