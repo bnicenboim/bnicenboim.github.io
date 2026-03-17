@@ -1,5 +1,6 @@
 ---
 title: "Publications & Presentations"
+freeze: false
 ---
 
 ```{r setup, include=FALSE,cache=FALSE}

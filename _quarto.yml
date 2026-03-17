@@ -1,8 +1,11 @@
 project:
   type: website
-  output-dir: docs  
+  output-dir: docs
   resources:
     - www/
+
+execute:
+  freeze: auto
 website:
   title: "Bruno Nicenboim"
   site-url: "https://bruno.nicenboim.me"

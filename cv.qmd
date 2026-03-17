@@ -1,5 +1,6 @@
 ---
 title: "CURRICULUM VITAE"
+freeze: false
 ---
 
 # Contact Information
@@ -116,7 +117,6 @@ output(books, withbrackets = FALSE)
 ## Published or accepted in peer-reviewed journals
 
 ```{r articles-cv,echo=FALSE,results="asis",cache=FALSE}
-
 for(y in sort(unique(as.numeric(articles$year)), decreasing  = TRUE)){
     articles_y <- suppressMessages(articles[list(year=as.character(y))])
     if(length(articles_y)!=0){    

@@ -2,7 +2,11 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://bruno.nicenboim.me/publications.html</loc>
-    <lastmod>2026-01-07T09:25:42.880Z</lastmod>
+    <lastmod>2026-03-17T15:41:06.598Z</lastmod>
+  </url>
+  <url>
+    <loc>https://bruno.nicenboim.me/www/word-prediction-explained_es.html</loc>
+    <lastmod>2026-03-17T12:56:01.706Z</lastmod>
   </url>
   <url>
     <loc>https://bruno.nicenboim.me/software.html</loc>
@@ -37,15 +41,11 @@
     <lastmod>2026-01-31T08:56:23.096Z</lastmod>
   </url>
   <url>
-    <loc>https://bruno.nicenboim.me/cv.html</loc>
-    <lastmod>2026-01-07T09:26:25.994Z</lastmod>
-  </url>
-  <url>
-    <loc>https://bruno.nicenboim.me/www/next-word-prediction.html</loc>
-    <lastmod>2026-03-13T17:05:10.750Z</lastmod>
-  </url>
-  <url>
     <loc>https://bruno.nicenboim.me/www/word-prediction-explained.html</loc>
-    <lastmod>2026-03-17T12:26:20.735Z</lastmod>
+    <lastmod>2026-03-17T12:56:04.323Z</lastmod>
+  </url>
+  <url>
+    <loc>https://bruno.nicenboim.me/cv.html</loc>
+    <lastmod>2026-03-17T15:41:23.389Z</lastmod>
   </url>
 </urlset>

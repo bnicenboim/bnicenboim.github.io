@@ -2169,7 +2169,7 @@ font-style: inherit;">doi</span> = {10.5281/zenodo.18225472}</span>
 <div class="cell-output cell-output-stdout">
 <pre><code>R version 4.5.2 (2025-10-31)
 Platform: x86_64-pc-linux-gnu
-Running under: Ubuntu 24.04.3 LTS
+Running under: Ubuntu 24.04.4 LTS
 
 Matrix products: default
 BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.12.0 
@@ -2191,7 +2191,7 @@ attached base packages:
 
 other attached packages:
 [1] ggridges_0.5.7      patchwork_1.3.2     bayesplot_1.15.0   
-[4] brms_2.23.0         Rcpp_1.1.1          ggplot2_4.0.1      
+[4] brms_2.23.0         Rcpp_1.1.1          ggplot2_4.0.2      
 [7] tidytable_0.11.2    extraDistr_1.10.0.1
 
 loaded via a namespace (and not attached):
@@ -3016,7 +3016,7 @@ font-style: inherit;">sessionInfo</span>()</span></code></pre></div></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>R version 4.5.2 (2025-10-31)
 Platform: x86_64-pc-linux-gnu
-Running under: Ubuntu 24.04.3 LTS
+Running under: Ubuntu 24.04.4 LTS
 
 Matrix products: default
 BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.12.0 
@@ -3040,7 +3040,7 @@ attached base packages:
 other attached packages:
 [1] bayesplot_1.15.0    cmdstanr_0.9.0     
 [3] rcorpora_2.0.1      extraDistr_1.10.0.1
-[5] ggplot2_4.0.1       tidytable_0.11.2   
+[5] ggplot2_4.0.2       tidytable_0.11.2   
 
 loaded via a namespace (and not attached):
  [1] gtable_0.3.6         jsonlite_2.0.0      
