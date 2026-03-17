@@ -432,5 +432,75 @@
     "title": "Next Word Showdown — and What It Reveals About Language",
     "section": "",
     "text": "Rayner, K. et al. (2006). “Eye movements in reading and information processing.” Psychological Bulletin.\nKutas, M. & Federmeier, K. (2011). “Thirty years and counting: Finding meaning in the N400 component.” Annual Review of Psychology.\nLevy, R. (2008). “Expectation-based syntactic comprehension.” Cognition.\nHale, J. (2001). “A probabilistic Earley parser as a psycholinguistic model.” NAACL.\nBrown et al. (2020). “Language models are few-shot learners.” NeurIPS (the GPT-3 paper)."
+  },
+  {
+    "objectID": "www/word-prediction-explained.html",
+    "href": "www/word-prediction-explained.html",
+    "title": "Next Word Showdown",
+    "section": "",
+    "text": "Play the game"
+  },
+  {
+    "objectID": "www/word-prediction-explained.html#what-the-game-is-about",
+    "href": "www/word-prediction-explained.html#what-the-game-is-about",
+    "title": "Next Word Showdown",
+    "section": "What the game is about",
+    "text": "What the game is about\nYou see the beginning of a sentence and try to guess the next hidden word before anyone else does. That’s it. But here’s the thing: predicting the next word is something your brain does automatically, all the time, without you noticing."
+  },
+  {
+    "objectID": "www/word-prediction-explained.html#your-brain-is-always-one-step-ahead",
+    "href": "www/word-prediction-explained.html#your-brain-is-always-one-step-ahead",
+    "title": "Next Word Showdown",
+    "section": "Your brain is always one step ahead",
+    "text": "Your brain is always one step ahead\nTry finishing this:\n\nShe put on her coat, picked up her keys, and walked out the ___.\n\nYou almost certainly thought about door. Something in your brain just… knew.\nNow this one:\n\nThe scientist published her results in a peer-reviewed ___.\n\nJournal, probably. Or maybe paper.\n\nHe ordered a coffee and a chocolate ___.\n\nCake? Croissant? Cookie? Harder. Several words fit equally well.\nThat difference matters: some words are much easier to predict than others. Predictable words feel almost inevitable. Unpredictable ones could go in many directions. The game makes this visible. Some words get guessed on the first try, others stump everyone."
+  },
+  {
+    "objectID": "www/word-prediction-explained.html#how-do-we-know-the-brain-predicts",
+    "href": "www/word-prediction-explained.html#how-do-we-know-the-brain-predicts",
+    "title": "Next Word Showdown",
+    "section": "How do we know the brain predicts?",
+    "text": "How do we know the brain predicts?\nYou can’t feel your brain making predictions. But scientists have found ways to catch it in the act.\nOne way is tracking people’s eyes while they read. Your eyes don’t slide smoothly across a page. They jump from word to word. And it turns out they spend less time on predictable words, sometimes skipping them entirely, while lingering on surprising ones. The brain already has a good guess for predictable words, so it doesn’t need to look as carefully.\nThere’s also a more direct approach. Your brain runs on electricity: billions of cells communicating through small bursts of electrical activity, these are your neurons. All those tiny signals add up, and some of that activity actually reaches the surface of your head. By placing small sensors on someone’s scalp (a technique called EEG, for electroencephalography), you can pick up those signals while the person reads. It looks like a cap covered in wires, and what it records is a kind of summary of what millions of neurons are doing at each moment. When a word shows up that the reader didn’t expect, the electrical response shifts. The more surprising the word, the bigger the shift. The brain is, in a sense, going: “Hang on, that’s not what I had in mind.”"
+  },
+  {
+    "objectID": "www/word-prediction-explained.html#context-is-everything",
+    "href": "www/word-prediction-explained.html#context-is-everything",
+    "title": "Next Word Showdown",
+    "section": "Context is everything",
+    "text": "Context is everything\nWatch what happens when you add more context:\n\nHe ordered a coffee and a chocolate ___.\n\nStill hard. But:\n\nHe was celebrating his birthday. He ordered a coffee and a chocolate ___.\n\nNow cake is much more obvious.\nGuesses become easier the further into a sentence you get. Your brain pulls in everything available: the words already said, what makes sense in the real world, what people typically say in that kind of situation. More context means fewer plausible options, and easier guesses.\nThe same thing happens when you listen. You start processing what someone is saying before they’ve finished the sentence. In conversation, people often begin composing their reply while the other person is still speaking, because they can already tell where it’s going."
+  },
+  {
+    "objectID": "www/word-prediction-explained.html#its-not-just-reading",
+    "href": "www/word-prediction-explained.html#its-not-just-reading",
+    "title": "Next Word Showdown",
+    "section": "It’s not just reading",
+    "text": "It’s not just reading\nThe same thing happens when you listen. You start processing what someone is saying before they’ve finished the sentence. In conversation, people often begin composing their reply while the other person is still speaking, because they can already tell where it’s going. It’s how language works, whether you’re reading, listening, or talking."
+  },
+  {
+    "objectID": "www/word-prediction-explained.html#so-what-are-the-ai-players-doing",
+    "href": "www/word-prediction-explained.html#so-what-are-the-ai-players-doing",
+    "title": "Next Word Showdown",
+    "section": "So what are the AI players doing?",
+    "text": "So what are the AI players doing?\nIn the game, the AI players do the same thing you do: they look at the words revealed so far and return their best guess.\nThe AI players in this game are large language models: programs trained by reading enormous amounts of text, including books, news articles, websites, and conversations.\nThe training works like this: the model sees a sequence of words and tries to guess what comes next. When it’s wrong, it adjusts a little. After billions of rounds, it develops something like an intuition for how language flows, which words tend to follow which, in what contexts. This next-word prediction task is actually the foundation of chatbots like ChatGPT too. Before a chatbot can hold a conversation or answer your questions, it first has to learn the patterns of language by practicing exactly this: predicting the next word, over and over, on enormous amounts of text.\nWhat makes a language model bigger or smaller comes down to parameters: numbers inside the model that get adjusted during training. Think of them as tiny knobs. Each knob controls a small part of how the model responds to a word or a pattern. More knobs means finer distinctions and subtler patterns. Fewer knobs means a rougher, blurrier picture of the language.\nThe models in this game are small and old by today’s standards. The English model (Pythia, from 2023) has about 410 million parameters. The Dutch and Spanish ones are based on GPT-2 (from 2019) and have about 125 million parameters each. That sounds like a lot until you hear that ChatGPT’s most powerful models are estimated at around 1.8 trillion parameters, roughly 4,000 times more than Pythia. A bit like comparing a bicycle to a jumbo jet.\nSo why not use the big ones? Because the models in this game have to run locally, right here in your browser, on your own computer. ChatGPT runs on massive servers, warehouses full of specialized hardware operated by companies like OpenAI. The models here are tiny enough to download and run on a normal laptop, or even a phone.\nThe English model, being larger, tends to predict a bit better. But the smaller Dutch and Spanish models were trained on text in their own languages, so they do much better when the sentence matches, just as you’d expect."
+  },
+  {
+    "objectID": "www/word-prediction-explained.html#some-words-are-hard-for-everyone",
+    "href": "www/word-prediction-explained.html#some-words-are-hard-for-everyone",
+    "title": "Next Word Showdown",
+    "section": "Some words are hard for everyone",
+    "text": "Some words are hard for everyone\nThe game shows something interesting: when both humans and AI miss a word over and over, it’s usually because the word was genuinely hard to predict. There were many equally good options, or the writer made an unexpected choice. When everyone nails it on the first guess, the word was practically inevitable given the context.\nThis lines up with what scientists find in the lab. Words that feel natural and expected get processed faster by the brain. Surprising words take more effort. The game score is, in a rough way, measuring exactly that: how well you match the statistical patterns of the language."
+  },
+  {
+    "objectID": "www/word-prediction-explained.html#birds-and-planes",
+    "href": "www/word-prediction-explained.html#birds-and-planes",
+    "title": "Next Word Showdown",
+    "section": "Birds and planes",
+    "text": "Birds and planes\nAre human minds and language models the same thing? Definitely not. They are as different as birds and airplanes. One is alive and evolved over millions of years; the other is engineered metal. They also have very different motivations for flying. But they both fly, and they both succeed because they exploit the same physics: aerodynamics, the way air flows around a wing.\nStudying airplanes can teach us a lot about the medium birds fly through. Not about feathers or muscles, but about air itself, what makes flight possible in the first place.\nSomething similar is going on with language models and human minds. They’re built completely differently, but they both navigate the same thing: language. By studying what a model finds predictable or surprising, we learn about regularities in the language: what tends to appear where, what’s common, what’s unusual. Those are the same regularities that shape how our brains process words. In a way, the game score measures this too: high scores go to whoever best matches the statistical patterns of the language.\nHow far this analogy stretches is genuinely controversial. Some researchers argue that language models are so different from brains that comparing them is misleading. Others think the similarities go deeper than we’d expect. Nobody has settled this, and figuring it out is one of the most interesting open questions in the field right now.\n\nNext time you finish someone else’s sentence without thinking, remember: your brain has been playing this game your whole life.\n\nBruno Nicenboim — Computational Cognitive Science, Tilburg University"
+  },
+  {
+    "objectID": "www/word-prediction-explained.html#the-bottom-line",
+    "href": "www/word-prediction-explained.html#the-bottom-line",
+    "title": "Next Word Showdown",
+    "section": "The bottom line",
+    "text": "The bottom line\nYou and the AI are doing the same basic task: using context to narrow down what comes next. You do it with a brain shaped by years of reading, listening, and talking. The AI does it with numbers tuned across billions of text examples. Completely different strategies, same task, and both are surprisingly good at it.\nNext time you finish someone else’s sentence without thinking, remember: your brain has been playing this game your whole life.\n\nBruno Nicenboim — Computational Cognitive Science, Tilburg University"
   }
 ]

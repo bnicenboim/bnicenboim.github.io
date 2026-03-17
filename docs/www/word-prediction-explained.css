@@ -1,0 +1,81 @@
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+#quarto-content {
+  background: white;
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2.5rem 3.5rem;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+/* Override Quarto's grid so content uses full width */
+.page-columns .content {
+  grid-column: 1 / -1 !important;
+}
+
+.page-columns {
+  display: block !important;
+}
+
+#quarto-content > * {
+  max-width: 100% !important;
+}
+
+main.content {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+#title-block-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+#title-block-header h1.title {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 300;
+  font-size: 2.2rem;
+  color: #333;
+}
+
+h2 {
+  color: #444;
+  font-weight: 400;
+  margin-top: 2rem;
+  font-size: 1.4rem;
+}
+
+blockquote {
+  border-left: 4px solid #667eea;
+  background: #f8f7ff;
+  padding: 0.8rem 1.2rem;
+  border-radius: 0 8px 8px 0;
+  margin: 1rem 0;
+}
+
+blockquote p {
+  margin: 0;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 2rem 0;
+}
+
+/* Hide Quarto site chrome */
+.navbar, #quarto-sidebar, .nav-footer, #quarto-search,
+#quarto-margin-sidebar, #TOC {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  #quarto-content {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+}

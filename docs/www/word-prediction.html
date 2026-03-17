@@ -685,7 +685,18 @@ button:disabled {
     <summary style="cursor:pointer; font-weight:600;" data-i18n="howToPlay">How to play</summary>
     <div id="howToPlayBody" style="margin-top:0.6rem; font-size:0.92rem; line-height:1.6;"></div>
   </details>
+
+  <div style="margin-top:1.5rem; display:flex; align-items:center; justify-content:center; gap:1.2rem; padding:1rem; background:#f5f7fa; border-radius:10px;">
+    <a id="explainLink" href="word-prediction-explained.html" style="color:#667eea; font-size:0.95rem; text-decoration:underline; text-underline-offset:3px;" data-i18n="explainLink">How does this work?</a>
+    <img id="qrCode" src="explanation.png" alt="QR code" style="width:80px; height:80px; border-radius:6px;">
+  </div>
 </div>
+
+<footer style="text-align:center; padding:1.5rem; color:rgba(255,255,255,0.7); font-size:0.8rem; max-width:900px; margin:0.5rem auto 0;">
+  <a href="https://bruno.nicenboim.me/" style="color:rgba(255,255,255,0.85);">Bruno Nicenboim</a>
+  · <a href="https://creativecommons.org/licenses/by/4.0/" style="color:rgba(255,255,255,0.85);">CC BY 4.0</a>
+  · 2025
+</footer>
 
 <!-- GAME -->
 <div id="game" class="panel" style="display:none;">
@@ -760,6 +771,7 @@ const TRANSLATIONS = {
     predictableSentence: "Predictable",
     balancedSentence: "Balanced",
     surprisingSentence: "Surprising",
+    explainLink: "How does this work?",
     difficulty: "Difficulty (lives):",
     easy: "Easy (10)",
     normal: "Normal (5)",
@@ -845,6 +857,7 @@ const TRANSLATIONS = {
     downloadingModel: "Model downloaden... (eerste keer, kan 50-500MB zijn)",
     modelsRunLocally: "Modellen draaien lokaal in uw browser met",
     loadModel: "Model laden",
+    explainLink: "Hoe werkt dit?",
     sentenceDifficulty: "Raadmoeilijkheid:",
     predictableSentence: "Voorspelbaar",
     balancedSentence: "Gebalanceerd",
@@ -933,6 +946,7 @@ const TRANSLATIONS = {
     downloadingModel: "Descargando modelo... (primera vez, puede ser 50-500MB)",
     modelsRunLocally: "Los modelos se ejecutan localmente en tu navegador con",
     loadModel: "Cargar modelo",
+    explainLink: "¿Cómo funciona?",
     sentenceDifficulty: "Dificultad de frase:",
     predictableSentence: "Predecible",
     balancedSentence: "Equilibrado",
@@ -1032,11 +1046,21 @@ function applyTranslations() {
     btn.classList.toggle('active', btn.id === 'lang-' + currentLang);
   });
   document.documentElement.lang = currentLang;
+  // Update explanation link and QR for current language
+  const suffix = currentLang === 'en' ? '' : '_' + currentLang;
+  const explainLink = document.getElementById('explainLink');
+  if (explainLink) explainLink.href = 'word-prediction-explained' + suffix + '.html';
+  const qrCode = document.getElementById('qrCode');
+  if (qrCode) qrCode.src = 'explanation' + suffix + '.png';
 }
 
 window.setLang = function(lang) {
   currentLang = lang;
   localStorage.setItem('lang', lang);
+  // Update URL so the link is shareable
+  const url = new URL(window.location);
+  url.searchParams.set('lang', lang);
+  window.history.replaceState({}, '', url);
   applyTranslations();
   // Update default sentence if user hasn't changed it
   const si = document.getElementById('sentenceInput');
