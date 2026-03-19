@@ -213,6 +213,13 @@ button:disabled {
   font-weight: 500;
 }
 
+.sentence .word.guessed {
+  background: linear-gradient(135deg, #1f6f43 0%, #14532d 100%);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(20, 83, 45, 0.22);
+}
+
 .sentence .word.hidden {
   color: #999;
   font-style: italic;
@@ -589,6 +596,167 @@ button:disabled {
   border-color: white;
   background: rgba(255,255,255,0.5);
 }
+
+/* ── Mobile & tablet responsiveness ── */
+
+@media (max-width: 600px) {
+  body {
+    padding: 0.5rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .panel {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+  }
+
+  .row label {
+    min-width: unset;
+  }
+
+  .sentence {
+    padding: 0.8rem;
+    min-height: 60px;
+    gap: 0.3rem;
+  }
+
+  .sentence .word {
+    font-size: 1.1rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .input-area {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .input-area input {
+    font-size: 1rem;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .input-area button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .players {
+    gap: 0.5rem;
+  }
+
+  .player {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .player .avatar {
+    font-size: 1.2rem;
+  }
+
+  .player .player-name {
+    max-width: 80px;
+  }
+
+  .game-log {
+    font-size: 0.75rem;
+    padding: 0.6rem;
+  }
+
+  .game-log .log-entry {
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .game-log .log-time {
+    min-width: 60px;
+  }
+
+  .game-log .log-player {
+    min-width: 70px;
+  }
+
+  .game-log .log-context {
+    max-width: 120px;
+  }
+
+  .game-over {
+    padding: 1rem;
+  }
+
+  .game-over h2 {
+    font-size: 1.4rem;
+  }
+
+  .game-over .final-sentence {
+    font-size: 1rem;
+    padding: 0.8rem;
+  }
+
+  .player-row {
+    gap: 0.5rem;
+  }
+
+  .player-row .ai-model-select {
+    min-width: 100px;
+    font-size: 0.8rem;
+  }
+
+  .btn-primary {
+    padding: 0.7rem 1.2rem;
+    width: 100%;
+  }
+
+  #lang-switcher {
+    top: 0.4rem;
+    right: 0.4rem;
+  }
+
+  #lang-switcher button {
+    font-size: 1.3rem;
+  }
+
+  .difficulty-buttons {
+    gap: 0.3rem;
+  }
+
+  .difficulty-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  body {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .panel {
+    padding: 1.5rem;
+  }
+
+  .sentence .word {
+    font-size: 1.2rem;
+  }
+
+  .row label {
+    min-width: 120px;
+  }
+}
 </style>
 </head>
 
@@ -626,7 +794,7 @@ button:disabled {
 	      <button class="btn-secondary" id="generateBtn" data-i18n="generateSentence">Generate Sentence</button>
 	    </div>
     <div class="row">
-      <label data-i18n="sentenceDifficulty">Guess difficulty:</label>
+      <label data-i18n="sentenceDifficulty">Sentence difficulty:</label>
       <div class="difficulty-buttons" id="sentenceDifficultyBtns">
         <button class="difficulty-btn" data-temp="0.1" data-i18n="predictableSentence">Predictable</button>
         <button class="difficulty-btn selected" data-temp="0.4" data-i18n="balancedSentence">Balanced</button>
@@ -767,7 +935,7 @@ const TRANSLATIONS = {
     downloadingModel: "Downloading model... (first time only, may be 50-500MB)",
     modelsRunLocally: "Models run locally in your browser using",
     loadModel: "Load Model",
-    sentenceDifficulty: "Guess difficulty:",
+    sentenceDifficulty: "Sentence difficulty:",
     predictableSentence: "Predictable",
     balancedSentence: "Balanced",
     surprisingSentence: "Surprising",
@@ -834,10 +1002,10 @@ const TRANSLATIONS = {
     howToPlay: "How to play",
     howToPlayBody: `Each round, one word of the secret sentence is hidden. Players take turns guessing it.
 <ul>
-<li><strong>Correct guess</strong>: +10 pts minus the number of lives already lost on that word.</li>
+<li><strong>Correct guess</strong>: +10 pts plus remaining lives on that word.</li>
 <li><strong>Wrong guess / Skip</strong>: lose 1 life ❤️. When all lives are gone you are out for that word.</li>
-<li><strong>All players exhausted</strong>: the word is revealed automatically and everyone loses <strong>-10 pts</strong>.</li>
-<li><strong>Disclose</strong>: reveals the word immediately — <strong>-10 pts</strong> for every player.</li>
+<li><strong>All players exhausted</strong>: the word is revealed automatically and everyone loses <strong>-1 pt</strong>.</li>
+<li><strong>Disclose</strong>: reveals the word immediately — <strong>-1 pt</strong> for every player.</li>
 <li>The game ends when all words are revealed.</li>
 </ul>`,
   },
@@ -858,7 +1026,7 @@ const TRANSLATIONS = {
     modelsRunLocally: "Modellen draaien lokaal in uw browser met",
     loadModel: "Model laden",
     explainLink: "Hoe werkt dit?",
-    sentenceDifficulty: "Raadmoeilijkheid:",
+    sentenceDifficulty: "Zinsmoeilijkheid:",
     predictableSentence: "Voorspelbaar",
     balancedSentence: "Gebalanceerd",
     surprisingSentence: "Verrassend",
@@ -923,10 +1091,10 @@ const TRANSLATIONS = {
     howToPlay: "Speluitleg",
     howToPlayBody: `Elke ronde is één woord van de geheime zin verborgen. Spelers raden om beurten.
 <ul>
-<li><strong>Goed geraden</strong>: +10 ptn minus het aantal reeds verloren levens voor dat woord.</li>
+<li><strong>Goed geraden</strong>: +10 ptn plus het aantal resterende levens voor dat woord.</li>
 <li><strong>Fout / Overgeslagen</strong>: verlies 1 leven ❤️. Bij nul levens ben je af voor dat woord.</li>
-<li><strong>Alle spelers uitgeput</strong>: het woord wordt automatisch onthuld en iedereen verliest <strong>-10 ptn</strong>.</li>
-<li><strong>Onthullen</strong>: onthult het woord direct — <strong>-10 ptn</strong> voor elke speler.</li>
+<li><strong>Alle spelers uitgeput</strong>: het woord wordt automatisch onthuld en iedereen verliest <strong>-1 pt</strong>.</li>
+<li><strong>Onthullen</strong>: onthult het woord direct — <strong>-1 pt</strong> voor elke speler.</li>
 <li>Het spel eindigt wanneer alle woorden zijn onthuld.</li>
 </ul>`,
   },
@@ -1012,10 +1180,10 @@ const TRANSLATIONS = {
     howToPlay: "Cómo jugar",
     howToPlayBody: `Cada ronda, una palabra de la frase secreta está oculta. Los jugadores la adivinan por turnos.
 <ul>
-<li><strong>Acierto</strong>: +10 pts menos el número de vidas ya perdidas en esa palabra.</li>
+<li><strong>Acierto</strong>: +10 pts más las vidas restantes en esa palabra.</li>
 <li><strong>Fallo / Saltar</strong>: pierde 1 vida ❤️. Al quedarte sin vidas estás fuera en esa palabra.</li>
-<li><strong>Todos agotados</strong>: la palabra se revela automáticamente y todos pierden <strong>-10 pts</strong>.</li>
-<li><strong>Revelar</strong>: revela la palabra al instante — <strong>-10 pts</strong> para todos los jugadores.</li>
+<li><strong>Todos agotados</strong>: la palabra se revela automáticamente y todos pierden <strong>-1 pt</strong>.</li>
+<li><strong>Revelar</strong>: revela la palabra al instante — <strong>-1 pt</strong> para todos los jugadores.</li>
 <li>El juego termina cuando se revelan todas las palabras.</li>
 </ul>`,
   }
@@ -1217,7 +1385,7 @@ const gameDiv = document.getElementById("game");
 const sentenceInput = document.getElementById("sentenceInput");
 const numPlayersSel = document.getElementById("numPlayers");
 const playerInputsDiv = document.getElementById("playerInputs");
-const difficultyBtns = document.querySelectorAll(".difficulty-btn");
+const difficultyBtns = document.querySelectorAll("#difficultyBtns .difficulty-btn");
 
 	// Default secret sentence
 	sentenceInput.value = t('defaultSentence');
@@ -2018,6 +2186,7 @@ document.getElementById("startBtn").onclick = () => {
   game = {
     sentence,
     revealed: 1,
+    lastGuessedWordIndex: null,
     mistakes: 0,
     maxLives: maxLives,
     players,
@@ -2087,6 +2256,7 @@ function advanceTurn() {
 }
 
 function failCurrentWord() {
+  game.lastGuessedWordIndex = null;
   game.revealed++;
   game.exhaustedForWord.clear();
   aiGuessHistory = []; // Clear AI guess history for new word
@@ -2177,10 +2347,10 @@ function submitGuess(guessOverride = null) {
   game.guessesForCurrentWord.push(guess.toLowerCase());
 
   if (ok) {
-    const livesLost = game.maxLives - currentPlayer.lives;
-    const points = Math.max(0, 10 - livesLost);
+    const points = 10 + currentPlayer.lives;
 
     currentPlayer.score += points;
+    game.lastGuessedWordIndex = game.revealed;
     game.revealed++;
     aiGuessHistory = []; // Clear AI guess history for new word
     game.guessesForCurrentWord = []; // Reset tracker for new word
@@ -2211,8 +2381,8 @@ function submitGuess(guessOverride = null) {
     showGameOver(true);
   } else if (currentPlayer.lives <= 0 && game.exhaustedForWord.size >= game.players.length) {
     game.players.forEach(p => {
-      p.score -= 10;
-      addScoreLog(p, "-10 (failed word)");
+      p.score -= 1;
+      addScoreLog(p, "-1 (failed word)");
     });
     failCurrentWord();
     resetLivesForAllPlayers();
@@ -2264,8 +2434,8 @@ function performSkip() {
     game.exhaustedForWord.add(currentPlayer.id);
     if (game.exhaustedForWord.size >= game.players.length) {
       game.players.forEach(p => {
-        p.score -= 10;
-        addScoreLog(p, "-10 (failed word)");
+        p.score -= 1;
+        addScoreLog(p, "-1 (failed word)");
       });
       failCurrentWord();
       resetLivesForAllPlayers();
@@ -2281,7 +2451,7 @@ document.getElementById("skipBtn").onclick = performSkip;
 
 document.getElementById("discloseBtn").onclick = () => {
   if (game.finished) return;
-  discloseWord(10);
+  discloseWord(1);
 };
 
 function discloseWord(penalty = 10) {
@@ -2290,6 +2460,7 @@ function discloseWord(penalty = 10) {
     addScoreLog(p, `-${penalty} (disclosed)`);
   });
 
+  game.lastGuessedWordIndex = null;
   game.revealed++;
   aiGuessHistory = []; // Clear AI guess history for new word
   game.guessesForCurrentWord = []; // Reset tracker for new word
@@ -2708,7 +2879,7 @@ function render() {
 
   for (let i = 0; i < game.revealed; i++) {
     const span = document.createElement("span");
-    span.className = "word revealed";
+    span.className = i === game.lastGuessedWordIndex ? "word revealed guessed" : "word revealed";
     span.textContent = game.sentence[i];
     sEl.appendChild(span);
   }
