@@ -420,6 +420,11 @@ button:disabled {
   min-width: 100px;
 }
 
+.game-log .log-duration {
+  color: #f6ad55;
+  white-space: nowrap;
+}
+
 .game-log .log-guess {
   color: #e2e8f0;
 }
@@ -1021,6 +1026,7 @@ const TRANSLATIONS = {
     wordRevealed: "(word revealed)",
     skippedTurn: "(skipped turn)",
     wordDisclosed: "(word disclosed)",
+    guessTime: (duration) => `in ${duration}`,
     score: "Score",
     aiLabel: " (AI)",
     downloadingModelPct: (name, pct) => `Downloading model ${name}... ${pct}%`,
@@ -1111,6 +1117,7 @@ const TRANSLATIONS = {
     wordRevealed: "(woord onthuld)",
     skippedTurn: "(beurt overgeslagen)",
     wordDisclosed: "(woord vrijgegeven)",
+    guessTime: (duration) => `in ${duration}`,
     score: "Score",
     aiLabel: " (AI)",
     downloadingModelPct: (name, pct) => `Model downloaden ${name}... ${pct}%`,
@@ -1201,6 +1208,7 @@ const TRANSLATIONS = {
     wordRevealed: "(palabra revelada)",
     skippedTurn: "(turno saltado)",
     wordDisclosed: "(palabra divulgada)",
+    guessTime: (duration) => `en ${duration}`,
     score: "Puntos",
     aiLabel: " (IA)",
     downloadingModelPct: (name, pct) => `Descargando modelo ${name}... ${pct}%`,
@@ -1342,11 +1350,6 @@ applyTranslations();
 		  { id: "Xenova/gpt2", name: "GPT-2", avatarColor: "blue" },
 		  { id: "Xenova/distilgpt2", name: "DistilGPT-2 (fast)", avatarColor: "green" },
 		  { id: "Xenova/gpt-neo-125M", name: "GPT-Neo 125M (fast)", avatarColor: "orange" },
-		  { id: "Xenova/phi-2", name: "Phi-2 (slow)", avatarColor: "red" },
-		  { id: "Xenova/mistral-7b", name: "Mistral-7B (slow)", avatarColor: "purple" },
-		  { id: "HuggingFaceTB/SmolLM3-3B-ONNX", name: "SmolLM3-3B (slow, instruct)", avatarColor: "yellow" },
-		  { id: "onnx-community/Qwen3-0.6B-ONNX", name: "Qwen3-0.6B (slow)", avatarColor: "yellow" },
-		  { id: "onnx-community/Qwen2.5-0.5B", name: "Qwen2.5-0.5B base (slow)", avatarColor: "blue" },
 		];
 
 		function getModelsForLang(lang) {
@@ -2244,6 +2247,7 @@ document.getElementById("startBtn").onclick = () => {
     log: [],
     finished: false,
     startTime: new Date(),
+    turnStartedAt: new Date(),
     guessesForCurrentWord: [], // Track all guesses made for the word at game.revealed (from all players/models)
     exhaustedForWord: new Set(), // Player IDs that have hit 0 lives for the current word
     aiGuessCache: {}, // Per-player cache: { playerId: { wordIndex: [guess1, guess2, ...] } }
@@ -2255,6 +2259,7 @@ document.getElementById("startBtn").onclick = () => {
   document.getElementById("gameOver").style.display = "none";
   document.getElementById("gameLog").innerHTML = "";
   render();
+  updateGuessControls();
 
   if (game.players[game.turn].isAI && !game.finished) {
     setTimeout(doAITurn, 1000);
@@ -2294,6 +2299,48 @@ guessInput.addEventListener("keydown", e => {
 
 document.getElementById("guessBtn").onclick = () => submitGuess();
 
+function formatGuessDuration(ms) {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
+}
+
+function updateGuessControls() {
+  const guessBtn = document.getElementById("guessBtn");
+  const skipBtn = document.getElementById("skipBtn");
+  const discloseBtn = document.getElementById("discloseBtn");
+
+  if (!game || game.finished) {
+    guessInput.disabled = true;
+    guessBtn.disabled = true;
+    skipBtn.disabled = true;
+    discloseBtn.disabled = true;
+    guessInput.value = "";
+    guessInput.placeholder = t('typeNextWord');
+    return;
+  }
+
+  const currentPlayer = game.players[game.turn];
+  if (currentPlayer.isAI) {
+    guessInput.disabled = true;
+    guessBtn.disabled = true;
+    skipBtn.disabled = true;
+    discloseBtn.disabled = true;
+    guessInput.value = t('thinkingPlayer', currentPlayer.name);
+    guessInput.placeholder = t('thinkingPlayer', currentPlayer.name);
+    return;
+  }
+
+  guessInput.disabled = false;
+  guessBtn.disabled = false;
+  skipBtn.disabled = false;
+  discloseBtn.disabled = false;
+  guessInput.value = "";
+  guessInput.placeholder = t('typeNextWord');
+}
+
 // Advance turn, skipping players who are exhausted for this word
 function advanceTurn() {
   let next = (game.turn + 1) % game.players.length;
@@ -2303,6 +2350,7 @@ function advanceTurn() {
     steps++;
   }
   game.turn = next;
+  game.turnStartedAt = new Date();
 }
 
 function failCurrentWord() {
@@ -2378,6 +2426,7 @@ function submitGuess(guessOverride = null) {
   const ok = levenshtein(normalize(guess), normalize(target)) <= opts.levenshtein;
 
   const timestamp = new Date();
+  const guessDuration = formatGuessDuration(timestamp - game.turnStartedAt);
   const logEntry = {
     time: timestamp.toISOString(),
     timeFormatted: formatTime(timestamp),
@@ -2385,6 +2434,7 @@ function submitGuess(guessOverride = null) {
     playerAvatar: currentPlayer.avatar,
     isAI: currentPlayer.isAI,
     context: game.sentence.slice(0, game.revealed).join(" "),
+    guessDuration,
     guess,
     target,
     correct: ok
@@ -2424,7 +2474,7 @@ function submitGuess(guessOverride = null) {
   }
 
   advanceTurn();
-  guessInput.value = "";
+  updateGuessControls();
 
   if (game.revealed >= game.sentence.length) {
     game.finished = true;
@@ -2439,6 +2489,7 @@ function submitGuess(guessOverride = null) {
   }
 
   render();
+  updateGuessControls();
 
   if (!game.finished && game.players[game.turn].isAI) {
     setTimeout(doAITurn, 1500);
@@ -2457,6 +2508,7 @@ function formatTime(date) {
 }
 
 function maybeTriggerAITurn() {
+  updateGuessControls();
   if (!game.finished && game.players[game.turn].isAI) {
     setTimeout(doAITurn, 1200);
   } else {
@@ -2494,6 +2546,7 @@ function performSkip() {
 
   advanceTurn();
   render();
+  updateGuessControls();
   maybeTriggerAITurn();
 }
 
@@ -2540,7 +2593,9 @@ function discloseWord(penalty = 10) {
     showGameOver(true);
   } else {
     game.turn = 0;
+    game.turnStartedAt = new Date();
     render();
+    updateGuessControls();
     maybeTriggerAITurn();
   }
 }
@@ -2552,10 +2607,14 @@ function addLogEntry(entry) {
   const contextHtml = entry.context
     ? `<span class="log-context" title="${entry.context}">${entry.context} →</span>`
     : '';
+  const durationHtml = entry.guessDuration
+    ? `<span class="log-duration">${t('guessTime', entry.guessDuration)}</span>`
+    : '';
   div.innerHTML = `
     <span class="log-time">${entry.timeFormatted}</span>
     <span class="log-player">${entry.playerAvatar} ${entry.player}${entry.isAI ? t('aiLabel') : ''}</span>
     ${contextHtml}
+    ${durationHtml}
     <span class="log-guess">"${entry.guess}"</span>
     <span class="log-result ${entry.correct ? 'correct' : 'wrong'}">${entry.correct ? '✓' : '✗'}</span>
   `;
@@ -2580,8 +2639,7 @@ async function doAITurn() {
 
   thinkingText.textContent = t('thinkingPlayer', currentPlayer.name);
   thinkingEl.style.display = "flex";
-  guessInput.disabled = true;
-  document.getElementById("guessBtn").disabled = true;
+  updateGuessControls();
 
   try {
     const generator = await ensureAIModel(currentPlayer.modelId);
@@ -2795,8 +2853,6 @@ async function doAITurn() {
     }
 
     thinkingEl.style.display = "none";
-    guessInput.disabled = false;
-    document.getElementById("guessBtn").disabled = false;
 
     if (guess) {
       submitGuess(guess);
@@ -2810,8 +2866,6 @@ async function doAITurn() {
     console.error("[AI-ERROR] Message:", e.message);
     console.error("[AI-ERROR] Stack:", e.stack);
     thinkingEl.style.display = "none";
-    guessInput.disabled = false;
-    document.getElementById("guessBtn").disabled = false;
 
     // On error, skip the turn
     console.log("[AI-FALLBACK] Skipping turn due to model error");
@@ -2869,7 +2923,7 @@ function showGameOver(won) {
     <button class="btn-secondary" style="margin-left:0.5rem;" onclick="downloadLog()">${t('downloadLog')}</button>
   `;
 
-  document.getElementById("guessInput").disabled = true;
+  updateGuessControls();
   render();
 
   const lb = document.getElementById("leaderboard");
@@ -2944,6 +2998,7 @@ function render() {
 
   renderPlayers();
   document.getElementById("livesText").textContent = "";
+  updateGuessControls();
 }
 
 /* ======================
@@ -2958,7 +3013,7 @@ document.getElementById("backBtn").onclick = () => {
   if (game) game.finished = true; // stop any running AI turn
   gameDiv.style.display = "none";
   setupDiv.style.display = "block";
-  document.getElementById("guessInput").disabled = false;
+  updateGuessControls();
 };
 
 </script>
