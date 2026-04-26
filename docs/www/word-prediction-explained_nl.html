@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="nl" xml:lang="nl"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Woordenduel – Bruno Nicenboim</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-b95dfa6f66e18e1d2bf1b631702b15ee.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "Geen resultaten",
+    "search-matching-documents-text": "Gevonden documenten",
+    "search-copy-link-title": "Kopieer link om te zoeken",
+    "search-hide-matches-text": "Extra overeenkomsten verbergen",
+    "search-more-match-text": "meer overeenkomst in dit document",
+    "search-more-matches-text": "meer overeenkomsten in dit document",
+    "search-clear-button-title": "Wissen",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Annuleren",
+    "search-submit-button-title": "Verzenden",
+    "search-label": "Zoeken"
+  }
+}</script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23667eea'/><stop offset='1' stop-color='%23764ba2'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='68' font-size='62' text-anchor='middle' font-family='system-ui,sans-serif'>💬</text><text x='68' y='52' font-size='28' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='bold' fill='white'>?</text></svg>">
+
+
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="word-prediction-explained.css">
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Woordenduel</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><a href="word-prediction.html?lang=nl"><strong>Speel het spel</strong></a></p>
+<section id="waar-gaat-het-spel-over" class="level2">
+<h2 class="anchored" data-anchor-id="waar-gaat-het-spel-over">Waar gaat het spel over?</h2>
+<p>Het doel van het spel is om een verborgen zin te raden. Je krijgt het eerste woord te zien en probeert het volgende woord te raden voordat de andere spelers dat doen. Dit klinkt simpel, maar is ook interessant: <strong>het voorspellen van het volgende woord in een zin is iets wat je hersenen de hele tijd automatisch doen, zonder dat je het merkt.</strong></p>
+<hr>
+</section>
+<section id="je-hersenen-lopen-altijd-een-stap-voor" class="level2">
+<h2 class="anchored" data-anchor-id="je-hersenen-lopen-altijd-een-stap-voor">Je hersenen lopen altijd een stap voor</h2>
+<p>Maak deze zin af:</p>
+<blockquote class="blockquote">
+<p><em>Ze trok haar jas aan, pakte haar sleutels en liep de ___ uit.</em></p>
+</blockquote>
+<p>Je dacht vrijwel zeker aan <em>deur</em>. Iets in je hersenen wist het gewoon.</p>
+<p>En deze:</p>
+<blockquote class="blockquote">
+<p><em>De onderzoeker publiceerde haar resultaten in een wetenschappelijk ___.</em></p>
+</blockquote>
+<p><em>Tijdschrift</em>, waarschijnlijk. Of misschien <em>artikel</em>.</p>
+<blockquote class="blockquote">
+<p><em>Hij bestelde een koffie en een ___ bij de bakker.</em></p>
+</blockquote>
+<p><em>Broodje? Croissant? Gevulde koek?</em> Dat is lastiger. Er zijn meerdere woorden die even goed passen.</p>
+<p>Dat verschil is belangrijk: <strong>sommige woorden zijn veel makkelijker te voorspellen dan andere.</strong> Voorspelbare woorden voelen bijna onvermijdelijk. Onvoorspelbare woorden kunnen alle kanten op. Het spel maakt dit zichtbaar: sommige woorden worden meteen geraden, andere zijn voor iedereen een raadsel.</p>
+<hr>
+</section>
+<section id="hoe-weten-we-dat-de-hersenen-voorspellen" class="level2">
+<h2 class="anchored" data-anchor-id="hoe-weten-we-dat-de-hersenen-voorspellen">Hoe weten we dat de hersenen voorspellen?</h2>
+<p>Je kunt niet <em>voelen</em> dat je hersenen voorspellingen maken. Maar wetenschappers hebben manieren gevonden om ze op heterdaad te betrappen.</p>
+<p>Eén manier is het volgen van oogbewegingen tijdens het lezen. Je ogen glijden niet vloeiend over de pagina, maar springen van woord naar woord. Het blijkt dat ze minder tijd besteden aan voorspelbare woorden — die slaan ze soms zelfs helemaal over — en langer stilstaan bij verrassende woorden. Bij voorspelbare woorden heeft het brein al een goed idee van wat er komt, dus hoeft het niet zo nauwkeurig te kijken.</p>
+<p>Er is ook een directere methode. Je hersenen werken op elektriciteit: miljarden cellen communiceren via kleine uitbarstingen van elektrische activiteit — dat zijn je neuronen. Al die kleine signalen tellen op, en een deel van die activiteit bereikt het oppervlak van je hoofd. Door kleine sensoren op iemands hoofdhuid te plaatsen (een techniek genaamd EEG, elektro-encefalografie) kun je die signalen opvangen terwijl iemand leest. Het ziet eruit als een badmuts vol kabels, en wat het registreert is een soort samenvatting van wat miljoenen neuronen op elk moment doen. Wanneer er een onverwacht woord verschijnt, verandert de elektrische reactie. Hoe verrassender het woord, hoe groter de verandering. De hersenen zeggen in feite: “Wacht even, dit had ik niet verwacht.”</p>
+<hr>
+</section>
+<section id="context-is-alles" class="level2">
+<h2 class="anchored" data-anchor-id="context-is-alles">Context is alles</h2>
+<p>Kijk wat er gebeurt als je meer context toevoegt:</p>
+<blockquote class="blockquote">
+<p><em>Hij bestelde een koffie en een ___ bij de bakker.</em></p>
+</blockquote>
+<p>Nog steeds lastig. Maar:</p>
+<blockquote class="blockquote">
+<p><em>Het was zijn verjaardag. Hij bestelde een koffie en een ___ bij de bakker.</em></p>
+</blockquote>
+<p>Nu is <em>taart</em> een stuk duidelijker.</p>
+<p>Hoe verder je in een zin komt, hoe makkelijker het raden wordt. Je hersenen gebruiken alles wat beschikbaar is: de woorden die al zijn gezegd, wat “logisch” is in de echte wereld en wat mensen doorgaans zeggen in dat soort situaties. Meer context betekent minder mogelijke opties en dus makkelijkere voorspellingen.</p>
+<p>Hetzelfde gebeurt bij het luisteren. Je begint te verwerken wat iemand zegt nog voordat de zin is afgelopen. In een gesprek beginnen mensen vaak al hun antwoord te formuleren <em>terwijl de ander nog aan het praten is</em>, omdat ze al aanvoelen waar het naartoe gaat.</p>
+<hr>
+</section>
+<section id="wat-doen-de-ai-spelers" class="level2">
+<h2 class="anchored" data-anchor-id="wat-doen-de-ai-spelers">Wat doen de AI-spelers?</h2>
+<p>In het spel doen de AI-spelers precies hetzelfde als jij: ze bekijken de woorden die tot nu toe zichtbaar zijn en doen hun beste gok.</p>
+<p>De AI-spelers in dit spel zijn <strong>grote taalmodellen</strong>: programma’s die getraind zijn op enorme hoeveelheden tekst, waaronder boeken, nieuwsartikelen, websites en gesprekken.</p>
+<p>De training werkt als volgt: het model ziet een reeks woorden en probeert te raden wat er daarna komt. Als het fout zit, wordt het een beetje bijgesteld. Na miljarden rondes ontwikkelt het iets wat lijkt op intuïtie voor hoe taal werkt — welke woorden doorgaans op welke volgen, in welke contexten. Deze taak van het volgende woord voorspellen is ook de basis van chatbots zoals ChatGPT. Voordat een chatbot een gesprek kan voeren of vragen kan beantwoorden, moet hij eerst de patronen van taal leren door precies dit te oefenen: het volgende woord voorspellen, keer op keer, op enorme hoeveelheden tekst.</p>
+<p>Wat een taalmodel groter of kleiner maakt, draait om <strong>parameters</strong>: getallen binnenin het model die tijdens de training worden aangepast. Zie ze als kleine draaiknoppen. Elke knop regelt een klein deel van hoe het model reageert op een woord of patroon. Meer knoppen betekent fijnere onderscheidingen en subtielere patronen. Minder knoppen betekent een ruwer, vager beeld van de taal.</p>
+<p>De modellen in dit spel zijn klein en verouderd naar huidige maatstaven. Het Engelse model (Pythia, uit 2023) heeft ongeveer 410 miljoen parameters. De Nederlandse en Spaanse modellen zijn gebaseerd op GPT-2 (uit 2019) en hebben elk ongeveer 125 miljoen parameters. Dat klinkt als veel, totdat je hoort dat de krachtigste modellen van ChatGPT naar schatting zo’n 1,8 <em>biljoen</em> parameters hebben — ruwweg 4.000 keer meer dan Pythia. Een beetje als het verschil tussen een fiets en een jumbojet.</p>
+<p>Waarom gebruiken we dan niet de grote modellen? Omdat de modellen in dit spel <em>lokaal</em> moeten draaien, hier in je browser, op je eigen computer. ChatGPT draait op enorme servers, datacenters vol gespecialiseerde hardware beheerd door bedrijven als OpenAI. De modellen hier zijn klein genoeg om te downloaden en op een gewone laptop te draaien, of zelfs op een telefoon.</p>
+<p>Het Engelse model presteert door zijn grotere omvang iets beter. Maar de kleinere Nederlandse en Spaanse modellen zijn getraind op tekst in hun eigen taal, en doen het dus veel beter wanneer de zin in die taal is — precies wat je zou verwachten.</p>
+<hr>
+</section>
+<section id="vogels-en-vliegtuigen" class="level2">
+<h2 class="anchored" data-anchor-id="vogels-en-vliegtuigen">Vogels en vliegtuigen</h2>
+<p>Zijn menselijke hersenen en taalmodellen hetzelfde? Absoluut niet. Ze zijn zo verschillend als vogels en vliegtuigen. De een leeft en is het resultaat van miljoenen jaren evolutie; de ander is ontworpen metaal. Ze hebben ook heel verschillende redenen om te vliegen. Maar ze vliegen allebei, en ze slagen daar allebei in omdat ze dezelfde natuurkunde benutten: aerodynamica, de manier waarop lucht om een vleugel stroomt.</p>
+<p>Het bestuderen van vliegtuigen kan ons veel leren over het <em>medium</em> waar vogels doorheen vliegen. Niet over veren of spieren, maar over de lucht zelf — wat vliegen überhaupt mogelijk maakt.</p>
+<p>Iets vergelijkbaars is er aan de hand met taalmodellen en menselijke hersenen. Ze zijn totaal anders gebouwd, maar ze bewegen zich allebei door hetzelfde: <strong>taal</strong>. Door te bestuderen wat een model voorspelbaar of verrassend vindt, leren we over de regelmatigheden in de taal: wat doorgaans waar verschijnt, wat gewoon is, wat ongebruikelijk. Datzelfde zijn de regelmatigheden die bepalen hoe onze hersenen woorden verwerken. In zekere zin meet de score van het spel dit ook: wie het beste overeenkomt met de statistische patronen van de taal, scoort het hoogst.</p>
+<p>Hoe ver deze analogie reikt, is een open vraag. Sommige onderzoekers betogen dat taalmodellen zo anders zijn dan hersenen dat het misleidend is om ze te vergelijken. Anderen denken dat de overeenkomsten dieper gaan dan je zou verwachten. Dit is nog niet uitgezocht, en het is een van de meest boeiende open vragen in het vakgebied.</p>
+<hr>
+<p>De volgende keer dat je zonder nadenken iemands zin afmaakt, bedenk dan: je hersenen spelen dit spel al je hele leven.</p>
+<hr>
+<p><a href="https://bruno.nicenboim.me/"><em>Bruno Nicenboim</em></a> <em>— Computationele Cognitiewetenschap, Tilburg University</em></p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Find the TOC
+  const toc = document.querySelector('#TOC');
+  
+  if (toc) {
+    // Create recent posts section
+    const postsSection = document.createElement('div');
+    postsSection.className = 'recent-posts-sidebar';
+    postsSection.innerHTML = `
+      <h2>Posts</h2>
+      <ul id="recent-posts-list">
+        <li>Loading...</li>
+      </ul>
+    `;
+    
+    // Insert after the TOC list
+    toc.appendChild(postsSection);
+    
+    // Fetch and display posts
+    fetchRecentPosts();
+  }
+});
+
+async function fetchRecentPosts() {
+  try {
+    const response = await fetch('/posts/');
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    // Get all post items
+    const postItems = doc.querySelectorAll('.quarto-post');
+    
+    const posts = [];
+    postItems.forEach((item, index) => {
+      if (index < 5) {
+        const titleLink = item.querySelector('h3.listing-title a');
+        const dateEl = item.querySelector('.listing-date');
+        
+        if (titleLink) {
+          const href = titleLink.getAttribute('href');
+          // Extract just the path part (remove domain if present)
+          const url = href.replace(/^https?:\/\/[^\/]+/, '');
+          
+          posts.push({
+            title: titleLink.textContent.trim(),
+            url: url,
+            date: dateEl ? dateEl.textContent.trim() : ''
+          });
+        }
+      }
+    });
+    
+    const listEl = document.getElementById('recent-posts-list');
+    if (posts.length > 0) {
+      listEl.innerHTML = posts.map(post => 
+        `<li>
+          <a href="${post.url}">${post.title}</a>
+          ${post.date ? `<br><small>${post.date}</small>` : ''}
+        </li>`
+      ).join('') + '<li><a href="/posts/">See all posts...</a></li>';
+    } else {
+      listEl.innerHTML = '<li><a href="/posts/">View posts</a></li>';
+    }
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    document.getElementById('recent-posts-list').innerHTML = '<li><a href="/posts/">View posts</a></li>';
+  }
+}
+</script>
+<script data-goatcounter="https://bnicenboim.goatcounter.com/count" async="" src="//gc.zgo.at/count.js"></script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Gekopieerd!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Gekopieerd!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/bruno\.nicenboim\.me");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Licensed under <a href="https://github.com/bnicenboim/bnicenboim.github.io/blob/master/LICENSE">MIT</a></p>
+</div>   
+    <div class="nav-footer-center">
+<p>© 2021-2026 Bruno Nicenboim</p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+    <a class="nav-link" href="../LICENSE.html">
+<p>License</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

@@ -109,6 +109,10 @@ button:disabled {
   background: #f0f0f0;
   padding: 0.6rem 0.8rem;
 }
+.btn-icon.eye-visible {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
 
 .section-box {
   background: #f8f9fa;
@@ -570,6 +574,19 @@ button:disabled {
   box-shadow: 0 6px 20px rgba(72, 187, 120, 0.3);
 }
 
+.btn-secondary.loading::before {
+  content: "";
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 0.5em;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: -0.15em;
+}
+
 .progress-bar {
   width: 100%;
   height: 8px;
@@ -814,27 +831,26 @@ button:disabled {
 <div id="setup" class="panel">
   <!-- Title removed per user preference -->
 
-  <!-- Sentence Input -->
+  <!-- Phrase Input -->
   <div class="section-box">
-    <h3>📝 <span data-i18n="secretSentence">Secret Sentence</span></h3>
+    <h3>📝 <span data-i18n="secretSentence">Secret Phrase</span></h3>
     <div class="row">
-      <label data-i18n="enterManually">Enter manually:</label>
-      <input id="sentenceInput" type="password" style="flex:1; min-width:200px;">
-      <button class="btn-icon" id="eyeBtn">👁</button>
-    </div>
-    <div class="row">
-      <span class="or-divider">— OR —</span>
+      <input id="sentenceInput" type="password" data-i18n-placeholder="sentencePlaceholder" placeholder="Type a phrase — or just the start, then click Generate" style="flex:1; min-width:200px;">
+      <button class="btn-icon" id="eyeBtn" title="Show / hide phrase">👁</button>
     </div>
 	    <div class="row">
 	      <label data-i18n="generateWithAI">Generate with AI:</label>
 	      <div class="inline-input">
-	        <input id="wordCount" type="number" class="word-count-input" min="3" max="20" placeholder="5-10" style="width:90px;">
+	        <input id="wordCount" type="number" class="word-count-input" min="3" max="40" placeholder="12" style="width:80px;">
 	        <span style="color:#666;" data-i18n="words">words</span>
+	        <span style="color:#666; margin-left:0.4rem;" data-i18n-title="wordToleranceTitle" title="Tolerance: cut at punctuation within ±N words of the target">±</span>
+	        <input id="wordTolerance" type="number" min="0" max="40" placeholder="5" style="width:84px;">
 	      </div>
-	      <button class="btn-secondary" id="generateBtn" data-i18n="generateSentence">Generate Sentence</button>
+	      <button class="btn-secondary" id="generateBtn" data-i18n="generateSentence">Generate Phrase</button>
+	      <button type="button" id="randomSeedBtn" class="btn-secondary" data-i18n-title="randomSeedTitle" title="Fill a random starting phrase" data-i18n="randomSeed" style="font-size:0.8rem; padding:0.3rem 0.6rem;">🎲</button>
 	    </div>
     <div class="row">
-      <label data-i18n="sentenceDifficulty">Sentence difficulty:</label>
+      <label data-i18n="sentenceDifficulty">Phrase difficulty:</label>
       <div class="difficulty-buttons" id="sentenceDifficultyBtns">
         <button class="difficulty-btn" data-temp="0.1" data-i18n="predictableSentence">Predictable</button>
         <button class="difficulty-btn selected" data-temp="0.4" data-i18n="balancedSentence">Balanced</button>
@@ -910,7 +926,7 @@ button:disabled {
 <div id="game" class="panel" style="display:none;">
   <div class="back" id="backBtn">← <span data-i18n="backToSetup">Back to Setup</span></div>
 
-  <div class="section-title" data-i18n="sentenceTitle">Sentence</div>
+  <div class="section-title" data-i18n="sentenceTitle">Phrase</div>
   <div id="sentenceDisplay" class="sentence"></div>
 
   <div class="section-title" data-i18n="playersTitle">Players</div>
@@ -960,14 +976,17 @@ button:disabled {
 
 const TRANSLATIONS = {
   en: {
-    defaultSentence: "You will never guess this sentence.",
+    defaultSentence: "You will never guess this phrase.",
     title: "Next Word Showdown",
-    secretSentence: "Secret Sentence",
-    enterManually: "Enter manually:",
+    secretSentence: "Secret Phrase",
+    sentencePlaceholder: "Type a phrase — or just the start, then click Generate",
     generateWithAI: "Generate with AI:",
     words: "words",
     temp: "Temp:",
-    generateSentence: "Generate Sentence",
+    generateSentence: "Generate Phrase",
+    randomSeed: "🎲",
+    randomSeedTitle: "Fill the box with a random starting phrase",
+    wordToleranceTitle: "Tolerance: cut at the latest punctuation within ±N words of the target",
     languageModel: "Language / Model:",
     notLoaded: "Not loaded",
     customModelId: "Custom model ID:",
@@ -975,7 +994,7 @@ const TRANSLATIONS = {
     downloadingModel: "Downloading model... (first time only, may be 50-500MB)",
     modelsRunLocally: "Models run locally in your browser using",
     loadModel: "Load Model",
-    sentenceDifficulty: "Sentence difficulty:",
+    sentenceDifficulty: "Phrase difficulty:",
     predictableSentence: "Predictable",
     balancedSentence: "Balanced",
     surprisingSentence: "Surprising",
@@ -989,7 +1008,7 @@ const TRANSLATIONS = {
     startGame: "Start Game",
     clearCache: "🗑️ Clear Downloaded Models",
     backToSetup: "Back to Setup",
-    sentenceTitle: "Sentence",
+    sentenceTitle: "Phrase",
     playersTitle: "Players",
     yourGuess: "Your Guess",
     typeNextWord: "Type the next word...",
@@ -1013,16 +1032,17 @@ const TRANSLATIONS = {
     modelsCleared: "All downloaded models have been cleared.",
     errorClearingCache: (msg) => "Error clearing cache: " + msg,
     pleaseLoadModel: "Please load a model first (click 'Load Model').",
-    generatingSentence: "Generating sentence...",
-    generatingSentenceWait: "Generating sentence... please wait a few seconds.",
+    generatingSentence: "Generating phrase...",
+    generatingSentenceWait: "Generating phrase... please wait a few seconds.",
     generatedWords: (n) => `Generated ${n} words. Click 👁 to reveal.`,
-    generatedTooShort: "Generated text too short - try again",
-    pleaseEnterSentence: "Please enter a sentence or generate one with AI.",
-    atLeastTwoWords: "The sentence must have at least 2 words.",
+    generatedTooShort: "Couldn't generate a clean phrase — please try again, or pick a different model.",
+    pleaseEnterSentence: "Please enter a phrase or generate one with AI.",
+    atLeastTwoWords: "The phrase must have at least 2 words.",
     unloadedModelsConfirm: (list) =>
       `The following AI players have models that are not loaded:\n\n${list}\n\n` +
       `The models will be downloaded when it's their turn (this may take time).\n\n` +
       `Do you want to continue anyway?`,
+    discloseConfirm: "Disclose is a group decision. All players must agree to reveal this word. Every player will lose 10 points. Continue?",
     wordRevealed: "(word revealed)",
     skippedTurn: "(skipped turn)",
     wordDisclosed: "(word disclosed)",
@@ -1042,24 +1062,27 @@ const TRANSLATIONS = {
     unloadedPlayer: (i, id) => `Player ${i}: ${id}`,
     wordsGuessed: (n) => `${n} word${n !== 1 ? 's' : ''}`,
     howToPlay: "How to play",
-    howToPlayBody: `Each round, one word of the secret sentence is hidden. Players take turns guessing it.
+    howToPlayBody: `Each round, one word of the secret phrase is hidden. Players take turns guessing it.
 <ul>
-<li><strong>Correct guess</strong>: +10 pts plus remaining lives on that word.</li>
+<li><strong>Correct guess</strong>: +10 points plus remaining lives on that word.</li>
 <li><strong>Wrong guess / Skip</strong>: lose 1 life ❤️. When all lives are gone you are out for that word.</li>
-<li><strong>All players exhausted</strong>: the word is revealed automatically and everyone loses <strong>-1 pt</strong>.</li>
-<li><strong>Disclose</strong>: reveals the word immediately — <strong>-1 pt</strong> for every player.</li>
+<li><strong>All players exhausted</strong>: the word is revealed automatically and everyone loses 1 point.</li>
+<li><strong>Disclose</strong>: a group decision — everyone must agree. Reveals the word immediately and every player loses 10 points.</li>
 <li>The game ends when all words are revealed.</li>
 </ul>`,
   },
   nl: {
-    defaultSentence: "Je zult deze zin nooit raden.",
+    defaultSentence: "Je zult deze frase nooit raden.",
     title: "Woordstrijd",
-    secretSentence: "Geheime Zin",
-    enterManually: "Handmatig invoeren:",
+    secretSentence: "Geheime Frase",
+    sentencePlaceholder: "Typ een frase — of alleen het begin, dan klik op Genereren",
     generateWithAI: "Genereren met AI:",
     words: "woorden",
     temp: "Temp:",
-    generateSentence: "Zin genereren",
+    generateSentence: "Frase genereren",
+    randomSeed: "🎲",
+    randomSeedTitle: "Vul het vak met een willekeurig beginstuk",
+    wordToleranceTitle: "Tolerantie: knip bij het laatste leesteken binnen ±N woorden van het doel",
     languageModel: "Taal / Model:",
     notLoaded: "Niet geladen",
     customModelId: "Aangepast model-ID:",
@@ -1068,7 +1091,7 @@ const TRANSLATIONS = {
     modelsRunLocally: "Modellen draaien lokaal in uw browser met",
     loadModel: "Model laden",
     explainLink: "Hoe werkt dit?",
-    sentenceDifficulty: "Zinsmoeilijkheid:",
+    sentenceDifficulty: "Frasemoeilijkheid:",
     predictableSentence: "Voorspelbaar",
     balancedSentence: "Gebalanceerd",
     surprisingSentence: "Verrassend",
@@ -1081,7 +1104,7 @@ const TRANSLATIONS = {
     startGame: "Spel starten",
     clearCache: "🗑️ Gedownloade modellen wissen",
     backToSetup: "Terug naar instellingen",
-    sentenceTitle: "Zin",
+    sentenceTitle: "Frase",
     playersTitle: "Spelers",
     yourGuess: "Jouw gok",
     typeNextWord: "Typ het volgende woord...",
@@ -1104,16 +1127,17 @@ const TRANSLATIONS = {
     modelsCleared: "Alle gedownloade modellen zijn gewist.",
     errorClearingCache: (msg) => "Fout bij wissen: " + msg,
     pleaseLoadModel: "Laad eerst een model (klik op 'Model laden').",
-    generatingSentence: "Zin genereren...",
-    generatingSentenceWait: "Zin wordt gegenereerd... wacht een paar seconden.",
+    generatingSentence: "Frase genereren...",
+    generatingSentenceWait: "Frase wordt gegenereerd... wacht een paar seconden.",
     generatedWords: (n) => `${n} woorden gegenereerd. Klik op 👁 om te zien.`,
-    generatedTooShort: "Gegenereerde tekst te kort – probeer opnieuw",
-    pleaseEnterSentence: "Voer een zin in of genereer er een met AI.",
-    atLeastTwoWords: "De zin moet minimaal 2 woorden bevatten.",
+    generatedTooShort: "Kon geen schone frase genereren — probeer het opnieuw of kies een ander model.",
+    pleaseEnterSentence: "Voer een frase in of genereer er een met AI.",
+    atLeastTwoWords: "De frase moet minimaal 2 woorden bevatten.",
     unloadedModelsConfirm: (list) =>
       `De volgende AI-spelers hebben modellen die niet geladen zijn:\n\n${list}\n\n` +
       `De modellen worden gedownload zodra zij aan de beurt zijn (dit kan even duren).\n\n` +
       `Wilt u toch doorgaan?`,
+    discloseConfirm: "Onthullen is een groepsbesluit. Alle spelers moeten akkoord gaan om dit woord te onthullen. Elke speler verliest 10 punten. Doorgaan?",
     wordRevealed: "(woord onthuld)",
     skippedTurn: "(beurt overgeslagen)",
     wordDisclosed: "(woord vrijgegeven)",
@@ -1133,12 +1157,12 @@ const TRANSLATIONS = {
     unloadedPlayer: (i, id) => `Speler ${i}: ${id}`,
     wordsGuessed: (n) => `${n} woord${n !== 1 ? 'en' : ''}`,
     howToPlay: "Speluitleg",
-    howToPlayBody: `Elke ronde is één woord van de geheime zin verborgen. Spelers raden om beurten.
-<ul>
-<li><strong>Goed geraden</strong>: +10 ptn plus het aantal resterende levens voor dat woord.</li>
+    howToPlayBody: `Spelers proberen om beurten steeds één woord van de geheime frase te raden. Elke ronde is één woord.
+  <ul>
+<li><strong>Goed geraden</strong>: +10 punten plus het aantal resterende levens voor dat woord.</li>
 <li><strong>Fout / Overgeslagen</strong>: verlies 1 leven ❤️. Bij nul levens ben je af voor dat woord.</li>
-<li><strong>Alle spelers uitgeput</strong>: het woord wordt automatisch onthuld en iedereen verliest <strong>-1 pt</strong>.</li>
-<li><strong>Onthullen</strong>: onthult het woord direct — <strong>-1 pt</strong> voor elke speler.</li>
+<li><strong>Alle spelers uitgeput</strong>: het woord wordt automatisch onthuld en iedereen verliest 1 punt.</li>
+<li><strong>Onthullen</strong>: een groepsbesluit — alle spelers moeten akkoord gaan. Het woord wordt direct onthuld en elke speler verliest 10 punten.</li>
 <li>Het spel eindigt wanneer alle woorden zijn onthuld.</li>
 </ul>`,
   },
@@ -1146,11 +1170,14 @@ const TRANSLATIONS = {
     defaultSentence: "Nunca adivinarás esta frase.",
     title: "Duelo de Palabras",
     secretSentence: "Frase Secreta",
-    enterManually: "Introducir manualmente:",
+    sentencePlaceholder: "Escribe una frase — o un comienzo, luego pulsa Generar frase",
     generateWithAI: "Generar con IA:",
     words: "palabras",
     temp: "Temp:",
     generateSentence: "Generar frase",
+    randomSeed: "🎲",
+    randomSeedTitle: "Llena el cuadro con una frase inicial aleatoria",
+    wordToleranceTitle: "Tolerancia: corta en la última puntuación dentro de ±N palabras del objetivo",
     languageModel: "Idioma / Modelo:",
     notLoaded: "No cargado",
     customModelId: "ID de modelo personalizado:",
@@ -1198,13 +1225,14 @@ const TRANSLATIONS = {
     generatingSentence: "Generando frase...",
     generatingSentenceWait: "Generando frase... espera unos segundos.",
     generatedWords: (n) => `${n} palabras generadas. Clic en 👁 para revelar.`,
-    generatedTooShort: "Texto generado demasiado corto – inténtalo de nuevo",
+    generatedTooShort: "No se pudo generar una frase limpia — inténtalo de nuevo o elige otro modelo.",
     pleaseEnterSentence: "Por favor, introduce una frase o genera una con IA.",
     atLeastTwoWords: "La frase debe tener al menos 2 palabras.",
     unloadedModelsConfirm: (list) =>
       `Los siguientes jugadores IA tienen modelos sin cargar:\n\n${list}\n\n` +
       `Los modelos se descargarán cuando les toque (puede tardar).\n\n` +
       `¿Deseas continuar de todas formas?`,
+    discloseConfirm: "Revelar es una decisión grupal. Todos los jugadores deben estar de acuerdo en revelar esta palabra. Cada jugador perderá 10 puntos. ¿Continuar?",
     wordRevealed: "(palabra revelada)",
     skippedTurn: "(turno saltado)",
     wordDisclosed: "(palabra divulgada)",
@@ -1226,10 +1254,10 @@ const TRANSLATIONS = {
     howToPlay: "Cómo jugar",
     howToPlayBody: `Cada ronda, una palabra de la frase secreta está oculta. Los jugadores la adivinan por turnos.
 <ul>
-<li><strong>Acierto</strong>: +10 pts más las vidas restantes en esa palabra.</li>
+<li><strong>Acierto</strong>: +10 puntos más las vidas restantes en esa palabra.</li>
 <li><strong>Fallo / Saltar</strong>: pierde 1 vida ❤️. Al quedarte sin vidas estás fuera en esa palabra.</li>
-<li><strong>Todos agotados</strong>: la palabra se revela automáticamente y todos pierden <strong>-1 pt</strong>.</li>
-<li><strong>Revelar</strong>: revela la palabra al instante — <strong>-1 pt</strong> para todos los jugadores.</li>
+<li><strong>Todos agotados</strong>: la palabra se revela automáticamente y todos pierden 1 punto.</li>
+<li><strong>Revelar</strong>: una decisión grupal — todos deben estar de acuerdo. La palabra se revela al instante y cada jugador pierde 10 puntos.</li>
 <li>El juego termina cuando se revelan todas las palabras.</li>
 </ul>`,
   }
@@ -1251,6 +1279,9 @@ function applyTranslations() {
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle);
   });
   // How-to-play body uses innerHTML (contains HTML tags)
   const htpBody = document.getElementById('howToPlayBody');
@@ -1342,7 +1373,8 @@ applyTranslations();
 // Each model gets a unique colored robot avatar
 		// Best (for this game) first, slow/heavy models later. Keep display names short.
 		const AVAILABLE_MODELS = [
-		  { id: "bnicenboim/gpt-neo-125m-dutch-onnx", name: "GPT-Neo 125M Dutch", avatarColor: "orange" },
+		  { id: "bnicenboim/gpt2-medium-dutch-onnx", name: "GPT-2 Medium Dutch", avatarColor: "yellow" },
+		  { id: "bnicenboim/gpt-neo-125m-dutch-onnx", name: "GPT-Neo 125M Dutch (fast)", avatarColor: "orange" },
 		  { id: "bnicenboim/gpt2-spanish-onnx", name: "GPT-2 Spanish", avatarColor: "blue" },
 		  { id: "Xenova/pythia-410m-deduped", name: "Pythia-410m deduped", avatarColor: "purple" },
 		  { id: "Xenova/pythia-410m", name: "Pythia-410m", avatarColor: "red" },
@@ -1361,7 +1393,7 @@ applyTranslations();
 
 		function getDefaultModelForLang(lang) {
 		  const map = {
-		    nl: "bnicenboim/gpt-neo-125m-dutch-onnx",
+		    nl: "bnicenboim/gpt2-medium-dutch-onnx",
 		    es: "bnicenboim/gpt2-spanish-onnx",
 		    en: "Xenova/pythia-410m-deduped",
 		  };
@@ -1468,7 +1500,7 @@ const difficultyBtns = document.querySelectorAll("#difficultyBtns .difficulty-bt
 		      const { pipeline } = await getTransformersStable();
 		      const isQwen25 = typeof modelId === 'string' && /Qwen2\.5/i.test(modelId);
 		      const isOnnxRepo =
-		        typeof modelId === 'string' && (modelId.startsWith('onnx-community/') || /ONNX/.test(modelId));
+		        typeof modelId === 'string' && (modelId.startsWith('onnx-community/') || /onnx/i.test(modelId));
 		      const knownModelMeta = AVAILABLE_MODELS.find(m => m.id === modelId);
 		      const forcedDtype = knownModelMeta?.dtype || null;
 		      // Qwen2.5 ONNX models are typically intended to be used quantized.
@@ -1479,9 +1511,9 @@ const difficultyBtns = document.querySelectorAll("#difficultyBtns .difficulty-bt
 		      };
 		      const generator = await pipeline('text-generation', modelId, modelLoadOptions);
 		      console.log(`Model loaded successfully: ${modelId}`);
-		      // WebGPU models often compile on first inference; do a tiny warmup so AI turns don't
-		      // appear to "hang" at the first generation call.
-		      if (isQwen25 && hasWebGPU()) {
+		      // WebGPU models compile shaders on first inference; do a tiny warmup so the first
+		      // real generation isn't dramatically slower than subsequent ones.
+		      if (isOnnxRepo && hasWebGPU()) {
 		        try {
 		          await generator("Hello", { max_new_tokens: 1, return_full_text: false });
 		          console.log(`Model warmed up (webgpu): ${modelId}`);
@@ -1491,34 +1523,10 @@ const difficultyBtns = document.querySelectorAll("#difficultyBtns .difficulty-bt
 		      }
 		      return generator;
 		    } catch (firstError) {
-		      const firstMsg = (firstError && typeof firstError === 'object' && firstError.message) ? firstError.message : String(firstError || '');
-		      // SmolLM3 support landed after some versions; auto-fallback to latest if stable can't
-		      // recognize the architecture.
-		      if (firstMsg.includes('Unsupported model type: smollm3')) {
-		        console.warn(`Stable Transformers.js doesn't support smollm3; retrying with latest: ${modelId}`, firstError);
-		        const { pipeline } = await getTransformersLatest();
-		        const preferWebGPU = (typeof navigator !== 'undefined' && !!navigator.gpu);
-		        try {
-		          const generator = await pipeline('text-generation', modelId, {
-		            ...baseOptions,
-		            dtype: 'q4f16',
-		            ...(preferWebGPU ? { device: 'webgpu' } : {})
-		          });
-		          console.log(`Model loaded successfully (latest): ${modelId}`);
-		          return generator;
-		        } catch (latestError) {
-		          // Fallback: try latest defaults if the recommended settings aren't supported.
-		          console.warn(`Latest Transformers.js load with q4f16/webgpu failed; retrying with defaults: ${modelId}`, latestError);
-		          const generator = await pipeline('text-generation', modelId, baseOptions);
-		          console.log(`Model loaded successfully (latest defaults): ${modelId}`);
-		          return generator;
-		        }
-		      }
-
 		      // One targeted retry: some model repos only publish quantized ONNX artifacts. Let the
 		      // first attempt try the library default, then retry with q4 for Xenova and ONNX repos.
 		      const isLikelyOnnxRepo =
-		        typeof modelId === 'string' && (modelId.startsWith('Xenova/') || /ONNX/.test(modelId));
+		        typeof modelId === 'string' && (modelId.startsWith('Xenova/') || /onnx/i.test(modelId));
 		      if (isLikelyOnnxRepo) {
 		        console.warn(`Retrying model load with quantized dtype (q4): ${modelId}`, firstError);
 		        const { pipeline } = await getTransformersStable();
@@ -1750,6 +1758,7 @@ async function ensureAIModel(modelId) {
 		document.getElementById("generateBtn").onclick = async () => {
 		  const statusEl = document.getElementById("generateStatus");
 		  const wordCountInput = document.getElementById("wordCount");
+		  const wordToleranceInput = document.getElementById("wordTolerance");
       const generateBtn = document.getElementById("generateBtn");
 
   if (!sentenceGenerator) {
@@ -1761,7 +1770,13 @@ async function ensureAIModel(modelId) {
 
   const wordCount = wordCountInput.value
     ? parseInt(wordCountInput.value)
-    : Math.floor(Math.random() * 8) + 5;
+    : 12;
+  // Tolerance ±N words: how far above/below the target the trim logic may reach
+  // for natural punctuation (.,!?;:). Default 5 words. The latest punctuation in
+  // the window wins, regardless of which mark.
+  const toleranceWords = wordToleranceInput && wordToleranceInput.value !== ""
+    ? Math.max(0, Math.min(40, parseInt(wordToleranceInput.value)))
+    : 5;
 
 	  statusEl.textContent = t('generatingSentenceWait');
       statusEl.classList.add("waiting");
@@ -1770,85 +1785,161 @@ async function ensureAIModel(modelId) {
       generateBtn.classList.add("loading");
       generateBtn.textContent = t('generatingSentence');
 	
+		  // Yield to the browser so the loading UI actually paints before we start
+		  // synchronous-heavy compute. Without this, fast 2nd+ generations look instantaneous.
+		  await new Promise(r => setTimeout(r, 0));
+
 		  try {
-		    const sentenceModelId = getSentenceModelId();
-		    const isSmolLM3 = /SmolLM3/i.test(sentenceModelId);
 		    const temp = sentenceTempInput && sentenceTempInput.value !== "" ? parseFloat(sentenceTempInput.value) : 0.4;
-		
+		    const knownDefaults = Object.values(TRANSLATIONS).map(tr => tr.defaultSentence).filter(Boolean);
+
+		    // Use the box as a seed-and-extend only when the user typed a partial phrase shorter
+		    // than the target. Otherwise (empty, default, or already long enough) regenerate.
+		    const initialSeed = (sentenceInput.value || "").trim();
+		    const initialSeedWords = initialSeed ? initialSeed.split(/\s+/).filter(w => /^\p{L}/u.test(w)) : [];
+		    const useAsSeed =
+		      initialSeed.length > 0 &&
+		      !knownDefaults.includes(initialSeed) &&
+		      initialSeedWords.length < wordCount;
+		    const seed = useAsSeed ? initialSeed : "";
+		    const seedWords = useAsSeed ? initialSeedWords : [];
+
+		    // Empty seed → single space so the tokenizer can prepend BOS naturally.
+		    const modelPrompt = seed || " ";
+
+		    // Adaptive token budget. ~4 tokens per word covers Dutch BPE (denser than English)
+		    // with some slack for the cleanup filter to drop a few unnatural tokens. Generation
+		    // time scales linearly with this number, so we keep it as tight as we can.
+		    // Generate enough tokens to potentially fill the upper tolerance bound, since the
+		    // cut logic may extend past wordCount looking for a sentence-ending punctuation.
+		    const wordsNeeded = Math.max(1, (wordCount + toleranceWords) - seedWords.length);
+		    const maxTokens = Math.max(40, wordsNeeded * 4);
+
+		    // A "natural" word: Unicode letters with apostrophes/hyphens, optionally followed by
+		    // a single piece of natural punctuation (.,!?;:). Accepts Dutch ('s-ochtends, 't),
+		    // French (d\u00e9j\u00e0-vu, na\u00efve), Spanish (ni\u00f1o, a\u00f1os), German (D\u00fcsseldorf, wei\u00df), English
+		    // contractions (don't, it's), and sentence-ending words (gezellige., dat!, vraag?).
+		    // Rejects digits, brackets, slashes, underscores \u2014 code/HTML/LaTeX residue.
+		    // Allow ASCII apostrophe ('), curly quotes (\u2018 \u2019 \u201c \u201d), hyphen, Unicode letters, and
+		    // an optional Spanish opener (\u00a1 / \u00bf) at the start of the word. Optionally followed
+		    // by sentence/clause punctuation. Word must contain \u22651 letter.
+		    const NATURAL = /^[\u00a1\u00bf]?(?=.*\p{L})[\p{L}'\u2018\u2019\u201c\u201d\-]+[.,!?;:]?$/u;
+		    // A "numeric" token: integers, decimals, dates, times, with optional leading currency
+		    // sign (€/$/£/¥). Keeps "100.000", "8", "8:00", "2026-04-25", "€1,7", "$200".
+		    // Code-like tokens are caught by the bracket/symbol strip in cleanRawOutput first.
+		    const NUMERIC = /^[€$£¥]?\d+(?:[.,:\-]\d+)*[.,!?;:]?$/;
+		    const NON_LATIN_LETTER = /[\p{Script=Cyrillic}\p{Script=Greek}\p{Script=Han}\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Devanagari}]/u;
+
+		    // Strip HTML/LaTeX/URLs/code residue from raw model output before tokenizing words.
+		    // We KEEP natural punctuation (.,!?;:) and glue it to the preceding word, so the
+		    // model's "voor !" becomes "voor!" and the cut logic sees the sentence boundary.
+		    function cleanRawOutput(s) {
+		      return (s || "")
+		        .replace(/<[^>]*>/g, ' ')                                       // HTML/XML tags
+		        .replace(/\\[a-zA-Z]+\*?(?:\[[^\]]*\])?(?:\{[^}]*\})*/g, ' ')   // \latexCmd{...}
+		        .replace(/\$+[^\$]*\$+/g, ' ')                                  // $math$ / $$math$$
+		        .replace(/https?:\/\/\S+/g, ' ')                                // URLs
+		        .replace(/[`{}\[\]<>=_|\\]/g, ' ')                              // stray code symbols
+		        .replace(/\n/g, ' ')
+		        .replace(/\s+/g, ' ')
+		        .replace(/\s+([.,!?;:])/g, '$1')                                // glue " ," " ." " !" etc.
+		        .replace(/([.!?])(?=\p{L})/gu, '$1 ')                           // split "bedankt!Kathy"
+		        .replace(/([.,!?;:]){2,}/g, '$1')                               // collapse "!!" / ",,," to one
+		        // Strip orphan punctuation at the very start (no word in front of them).
+		        // Keep Spanish openers ¡ ¿ so "¡Hola!" survives.
+		        .replace(/^[.,!?;:'"‘’“”\s]+/, '')
+		        .trim();
+		    }
+
+		    function isAcceptable(words) {
+		      // Need at least 3 words and the lower bound of the tolerance window.
+		      if (words.length < Math.max(3, wordCount - toleranceWords)) return false;
+		      const joined = words.join(" ");
+		      // We expect Latin script for all bundled models. Any non-Latin letter is rejected.
+		      if (NON_LATIN_LETTER.test(joined)) return false;
+		      // Reject "stitched-fragment" outputs: a capital mid-sentence is fine after a
+		      // sentence-ending punctuation (.!?) on the previous word, or for a proper noun.
+		      // We flag only capitals appearing without a preceding sentence-end.
+		      if (words.length > 4) {
+		        let stitchedCaps = 0;
+		        for (let i = 1; i < words.length; i++) {
+		          if (!/^\p{Lu}/u.test(words[i])) continue;
+		          const prev = words[i - 1] || "";
+		          if (/[.!?]$/.test(prev)) continue;
+		          stitchedCaps++;
+		        }
+		        if (stitchedCaps / (words.length - 1) > 0.30) return false;
+		      }
+		      // Require an uppercase first letter for fresh (no-seed) generation.
+		      if (!seed && !/^\p{Lu}/u.test(words[0] || "")) return false;
+		      return true;
+		    }
+
+		    // Trim to a natural cut point near the target. Within ±`toleranceWords` of
+		    // `wordCount`, cut at the LATEST word ending in any natural punctuation
+		    // (.!?,;:). If none in range, cut at exactly `wordCount`.
+		    function trimAtNaturalCut(words) {
+		      const minLen = Math.max(3, wordCount - toleranceWords);
+		      const maxLen = wordCount + toleranceWords;
+		      let bestCut = -1;
+		      const lookEnd = Math.min(words.length, maxLen);
+		      for (let i = minLen - 1; i < lookEnd; i++) {
+		        const w = words[i] || "";
+		        if (/[.,!?;:]$/.test(w)) bestCut = i + 1; // overwrite — latest wins
+		      }
+		      const cut = bestCut > 0 ? bestCut : Math.min(wordCount, words.length);
+		      return words.slice(0, cut);
+		    }
+
+		    // If no seed and the result starts lowercase, jump forward to the first sentence-
+		    // start (a capital word preceded by a `.!?`-ending word) so we can salvage a clean
+		    // sentence from the middle of the model's output.
+		    function skipToSentenceStart(words) {
+		      if (seed || words.length === 0) return words;
+		      if (/^\p{Lu}/u.test(words[0])) return words;
+		      for (let i = 1; i < words.length; i++) {
+		        if (/^\p{Lu}/u.test(words[i]) && /[.!?]$/.test(words[i - 1] || "")) {
+		          return words.slice(i);
+		        }
+		      }
+		      return words;
+		    }
+
 		    let result = "";
-		    if (isSmolLM3) {
-	      // SmolLM3 is an instruct/chat model; ask for a plain sentence output.
-	      const messages = [
-	        { role: "system", content: "/no_think" },
-	        {
-	          role: "user",
-	          content:
-	            `Write ONE natural sentence of about ${wordCount} words.\n` +
-	            `Output only the sentence text (no quotes, no markdown, no list, no extra commentary).`
-	        },
-	      ];
-	      result = await generateText(sentenceGenerator, messages, 128, { temperature: temp, top_p: 0.9, do_sample: true });
-	      result = result
-	        .replace(/\n/g, ' ')
-	        .replace(/\s+/g, ' ')
-	        .trim();
-	    } else {
-	      // Better prompts for more coherent sentences (continuation style)
-	      const prompts = [
-	        "The cat sat on",
-	        "Yesterday I went to",
-	        "My friend told me",
-	        "The weather was",
-	        "She decided to",
-	        "In the morning",
-	        "The book was about",
-	        "He walked into",
-	        "They found a",
-	        "It was a beautiful"
-	      ];
-	      const prompt = prompts[Math.floor(Math.random() * prompts.length)];
-	
-	      result = await generateText(sentenceGenerator, prompt, 80, { temperature: temp, top_p: 0.9, do_sample: true });
-	      result = (prompt + " " + result)
-	        .replace(/\n/g, ' ')
-	        .replace(/\s+/g, ' ')
-	        .trim();
-	    }
+		    let words = [];
+		    const MAX_ATTEMPTS = 4;
+		    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+		      // Yield to the browser between retries so the page stays responsive.
+		      if (attempt > 1) await new Promise(r => setTimeout(r, 0));
 
-	    // Try to end at a natural sentence boundary
-	    const sentenceEnd = result.search(/[.!?]/);
-	    if (sentenceEnd > 15) {
-	      result = result.substring(0, sentenceEnd);
-    }
+		      const rawText = await generateText(sentenceGenerator, modelPrompt, maxTokens, { temperature: temp, top_p: 0.9, do_sample: true });
+		      console.log(`[GENERATE] Attempt ${attempt} raw model output:`, JSON.stringify(rawText));
+		      const newText = cleanRawOutput(rawText);
+		      console.log(`[GENERATE] Attempt ${attempt} cleaned:`, JSON.stringify(newText));
 
-    // Clean up punctuation at the end
-    result = result.replace(/[.!?,;:'"]+$/, '').trim();
+		      const combined = (seed ? seed + " " + newText : newText).replace(/\s+/g, ' ').trim();
+		      // Keep natural words AND numeric tokens (100.000, 8, 8:00, 2026-04-25, ...).
+		      let candidateWords = combined.split(/\s+/).filter(w => NATURAL.test(w) || NUMERIC.test(w));
+		      candidateWords = skipToSentenceStart(candidateWords);
+		      const trimmed = trimAtNaturalCut(candidateWords);
 
-	    // Remove incomplete words at the end
-	    let words = result.split(/\s+/).filter(w => w.length > 0 && /^\p{L}/u.test(w));
+		      if (isAcceptable(trimmed)) {
+		        words = trimmed;
+		        result = words.join(" ");
+		        console.log(`[GENERATE] Attempt ${attempt} accepted (${words.length} words).`);
+		        break;
+		      }
+		      console.warn(`[GENERATE] Attempt ${attempt} rejected. Filtered words (${trimmed.length}):`, trimmed);
+		    }
 
-    // Trim to target word count
-    if (words.length > wordCount) {
-      words = words.slice(0, wordCount);
-    }
-
-    // Remove trailing articles/prepositions for cleaner ending
-    const trailingWords = ['the', 'a', 'an', 'to', 'of', 'in', 'on', 'at', 'for', 'and', 'or', 'but'];
-    while (words.length > 3 && trailingWords.includes(words[words.length - 1].toLowerCase())) {
-      words.pop();
-    }
-
-    result = words.join(" ");
-
-    if (result && words.length >= 3) {
-      // Keep it hidden - don't change type to "text"
-      sentenceInput.value = result;
-      statusEl.textContent = t('generatedWords', words.length);
-      statusEl.classList.remove("waiting");
-      statusEl.style.color = "#276749";
-    } else {
-      throw new Error(t('generatedTooShort'));
-    }
+		    if (result) {
+		      sentenceInput.value = result;
+		      statusEl.textContent = t('generatedWords', words.length);
+		      statusEl.classList.remove("waiting");
+		      statusEl.style.color = "#276749";
+		    } else {
+		      throw new Error(t('generatedTooShort'));
+		    }
   } catch (e) {
     statusEl.textContent = `Error: ${e.message}`;
     statusEl.classList.remove("waiting");
@@ -2147,9 +2238,17 @@ sentenceTempInput.addEventListener("input", () => {
   });
 });
 
+function updateEyeIcon() {
+  const btn = document.getElementById("eyeBtn");
+  if (!btn) return;
+  // Hidden (password) → solid black eye; Visible (text) → greyed-out eye.
+  btn.classList.toggle("eye-visible", sentenceInput.type !== "password");
+}
 document.getElementById("eyeBtn").onclick = () => {
   sentenceInput.type = sentenceInput.type === "password" ? "text" : "password";
+  updateEyeIcon();
 };
+updateEyeIcon();
 
 /* ======================
    Start game
@@ -2554,7 +2653,8 @@ document.getElementById("skipBtn").onclick = performSkip;
 
 document.getElementById("discloseBtn").onclick = () => {
   if (game.finished) return;
-  discloseWord(1);
+  if (!confirm(t('discloseConfirm'))) return;
+  discloseWord(10);
 };
 
 function discloseWord(penalty = 10) {
@@ -2676,30 +2776,14 @@ async function doAITurn() {
 	      console.log(`[AI-PROMPT] Context: "${prompt.trim()}"`);
 	      
 		      const modelId = currentPlayer.modelId || "";
-		      const isSmolLM3 = /SmolLM3/i.test(modelId);
 		      const isQwen25 = /Qwen2\.5/i.test(modelId);
 		      const modelMeta = AVAILABLE_MODELS.find(m => m.id === modelId);
 		      const modelDisplayName = modelMeta ? modelMeta.name : "";
-		      const isSlowModel = /\(slow\)/i.test(modelDisplayName) || /Qwen|Mistral|Phi-2|SmolLM3/i.test(modelId);
-		      const genInput = isSmolLM3
-		        ? [
-	            { role: "system", content: "/no_think" },
-	            {
-	              role: "user",
-	              content:
-	                `You are playing a next-word guessing game.\n\n` +
-	                `Text so far:\n${revealedWords}\n\n` +
-	                `Respond with EXACTLY ONE next word to continue the text.\n` +
-	                `Rules:\n` +
-	                `- Output must begin with a single leading space, then the word.\n` +
-	                `- No quotes, no punctuation, no extra words.\n` +
-	                `- Preserve correct capitalization (e.g., output " I" not " i").`
-	            },
-	          ]
-	        : prompt;
+		      const isSlowModel = /\(slow\)/i.test(modelDisplayName) || /Qwen|Mistral|Phi-2/i.test(modelId);
+		      const genInput = prompt;
 	      const baseTemp = (typeof currentPlayer.temperature === "number") ? currentPlayer.temperature : 0.4;
-	      const maxTokens = isSmolLM3 ? 8 : (isQwen25 ? 8 : 6);
-	      const numCandidates = isSmolLM3 ? 5 : (isSlowModel ? 2 : 3);
+	      const maxTokens = isQwen25 ? 8 : 6;
+	      const numCandidates = isSlowModel ? 2 : 3;
 	      let results = await generateMultipleTexts(
 	        generator,
 	        genInput,
@@ -2812,13 +2896,10 @@ async function doAITurn() {
     // If cache is exhausted, escalate temperature + candidates and retry up to 3 times
     if (availableGuesses.length === 0) {
       const modelId = currentPlayer.modelId || "";
-      const isSmolLM3 = /SmolLM3/i.test(modelId);
-      const isSlowModel = /\(slow\)/i.test((AVAILABLE_MODELS.find(m => m.id === modelId) || {}).name || "") || /Qwen|Mistral|Phi-2|SmolLM3/i.test(modelId);
+      const isSlowModel = /\(slow\)/i.test((AVAILABLE_MODELS.find(m => m.id === modelId) || {}).name || "") || /Qwen|Mistral|Phi-2/i.test(modelId);
       const baseTemp = (typeof currentPlayer.temperature === "number") ? currentPlayer.temperature : 0.4;
-      const maxTokens = isSmolLM3 ? 8 : 6;
-      const genInput = isSmolLM3
-        ? [{ role: "system", content: "/no_think" }, { role: "user", content: `You are playing a next-word guessing game.\n\nText so far:\n${revealedWords}\n\nRespond with EXACTLY ONE next word to continue the text.\nRules:\n- Output must begin with a single leading space, then the word.\n- No quotes, no punctuation, no extra words.\n- Preserve correct capitalization (e.g., output " I" not " i").` }]
-        : prompt;
+      const maxTokens = 6;
+      const genInput = prompt;
 
       for (let attempt = 1; attempt <= 3 && availableGuesses.length === 0; attempt++) {
         const escTemp = Math.min(1.5, baseTemp + attempt * 0.3);
@@ -3008,6 +3089,28 @@ function render() {
 document.getElementById("optCase").onchange = e => opts.caseInsensitive = e.target.checked;
 document.getElementById("optPunct").onchange = e => opts.ignorePunctuation = e.target.checked;
 document.getElementById("optLev").oninput = e => opts.levenshtein = Number(e.target.value) || 0;
+
+const SEED_PROMPT_POOL = {
+  en: ["The cat sat on", "Yesterday I went to", "My friend told me", "The weather was", "She decided to", "In the morning", "The book was about", "He walked into", "They found a", "It was a beautiful"],
+  nl: ["De kat zat op", "Gisteren ging ik naar", "Mijn vriend vertelde me", "Het weer was", "Zij besloot om", "'s Ochtends", "Het boek ging over", "Hij liep naar binnen en", "Ze vonden een", "Het was een mooie"],
+  es: ["El gato se sentó en", "Ayer fui a", "Mi amigo me dijo", "El tiempo estaba", "Ella decidió", "Por la mañana", "El libro trataba de", "Él entró en", "Encontraron una", "Era una hermosa"]
+};
+
+function seedLangForCurrentModel() {
+  const id = (typeof getSentenceModelId === "function" ? getSentenceModelId() : "") || "";
+  if (/dutch|nederlands/i.test(id)) return "nl";
+  if (/spanish|español|gpt2-base-bne/i.test(id)) return "es";
+  return SEED_PROMPT_POOL[currentLang] ? currentLang : "en";
+}
+
+document.getElementById("randomSeedBtn").onclick = () => {
+  const pool = SEED_PROMPT_POOL[seedLangForCurrentModel()] || SEED_PROMPT_POOL.en;
+  sentenceInput.value = pool[Math.floor(Math.random() * pool.length)];
+  if (sentenceInput.type === "password") {
+    sentenceInput.type = "text";
+    updateEyeIcon();
+  }
+};
 
 document.getElementById("backBtn").onclick = () => {
   if (game) game.finished = true; // stop any running AI turn
