@@ -831,53 +831,17 @@ button:disabled {
 <div id="setup" class="panel">
   <!-- Title removed per user preference -->
 
-  <!-- Phrase Input -->
+  <!-- Sentence Input -->
   <div class="section-box">
-    <h3>📝 <span data-i18n="secretSentence">Secret Phrase</span></h3>
+    <h3>📝 <span data-i18n="secretSentence">Secret Sentence</span></h3>
     <div class="row">
-      <input id="sentenceInput" type="password" data-i18n-placeholder="sentencePlaceholder" placeholder="Type a phrase — or just the start, then click Generate" style="flex:1; min-width:200px;">
-      <button class="btn-icon" id="eyeBtn" title="Show / hide phrase">👁</button>
+      <input id="sentenceInput" type="password" data-i18n-placeholder="sentencePlaceholder" placeholder="Type a sentence, or click Generate" style="flex:1; min-width:200px;">
+      <button class="btn-icon" id="eyeBtn" title="Show / hide sentence">👁</button>
     </div>
-	    <div class="row">
-	      <label data-i18n="generateWithAI">Generate with AI:</label>
-	      <div class="inline-input">
-	        <input id="wordCount" type="number" class="word-count-input" min="3" max="40" placeholder="12" style="width:80px;">
-	        <span style="color:#666;" data-i18n="words">words</span>
-	        <span style="color:#666; margin-left:0.4rem;" data-i18n-title="wordToleranceTitle" title="Tolerance: cut at punctuation within ±N words of the target">±</span>
-	        <input id="wordTolerance" type="number" min="0" max="40" placeholder="5" style="width:84px;">
-	      </div>
-	      <button class="btn-secondary" id="generateBtn" data-i18n="generateSentence">Generate Phrase</button>
-	      <button type="button" id="randomSeedBtn" class="btn-secondary" data-i18n-title="randomSeedTitle" title="Fill a random starting phrase" data-i18n="randomSeed" style="font-size:0.8rem; padding:0.3rem 0.6rem;">🎲</button>
-	    </div>
     <div class="row">
-      <label data-i18n="sentenceDifficulty">Phrase difficulty:</label>
-      <div class="difficulty-buttons" id="sentenceDifficultyBtns">
-        <button class="difficulty-btn" data-temp="0.1" data-i18n="predictableSentence">Predictable</button>
-        <button class="difficulty-btn selected" data-temp="0.4" data-i18n="balancedSentence">Balanced</button>
-        <button class="difficulty-btn" data-temp="0.9" data-i18n="surprisingSentence">Surprising</button>
-      </div>
-      <span style="color:#999; font-size:0.75rem; display:inline-flex; align-items:center; gap:0.3rem;" data-i18n="temp">Temp:</span>
-      <input id="sentenceTemp" type="number" min="0" max="2" step="0.1" value="0.4" style="width:55px; font-size:0.75rem; padding:0.2rem 0.4rem; color:#888;">
+      <button class="btn-secondary" id="generateBtn" data-i18n="generateSentence">Generate sentence</button>
+      <div id="generateStatus" class="generate-status"></div>
     </div>
-    <div class="row" style="margin-top:0.8rem;">
-      <label data-i18n="languageModel">Language / Model:</label>
-      <select id="sentenceModelSelect" style="min-width:180px;"></select>
-      <span id="sentenceModelStatus" class="model-status not-loaded" data-i18n="notLoaded">Not loaded</span>
-    </div>
-    <div id="customModelRow" class="row" style="display:none; margin-top:0.5rem;">
-      <label data-i18n="customModelId">Custom model ID:</label>
-      <input id="customModelInput" type="text" placeholder="e.g., Xenova/gpt2" style="flex:1; min-width:200px;">
-      <a href="https://huggingface.co/models?pipeline_tag=text-generation&library=transformers.js" target="_blank" style="font-size:0.85rem; color:#667eea;" data-i18n="browseModels">Browse models ↗</a>
-    </div>
-    <div id="sentenceModelProgress" style="display:none;">
-      <div class="progress-bar"><div class="progress" style="width:0%"></div></div>
-      <div class="model-info" data-i18n="downloadingModel">Downloading model... (first time only, may be 50-500MB)</div>
-    </div>
-    <div style="font-size:0.85rem; color:#666; margin-top:0.5rem;">
-      <span data-i18n="modelsRunLocally">Models run locally in your browser using</span> <a href="https://huggingface.co/docs/transformers.js" target="_blank" style="color:#667eea;">Transformers.js</a>.
-      <button type="button" id="loadSentenceModelBtn" style="margin-left:1rem; font-size:0.8rem; padding:0.3rem 0.6rem;" data-i18n="loadModel">Load Model</button>
-    </div>
-    <div id="generateStatus" class="generate-status"></div>
   </div>
 
   <div class="row">
@@ -926,7 +890,7 @@ button:disabled {
 <div id="game" class="panel" style="display:none;">
   <div class="back" id="backBtn">← <span data-i18n="backToSetup">Back to Setup</span></div>
 
-  <div class="section-title" data-i18n="sentenceTitle">Phrase</div>
+  <div class="section-title" data-i18n="sentenceTitle">Sentence</div>
   <div id="sentenceDisplay" class="sentence"></div>
 
   <div class="section-title" data-i18n="playersTitle">Players</div>
@@ -976,28 +940,11 @@ button:disabled {
 
 const TRANSLATIONS = {
   en: {
-    defaultSentence: "You will never guess this phrase.",
+    defaultSentence: "You will never guess this sentence.",
     title: "Next Word Showdown",
-    secretSentence: "Secret Phrase",
-    sentencePlaceholder: "Type a phrase — or just the start, then click Generate",
-    generateWithAI: "Generate with AI:",
-    words: "words",
-    temp: "Temp:",
-    generateSentence: "Generate Phrase",
-    randomSeed: "🎲",
-    randomSeedTitle: "Fill the box with a random starting phrase",
-    wordToleranceTitle: "Tolerance: cut at the latest punctuation within ±N words of the target",
-    languageModel: "Language / Model:",
-    notLoaded: "Not loaded",
-    customModelId: "Custom model ID:",
-    browseModels: "Browse models ↗",
-    downloadingModel: "Downloading model... (first time only, may be 50-500MB)",
-    modelsRunLocally: "Models run locally in your browser using",
-    loadModel: "Load Model",
-    sentenceDifficulty: "Phrase difficulty:",
-    predictableSentence: "Predictable",
-    balancedSentence: "Balanced",
-    surprisingSentence: "Surprising",
+    secretSentence: "Secret Sentence",
+    sentencePlaceholder: "Type a sentence, or click Generate",
+    generateSentence: "Generate sentence",
     explainLink: "How does this work?",
     difficulty: "Difficulty (lives):",
     easy: "Easy (10)",
@@ -1008,7 +955,7 @@ const TRANSLATIONS = {
     startGame: "Start Game",
     clearCache: "🗑️ Clear Downloaded Models",
     backToSetup: "Back to Setup",
-    sentenceTitle: "Phrase",
+    sentenceTitle: "Sentence",
     playersTitle: "Players",
     yourGuess: "Your Guess",
     typeNextWord: "Type the next word...",
@@ -1024,20 +971,16 @@ const TRANSLATIONS = {
     humanOption: "👤 Human",
     customModelOption: "🔧 Custom model...",
     loadBtn: "Load",
+    notLoaded: "Not loaded",
     ready: "✓ Ready",
     loading: "Loading...",
     error: "Error!",
     playerNamePlaceholder: (n) => `Player ${n} name`,
-    pleaseEnterModelId: "Please enter a model ID or select a language.",
     modelsCleared: "All downloaded models have been cleared.",
     errorClearingCache: (msg) => "Error clearing cache: " + msg,
-    pleaseLoadModel: "Please load a model first (click 'Load Model').",
-    generatingSentence: "Generating phrase...",
-    generatingSentenceWait: "Generating phrase... please wait a few seconds.",
     generatedWords: (n) => `Generated ${n} words. Click 👁 to reveal.`,
-    generatedTooShort: "Couldn't generate a clean phrase — please try again, or pick a different model.",
-    pleaseEnterSentence: "Please enter a phrase or generate one with AI.",
-    atLeastTwoWords: "The phrase must have at least 2 words.",
+    pleaseEnterSentence: "Please enter a sentence or click Generate.",
+    atLeastTwoWords: "The sentence must have at least 2 words.",
     unloadedModelsConfirm: (list) =>
       `The following AI players have models that are not loaded:\n\n${list}\n\n` +
       `The models will be downloaded when it's their turn (this may take time).\n\n` +
@@ -1051,7 +994,6 @@ const TRANSLATIONS = {
     aiLabel: " (AI)",
     downloadingModelPct: (name, pct) => `Downloading model ${name}... ${pct}%`,
     thinkingPlayer: (name) => `${name} is thinking`,
-    failedToLoadModel: (msg) => `Failed to load model:\n\n${msg}\n\nTip: Models from the Xenova namespace are most reliable.`,
     failedToLoadModelAI: (msg) => `Failed to load model: ${msg}\n\nMake sure the model exists and is compatible with Transformers.js.`,
     gameFinished: "🏁 Game Finished",
     leaderboard: "🏆 Leaderboard",
@@ -1062,7 +1004,7 @@ const TRANSLATIONS = {
     unloadedPlayer: (i, id) => `Player ${i}: ${id}`,
     wordsGuessed: (n) => `${n} word${n !== 1 ? 's' : ''}`,
     howToPlay: "How to play",
-    howToPlayBody: `Each round, one word of the secret phrase is hidden. Players take turns guessing it.
+    howToPlayBody: `Each round, one word of the secret sentence is hidden. Players take turns guessing it.
 <ul>
 <li><strong>Correct guess</strong>: +10 points plus remaining lives on that word.</li>
 <li><strong>Wrong guess / Skip</strong>: lose 1 life ❤️. When all lives are gone you are out for that word.</li>
@@ -1072,29 +1014,12 @@ const TRANSLATIONS = {
 </ul>`,
   },
   nl: {
-    defaultSentence: "Je zult deze zin(sdeel) nooit raden.",
+    defaultSentence: "Je zult deze zin nooit raden.",
     title: "Woordstrijd",
-    secretSentence: "Geheime Frase",
-    sentencePlaceholder: "Typ een zin(sdeel) — of alleen het begin, dan klik op Genereren",
-    generateWithAI: "Genereren met AI:",
-    words: "woorden",
-    temp: "Temp:",
-    generateSentence: "Zin(sdeel) genereren",
-    randomSeed: "🎲",
-    randomSeedTitle: "Vul het vak met een willekeurig beginstuk",
-    wordToleranceTitle: "Tolerantie: knip bij het laatste leesteken binnen ±N woorden van het doel",
-    languageModel: "Taal / Model:",
-    notLoaded: "Niet geladen",
-    customModelId: "Aangepast model-ID:",
-    browseModels: "Modellen bekijken ↗",
-    downloadingModel: "Model downloaden... (eerste keer, kan 50-500MB zijn)",
-    modelsRunLocally: "Modellen draaien lokaal in uw browser met",
-    loadModel: "Model laden",
+    secretSentence: "Geheime Zin",
+    sentencePlaceholder: "Typ een zin, of klik op Genereren",
+    generateSentence: "Zin genereren",
     explainLink: "Hoe werkt dit?",
-    sentenceDifficulty: "Zin(sdeel)moeilijkheid:",
-    predictableSentence: "Voorspelbaar",
-    balancedSentence: "Gebalanceerd",
-    surprisingSentence: "Verrassend",
     difficulty: "Moeilijkheid (levens):",
     easy: "Makkelijk (10)",
     normal: "Normaal (5)",
@@ -1104,7 +1029,7 @@ const TRANSLATIONS = {
     startGame: "Spel starten",
     clearCache: "🗑️ Gedownloade modellen wissen",
     backToSetup: "Terug naar instellingen",
-    sentenceTitle: "Frase",
+    sentenceTitle: "Zin",
     playersTitle: "Spelers",
     yourGuess: "Jouw gok",
     typeNextWord: "Typ het volgende woord...",
@@ -1119,20 +1044,16 @@ const TRANSLATIONS = {
     humanOption: "👤 Mens",
     customModelOption: "🔧 Aangepast model...",
     loadBtn: "Laden",
+    notLoaded: "Niet geladen",
     ready: "✓ Klaar",
     loading: "Laden...",
     error: "Fout!",
     playerNamePlaceholder: (n) => `Naam speler ${n}`,
-    pleaseEnterModelId: "Voer een model-ID in of selecteer een taal.",
     modelsCleared: "Alle gedownloade modellen zijn gewist.",
     errorClearingCache: (msg) => "Fout bij wissen: " + msg,
-    pleaseLoadModel: "Laad eerst een model (klik op 'Model laden').",
-    generatingSentence: "Zin(sdeel) genereren...",
-    generatingSentenceWait: "Zin(sdeel) wordt gegenereerd... wacht een paar seconden.",
     generatedWords: (n) => `${n} woorden gegenereerd. Klik op 👁 om te zien.`,
-    generatedTooShort: "Kon geen schone zin(sdeel) genereren — probeer het opnieuw of kies een ander model.",
-    pleaseEnterSentence: "Voer een zin(sdeel) in of genereer er een met AI.",
-    atLeastTwoWords: "Het zin(sdeel) moet minimaal 2 woorden bevatten.",
+    pleaseEnterSentence: "Voer een zin in of klik op Genereren.",
+    atLeastTwoWords: "De zin moet minimaal 2 woorden bevatten.",
     unloadedModelsConfirm: (list) =>
       `De volgende AI-spelers hebben modellen die niet geladen zijn:\n\n${list}\n\n` +
       `De modellen worden gedownload zodra zij aan de beurt zijn (dit kan even duren).\n\n` +
@@ -1146,7 +1067,6 @@ const TRANSLATIONS = {
     aiLabel: " (AI)",
     downloadingModelPct: (name, pct) => `Model downloaden ${name}... ${pct}%`,
     thinkingPlayer: (name) => `${name} denkt na`,
-    failedToLoadModel: (msg) => `Model laden mislukt:\n\n${msg}\n\nTip: Modellen uit de Xenova-naamruimte zijn het betrouwbaarst.`,
     failedToLoadModelAI: (msg) => `Model laden mislukt: ${msg}\n\nZorg dat het model bestaat en compatibel is met Transformers.js.`,
     gameFinished: "🏁 Spel afgelopen",
     leaderboard: "🏆 Ranglijst",
@@ -1157,8 +1077,8 @@ const TRANSLATIONS = {
     unloadedPlayer: (i, id) => `Speler ${i}: ${id}`,
     wordsGuessed: (n) => `${n} woord${n !== 1 ? 'en' : ''}`,
     howToPlay: "Speluitleg",
-    howToPlayBody: `Spelers proberen om beurten steeds één woord van de geheime frase te raden. Elke ronde is één woord.
-  <ul>
+    howToPlayBody: `Spelers proberen om beurten steeds één woord van de geheime zin te raden. Elke ronde is één woord.
+<ul>
 <li><strong>Goed geraden</strong>: +10 punten plus het aantal resterende levens voor dat woord.</li>
 <li><strong>Fout / Overgeslagen</strong>: verlies 1 leven ❤️. Bij nul levens ben je af voor dat woord.</li>
 <li><strong>Alle spelers uitgeput</strong>: het woord wordt automatisch onthuld en iedereen verliest 1 punt.</li>
@@ -1167,29 +1087,12 @@ const TRANSLATIONS = {
 </ul>`,
   },
   es: {
-    defaultSentence: "Nunca adivinarás esta frase.",
+    defaultSentence: "Nunca adivinarás esta oración.",
     title: "Duelo de Palabras",
-    secretSentence: "Frase Secreta",
-    sentencePlaceholder: "Escribe una frase — o un comienzo, luego pulsa Generar frase",
-    generateWithAI: "Generar con IA:",
-    words: "palabras",
-    temp: "Temp:",
-    generateSentence: "Generar frase",
-    randomSeed: "🎲",
-    randomSeedTitle: "Llena el cuadro con una frase inicial aleatoria",
-    wordToleranceTitle: "Tolerancia: corta en la última puntuación dentro de ±N palabras del objetivo",
-    languageModel: "Idioma / Modelo:",
-    notLoaded: "No cargado",
-    customModelId: "ID de modelo personalizado:",
-    browseModels: "Ver modelos ↗",
-    downloadingModel: "Descargando modelo... (primera vez, puede ser 50-500MB)",
-    modelsRunLocally: "Los modelos se ejecutan localmente en tu navegador con",
-    loadModel: "Cargar modelo",
+    secretSentence: "Oración Secreta",
+    sentencePlaceholder: "Escribe una oración, o pulsa Generar",
+    generateSentence: "Generar oración",
     explainLink: "¿Cómo funciona?",
-    sentenceDifficulty: "Dificultad de frase:",
-    predictableSentence: "Predecible",
-    balancedSentence: "Equilibrado",
-    surprisingSentence: "Sorprendente",
     difficulty: "Dificultad (vidas):",
     easy: "Fácil (10)",
     normal: "Normal (5)",
@@ -1199,7 +1102,7 @@ const TRANSLATIONS = {
     startGame: "Iniciar juego",
     clearCache: "🗑️ Borrar modelos descargados",
     backToSetup: "Volver a configuración",
-    sentenceTitle: "Frase",
+    sentenceTitle: "Oración",
     playersTitle: "Jugadores",
     yourGuess: "Tu predicción",
     typeNextWord: "Escribe la siguiente palabra...",
@@ -1214,20 +1117,16 @@ const TRANSLATIONS = {
     humanOption: "👤 Humano",
     customModelOption: "🔧 Modelo personalizado...",
     loadBtn: "Cargar",
+    notLoaded: "No cargado",
     ready: "✓ Listo",
     loading: "Cargando...",
     error: "¡Error!",
     playerNamePlaceholder: (n) => `Nombre del jugador ${n}`,
-    pleaseEnterModelId: "Por favor, introduce un ID de modelo o selecciona un idioma.",
     modelsCleared: "Todos los modelos descargados han sido eliminados.",
     errorClearingCache: (msg) => "Error al limpiar caché: " + msg,
-    pleaseLoadModel: "Por favor, carga un modelo primero (clic en 'Cargar modelo').",
-    generatingSentence: "Generando frase...",
-    generatingSentenceWait: "Generando frase... espera unos segundos.",
     generatedWords: (n) => `${n} palabras generadas. Clic en 👁 para revelar.`,
-    generatedTooShort: "No se pudo generar una frase limpia — inténtalo de nuevo o elige otro modelo.",
-    pleaseEnterSentence: "Por favor, introduce una frase o genera una con IA.",
-    atLeastTwoWords: "La frase debe tener al menos 2 palabras.",
+    pleaseEnterSentence: "Por favor, introduce una oración o pulsa Generar.",
+    atLeastTwoWords: "La oración debe tener al menos 2 palabras.",
     unloadedModelsConfirm: (list) =>
       `Los siguientes jugadores IA tienen modelos sin cargar:\n\n${list}\n\n` +
       `Los modelos se descargarán cuando les toque (puede tardar).\n\n` +
@@ -1241,7 +1140,6 @@ const TRANSLATIONS = {
     aiLabel: " (IA)",
     downloadingModelPct: (name, pct) => `Descargando modelo ${name}... ${pct}%`,
     thinkingPlayer: (name) => `${name} está pensando`,
-    failedToLoadModel: (msg) => `Error al cargar modelo:\n\n${msg}\n\nConsejo: Los modelos del espacio Xenova son los más fiables.`,
     failedToLoadModelAI: (msg) => `Error al cargar modelo: ${msg}\n\nAsegúrate de que el modelo existe y es compatible con Transformers.js.`,
     gameFinished: "🏁 Juego terminado",
     leaderboard: "🏆 Clasificación",
@@ -1252,7 +1150,7 @@ const TRANSLATIONS = {
     unloadedPlayer: (i, id) => `Jugador ${i}: ${id}`,
     wordsGuessed: (n) => `${n} palabra${n !== 1 ? 's' : ''}`,
     howToPlay: "Cómo jugar",
-    howToPlayBody: `Cada ronda, una palabra de la frase secreta está oculta. Los jugadores la adivinan por turnos.
+    howToPlayBody: `Cada ronda, una palabra de la oración secreta está oculta. Los jugadores la adivinan por turnos.
 <ul>
 <li><strong>Acierto</strong>: +10 puntos más las vidas restantes en esa palabra.</li>
 <li><strong>Fallo / Saltar</strong>: pierde 1 vida ❤️. Al quedarte sin vidas estás fuera en esa palabra.</li>
@@ -1315,8 +1213,6 @@ window.setLang = function(lang) {
       si.value = t('defaultSentence');
     }
   }
-  // Repopulate model selects for new language
-  if (typeof populateSentenceModelSelect === 'function') populateSentenceModelSelect();
   // Re-render player inputs so Human/Custom labels and default model update
   if (typeof renderPlayerInputs === 'function') renderPlayerInputs();
   // Re-render game-over screen if visible so translations update
@@ -1400,25 +1296,6 @@ applyTranslations();
 		  return map[lang] || "Xenova/pythia-410m-deduped";
 		}
 
-		function populateSentenceModelSelect() {
-		  const select = document.getElementById("sentenceModelSelect");
-		  if (!select) return;
-
-		  const prev = select.value;
-		  const langModels = getModelsForLang(currentLang);
-		  const options = langModels.map(m => `<option value="${m.id}">${m.name}</option>`).join("") +
-		    `<option value="custom">🔧 Custom model...</option>`;
-		  select.innerHTML = options;
-
-		  // Try to preserve previous selection, otherwise use language default.
-		  if (prev && (langModels.some(m => m.id === prev) || prev === "custom")) {
-		    select.value = prev;
-		  } else {
-		    select.value = getDefaultModelForLang(currentLang);
-		  }
-		}
-
-        
 // Color palette for custom models
 const AI_COLORS = ["blue", "green", "orange", "yellow", "red", "purple"];
 
@@ -1439,7 +1316,6 @@ function createRobotAvatar(colorClass) {
 
 let game = null;
 let maxLives = 5;
-let sentenceGenerator = null;
 let aiGenerators = {}; // model_id -> pipeline
 let aiGuessHistory = []; // Track recent AI guesses to avoid repetition
 
@@ -1462,22 +1338,6 @@ const difficultyBtns = document.querySelectorAll("#difficultyBtns .difficulty-bt
 
 	// Default secret sentence
 	sentenceInput.value = t('defaultSentence');
-	
-	// Model selector elements
-	const sentenceModelSelect = document.getElementById("sentenceModelSelect");
-	const customModelRow = document.getElementById("customModelRow");
-	const customModelInput = document.getElementById("customModelInput");
-
-	// Keep the model list as a single source of truth.
-	populateSentenceModelSelect();
-
-// Get the actual model ID (handles custom option)
-	function getSentenceModelId() {
-	  if (sentenceModelSelect.value === "custom") {
-	    return customModelInput.value.trim() || "Xenova/pythia-410m-deduped";
-	  }
-	  return sentenceModelSelect.value;
-	}
 
 /* ======================
    Model Loading
@@ -1583,48 +1443,6 @@ const difficultyBtns = document.querySelectorAll("#difficultyBtns .difficulty-bt
 	  return m ? m[1] : "";
 	}
 
-document.getElementById("loadSentenceModelBtn").onclick = async () => {
-  const modelId = getSentenceModelId();
-  if (!modelId) {
-    alert(t('pleaseEnterModelId'));
-    return;
-  }
-
-  const statusEl = document.getElementById("sentenceModelStatus");
-  const progressEl = document.getElementById("sentenceModelProgress");
-  const progressBar = progressEl.querySelector(".progress");
-
-  statusEl.textContent = t('loading');
-  statusEl.className = "model-status loading";
-  progressEl.style.display = "block";
-  progressBar.style.width = "0%";
-
-  try {
-    sentenceGenerator = await loadModel(modelId, (progress) => {
-      if (progress.status === "progress" && progress.progress) {
-        progressBar.style.width = `${progress.progress}%`;
-      } else if (progress.status === "initiate") {
-        document.querySelector("#sentenceModelProgress .model-info").textContent =
-          `Loading ${progress.file || 'model files'}...`;
-      } else if (progress.status === "download") {
-        document.querySelector("#sentenceModelProgress .model-info").textContent =
-          `Downloading ${progress.file || 'model'}... (${Math.round((progress.loaded || 0) / 1024 / 1024)}MB)`;
-      }
-    });
-
-    const shortName = modelId.split("/").pop();
-    statusEl.textContent = `✓ ${shortName}`;
-    statusEl.className = "model-status ready";
-    progressEl.style.display = "none";
-  } catch (e) {
-    console.error("Model load error:", e);
-    statusEl.textContent = t('error');
-    statusEl.className = "model-status not-loaded";
-    progressEl.style.display = "none";
-    alert(t('failedToLoadModel', e.message));
-  }
-};
-
 // Clear all downloaded models from cache
 document.getElementById("clearCacheBtn").onclick = async () => {
   if (!confirm(t('clearCacheConfirm'))) {
@@ -1649,12 +1467,7 @@ document.getElementById("clearCacheBtn").onclick = async () => {
     }
 
     // Reset loaded generators
-    sentenceGenerator = null;
     aiGenerators = {};
-
-    // Update status
-    document.getElementById("sentenceModelStatus").textContent = t('notLoaded');
-    document.getElementById("sentenceModelStatus").className = "model-status not-loaded";
 
     alert(t('modelsCleared'));
   } catch (e) {
@@ -1755,199 +1568,38 @@ async function ensureAIModel(modelId) {
    Generate Sentence
 ====================== */
 
-		document.getElementById("generateBtn").onclick = async () => {
-		  const statusEl = document.getElementById("generateStatus");
-		  const wordCountInput = document.getElementById("wordCount");
-		  const wordToleranceInput = document.getElementById("wordTolerance");
-      const generateBtn = document.getElementById("generateBtn");
+const sentenceCache = {};
+async function loadSentencesForLang(lang) {
+  if (sentenceCache[lang]) return sentenceCache[lang];
+  const res = await fetch(`sentences_${lang}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const lines = (await res.text()).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  sentenceCache[lang] = lines;
+  return lines;
+}
 
-  if (!sentenceGenerator) {
-    statusEl.textContent = t('pleaseLoadModel');
-    statusEl.classList.remove("waiting");
-    statusEl.style.color = "#c53030";
-    return;
-  }
+document.getElementById("generateBtn").onclick = async () => {
+  const statusEl = document.getElementById("generateStatus");
+  const generateBtn = document.getElementById("generateBtn");
+  const lang = TRANSLATIONS[currentLang] ? currentLang : 'en';
 
-  const wordCount = wordCountInput.value
-    ? parseInt(wordCountInput.value)
-    : 12;
-  // Tolerance ±N words: how far above/below the target the trim logic may reach
-  // for natural punctuation (.,!?;:). Default 5 words. The latest punctuation in
-  // the window wins, regardless of which mark.
-  const toleranceWords = wordToleranceInput && wordToleranceInput.value !== ""
-    ? Math.max(0, Math.min(40, parseInt(wordToleranceInput.value)))
-    : 5;
-
-	  statusEl.textContent = t('generatingSentenceWait');
-      statusEl.classList.add("waiting");
-	  statusEl.style.color = "";
-      generateBtn.disabled = true;
-      generateBtn.classList.add("loading");
-      generateBtn.textContent = t('generatingSentence');
-	
-		  // Yield to the browser so the loading UI actually paints before we start
-		  // synchronous-heavy compute. Without this, fast 2nd+ generations look instantaneous.
-		  await new Promise(r => setTimeout(r, 0));
-
-		  try {
-		    const temp = sentenceTempInput && sentenceTempInput.value !== "" ? parseFloat(sentenceTempInput.value) : 0.4;
-		    const knownDefaults = Object.values(TRANSLATIONS).map(tr => tr.defaultSentence).filter(Boolean);
-
-		    // Use the box as a seed-and-extend only when the user typed a partial phrase shorter
-		    // than the target. Otherwise (empty, default, or already long enough) regenerate.
-		    const initialSeed = (sentenceInput.value || "").trim();
-		    const initialSeedWords = initialSeed ? initialSeed.split(/\s+/).filter(w => /^\p{L}/u.test(w)) : [];
-		    const useAsSeed =
-		      initialSeed.length > 0 &&
-		      !knownDefaults.includes(initialSeed) &&
-		      initialSeedWords.length < wordCount;
-		    const seed = useAsSeed ? initialSeed : "";
-		    const seedWords = useAsSeed ? initialSeedWords : [];
-
-		    // Empty seed → single space so the tokenizer can prepend BOS naturally.
-		    const modelPrompt = seed || " ";
-
-		    // Adaptive token budget. ~4 tokens per word covers Dutch BPE (denser than English)
-		    // with some slack for the cleanup filter to drop a few unnatural tokens. Generation
-		    // time scales linearly with this number, so we keep it as tight as we can.
-		    // Generate enough tokens to potentially fill the upper tolerance bound, since the
-		    // cut logic may extend past wordCount looking for a sentence-ending punctuation.
-		    const wordsNeeded = Math.max(1, (wordCount + toleranceWords) - seedWords.length);
-		    const maxTokens = Math.max(40, wordsNeeded * 4);
-
-		    // A "natural" word: Unicode letters with apostrophes/hyphens, optionally followed by
-		    // a single piece of natural punctuation (.,!?;:). Accepts Dutch ('s-ochtends, 't),
-		    // French (d\u00e9j\u00e0-vu, na\u00efve), Spanish (ni\u00f1o, a\u00f1os), German (D\u00fcsseldorf, wei\u00df), English
-		    // contractions (don't, it's), and sentence-ending words (gezellige., dat!, vraag?).
-		    // Rejects digits, brackets, slashes, underscores \u2014 code/HTML/LaTeX residue.
-		    // Allow ASCII apostrophe ('), curly quotes (\u2018 \u2019 \u201c \u201d), hyphen, Unicode letters, and
-		    // an optional Spanish opener (\u00a1 / \u00bf) at the start of the word. Optionally followed
-		    // by sentence/clause punctuation. Word must contain \u22651 letter.
-		    const NATURAL = /^[\u00a1\u00bf]?(?=.*\p{L})[\p{L}'\u2018\u2019\u201c\u201d\-]+[.,!?;:]?$/u;
-		    // A "numeric" token: integers, decimals, dates, times, with optional leading currency
-		    // sign (€/$/£/¥). Keeps "100.000", "8", "8:00", "2026-04-25", "€1,7", "$200".
-		    // Code-like tokens are caught by the bracket/symbol strip in cleanRawOutput first.
-		    const NUMERIC = /^[€$£¥]?\d+(?:[.,:\-]\d+)*[.,!?;:]?$/;
-		    const NON_LATIN_LETTER = /[\p{Script=Cyrillic}\p{Script=Greek}\p{Script=Han}\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Devanagari}]/u;
-
-		    // Strip HTML/LaTeX/URLs/code residue from raw model output before tokenizing words.
-		    // We KEEP natural punctuation (.,!?;:) and glue it to the preceding word, so the
-		    // model's "voor !" becomes "voor!" and the cut logic sees the sentence boundary.
-		    function cleanRawOutput(s) {
-		      return (s || "")
-		        .replace(/<[^>]*>/g, ' ')                                       // HTML/XML tags
-		        .replace(/\\[a-zA-Z]+\*?(?:\[[^\]]*\])?(?:\{[^}]*\})*/g, ' ')   // \latexCmd{...}
-		        .replace(/\$+[^\$]*\$+/g, ' ')                                  // $math$ / $$math$$
-		        .replace(/https?:\/\/\S+/g, ' ')                                // URLs
-		        .replace(/[`{}\[\]<>=_|\\]/g, ' ')                              // stray code symbols
-		        .replace(/\n/g, ' ')
-		        .replace(/\s+/g, ' ')
-		        .replace(/\s+([.,!?;:])/g, '$1')                                // glue " ," " ." " !" etc.
-		        .replace(/([.!?])(?=\p{L})/gu, '$1 ')                           // split "bedankt!Kathy"
-		        .replace(/([.,!?;:]){2,}/g, '$1')                               // collapse "!!" / ",,," to one
-		        // Strip orphan punctuation at the very start (no word in front of them).
-		        // Keep Spanish openers ¡ ¿ so "¡Hola!" survives.
-		        .replace(/^[.,!?;:'"‘’“”\s]+/, '')
-		        .trim();
-		    }
-
-		    function isAcceptable(words) {
-		      // Need at least 3 words and the lower bound of the tolerance window.
-		      if (words.length < Math.max(3, wordCount - toleranceWords)) return false;
-		      const joined = words.join(" ");
-		      // We expect Latin script for all bundled models. Any non-Latin letter is rejected.
-		      if (NON_LATIN_LETTER.test(joined)) return false;
-		      // Reject "stitched-fragment" outputs: a capital mid-sentence is fine after a
-		      // sentence-ending punctuation (.!?) on the previous word, or for a proper noun.
-		      // We flag only capitals appearing without a preceding sentence-end.
-		      if (words.length > 4) {
-		        let stitchedCaps = 0;
-		        for (let i = 1; i < words.length; i++) {
-		          if (!/^\p{Lu}/u.test(words[i])) continue;
-		          const prev = words[i - 1] || "";
-		          if (/[.!?]$/.test(prev)) continue;
-		          stitchedCaps++;
-		        }
-		        if (stitchedCaps / (words.length - 1) > 0.30) return false;
-		      }
-		      // Require an uppercase first letter for fresh (no-seed) generation.
-		      if (!seed && !/^\p{Lu}/u.test(words[0] || "")) return false;
-		      return true;
-		    }
-
-		    // Trim to a natural cut point near the target. Within ±`toleranceWords` of
-		    // `wordCount`, cut at the LATEST word ending in any natural punctuation
-		    // (.!?,;:). If none in range, cut at exactly `wordCount`.
-		    function trimAtNaturalCut(words) {
-		      const minLen = Math.max(3, wordCount - toleranceWords);
-		      const maxLen = wordCount + toleranceWords;
-		      let bestCut = -1;
-		      const lookEnd = Math.min(words.length, maxLen);
-		      for (let i = minLen - 1; i < lookEnd; i++) {
-		        const w = words[i] || "";
-		        if (/[.,!?;:]$/.test(w)) bestCut = i + 1; // overwrite — latest wins
-		      }
-		      const cut = bestCut > 0 ? bestCut : Math.min(wordCount, words.length);
-		      return words.slice(0, cut);
-		    }
-
-		    // If no seed and the result starts lowercase, jump forward to the first sentence-
-		    // start (a capital word preceded by a `.!?`-ending word) so we can salvage a clean
-		    // sentence from the middle of the model's output.
-		    function skipToSentenceStart(words) {
-		      if (seed || words.length === 0) return words;
-		      if (/^\p{Lu}/u.test(words[0])) return words;
-		      for (let i = 1; i < words.length; i++) {
-		        if (/^\p{Lu}/u.test(words[i]) && /[.!?]$/.test(words[i - 1] || "")) {
-		          return words.slice(i);
-		        }
-		      }
-		      return words;
-		    }
-
-		    let result = "";
-		    let words = [];
-		    const MAX_ATTEMPTS = 4;
-		    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-		      // Yield to the browser between retries so the page stays responsive.
-		      if (attempt > 1) await new Promise(r => setTimeout(r, 0));
-
-		      const rawText = await generateText(sentenceGenerator, modelPrompt, maxTokens, { temperature: temp, top_p: 0.9, do_sample: true });
-		      console.log(`[GENERATE] Attempt ${attempt} raw model output:`, JSON.stringify(rawText));
-		      const newText = cleanRawOutput(rawText);
-		      console.log(`[GENERATE] Attempt ${attempt} cleaned:`, JSON.stringify(newText));
-
-		      const combined = (seed ? seed + " " + newText : newText).replace(/\s+/g, ' ').trim();
-		      // Keep natural words AND numeric tokens (100.000, 8, 8:00, 2026-04-25, ...).
-		      let candidateWords = combined.split(/\s+/).filter(w => NATURAL.test(w) || NUMERIC.test(w));
-		      candidateWords = skipToSentenceStart(candidateWords);
-		      const trimmed = trimAtNaturalCut(candidateWords);
-
-		      if (isAcceptable(trimmed)) {
-		        words = trimmed;
-		        result = words.join(" ");
-		        console.log(`[GENERATE] Attempt ${attempt} accepted (${words.length} words).`);
-		        break;
-		      }
-		      console.warn(`[GENERATE] Attempt ${attempt} rejected. Filtered words (${trimmed.length}):`, trimmed);
-		    }
-
-		    if (result) {
-		      sentenceInput.value = result;
-		      statusEl.textContent = t('generatedWords', words.length);
-		      statusEl.classList.remove("waiting");
-		      statusEl.style.color = "#276749";
-		    } else {
-		      throw new Error(t('generatedTooShort'));
-		    }
+  generateBtn.disabled = true;
+  statusEl.textContent = "";
+  statusEl.classList.remove("waiting");
+  statusEl.style.color = "";
+  try {
+    const lines = await loadSentencesForLang(lang);
+    if (!lines.length) throw new Error("no sentences available");
+    const pick = lines[Math.floor(Math.random() * lines.length)];
+    sentenceInput.value = pick;
+    const wordCount = pick.split(/\s+/).filter(Boolean).length;
+    statusEl.textContent = t('generatedWords', wordCount);
+    statusEl.style.color = "#276749";
   } catch (e) {
     statusEl.textContent = `Error: ${e.message}`;
-    statusEl.classList.remove("waiting");
     statusEl.style.color = "#c53030";
   } finally {
     generateBtn.disabled = false;
-    generateBtn.classList.remove("loading");
-    generateBtn.textContent = t('generateSentence');
   }
 };
 
@@ -2035,7 +1687,6 @@ function renderPlayerInputs() {
   playerInputsDiv.innerHTML = "";
 
   const shuffledAvatars = shuffleArray(AVATARS);
-  const defaultSentenceModel = getSentenceModelId();
 
   for (let i = 0; i < n; i++) {
     const row = document.createElement("div");
@@ -2205,36 +1856,12 @@ function renderPlayerInputs() {
 
 renderPlayerInputs();
 numPlayersSel.addEventListener("change", renderPlayerInputs);
-// Re-render players when sentence model changes (to update AI default model)
-sentenceModelSelect.addEventListener("change", () => {
-  customModelRow.style.display = sentenceModelSelect.value === "custom" ? "flex" : "none";
-  renderPlayerInputs();
-});
-customModelInput.addEventListener("change", renderPlayerInputs);
 
 difficultyBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     difficultyBtns.forEach(b => b.classList.remove("selected"));
     btn.classList.add("selected");
     maxLives = Number(btn.dataset.lives);
-  });
-});
-
-// Sentence difficulty presets → update temp input
-const sentenceDifficultyBtns = document.querySelectorAll("#sentenceDifficultyBtns .difficulty-btn");
-const sentenceTempInput = document.getElementById("sentenceTemp");
-sentenceDifficultyBtns.forEach(btn => {
-  btn.addEventListener("click", () => {
-    sentenceDifficultyBtns.forEach(b => b.classList.remove("selected"));
-    btn.classList.add("selected");
-    sentenceTempInput.value = btn.dataset.temp;
-  });
-});
-// Deselect presets when temp is manually changed
-sentenceTempInput.addEventListener("input", () => {
-  const val = parseFloat(sentenceTempInput.value);
-  sentenceDifficultyBtns.forEach(btn => {
-    btn.classList.toggle("selected", parseFloat(btn.dataset.temp) === val);
   });
 });
 
@@ -3089,28 +2716,6 @@ function render() {
 document.getElementById("optCase").onchange = e => opts.caseInsensitive = e.target.checked;
 document.getElementById("optPunct").onchange = e => opts.ignorePunctuation = e.target.checked;
 document.getElementById("optLev").oninput = e => opts.levenshtein = Number(e.target.value) || 0;
-
-const SEED_PROMPT_POOL = {
-  en: ["The cat sat on", "Yesterday I went to", "My friend told me", "The weather was", "She decided to", "In the morning", "The book was about", "He walked into", "They found a", "It was a beautiful"],
-  nl: ["De kat zat op", "Gisteren ging ik naar", "Mijn vriend vertelde me", "Het weer was", "Zij besloot om", "'s Ochtends", "Het boek ging over", "Hij liep naar binnen en", "Ze vonden een", "Het was een mooie"],
-  es: ["El gato se sentó en", "Ayer fui a", "Mi amigo me dijo", "El tiempo estaba", "Ella decidió", "Por la mañana", "El libro trataba de", "Él entró en", "Encontraron una", "Era una hermosa"]
-};
-
-function seedLangForCurrentModel() {
-  const id = (typeof getSentenceModelId === "function" ? getSentenceModelId() : "") || "";
-  if (/dutch|nederlands/i.test(id)) return "nl";
-  if (/spanish|español|gpt2-base-bne/i.test(id)) return "es";
-  return SEED_PROMPT_POOL[currentLang] ? currentLang : "en";
-}
-
-document.getElementById("randomSeedBtn").onclick = () => {
-  const pool = SEED_PROMPT_POOL[seedLangForCurrentModel()] || SEED_PROMPT_POOL.en;
-  sentenceInput.value = pool[Math.floor(Math.random() * pool.length)];
-  if (sentenceInput.type === "password") {
-    sentenceInput.type = "text";
-    updateEyeIcon();
-  }
-};
 
 document.getElementById("backBtn").onclick = () => {
   if (game) game.finished = true; // stop any running AI turn
