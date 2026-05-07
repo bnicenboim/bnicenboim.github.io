@@ -978,7 +978,6 @@ const TRANSLATIONS = {
     playerNamePlaceholder: (n) => `Player ${n} name`,
     modelsCleared: "All downloaded models have been cleared.",
     errorClearingCache: (msg) => "Error clearing cache: " + msg,
-    generatedWords: (n) => `Generated ${n} words. Click 👁 to reveal.`,
     pleaseEnterSentence: "Please enter a sentence or click Generate.",
     atLeastTwoWords: "The sentence must have at least 2 words.",
     unloadedModelsConfirm: (list) =>
@@ -1051,7 +1050,6 @@ const TRANSLATIONS = {
     playerNamePlaceholder: (n) => `Naam speler ${n}`,
     modelsCleared: "Alle gedownloade modellen zijn gewist.",
     errorClearingCache: (msg) => "Fout bij wissen: " + msg,
-    generatedWords: (n) => `${n} woorden gegenereerd. Klik op 👁 om te zien.`,
     pleaseEnterSentence: "Voer een zin in of klik op Genereren.",
     atLeastTwoWords: "De zin moet minimaal 2 woorden bevatten.",
     unloadedModelsConfirm: (list) =>
@@ -1124,7 +1122,6 @@ const TRANSLATIONS = {
     playerNamePlaceholder: (n) => `Nombre del jugador ${n}`,
     modelsCleared: "Todos los modelos descargados han sido eliminados.",
     errorClearingCache: (msg) => "Error al limpiar caché: " + msg,
-    generatedWords: (n) => `${n} palabras generadas. Clic en 👁 para revelar.`,
     pleaseEnterSentence: "Por favor, introduce una oración o pulsa Generar.",
     atLeastTwoWords: "La oración debe tener al menos 2 palabras.",
     unloadedModelsConfirm: (list) =>
@@ -1590,11 +1587,7 @@ document.getElementById("generateBtn").onclick = async () => {
   try {
     const lines = await loadSentencesForLang(lang);
     if (!lines.length) throw new Error("no sentences available");
-    const pick = lines[Math.floor(Math.random() * lines.length)];
-    sentenceInput.value = pick;
-    const wordCount = pick.split(/\s+/).filter(Boolean).length;
-    statusEl.textContent = t('generatedWords', wordCount);
-    statusEl.style.color = "#276749";
+    sentenceInput.value = lines[Math.floor(Math.random() * lines.length)];
   } catch (e) {
     statusEl.textContent = `Error: ${e.message}`;
     statusEl.style.color = "#c53030";
