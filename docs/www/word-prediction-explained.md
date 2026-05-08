@@ -26,21 +26,21 @@ You see the beginning of a sentence and try to guess the next hidden word before
 
 Try finishing this:
 
-> <em>She put on her coat, picked up her keys, and walked out the ___.</em>
+> <em>She put on her coat, picked up her keys, and walked out the ___</em>
 
-You almost certainly thought about _door_. Something in your brain just... knew.
+You almost certainly thought about _door_. Something in your brain just knew.
 
 Now this one:
 
-> <em>The scientist published her results in a peer-reviewed ___.</em>
+> <em>It was raining, so she grabbed her ___</em>
 
-_Journal_, probably. Or maybe _paper_.
+_Umbrella_, probably. Or maybe _jacket_.
 
-> <em>He ordered a coffee and a chocolate ___.</em>
+> <em>He had a coffee and a ___</em>
 
-_Cake? Croissant? Cookie?_ Harder. Several words fit equally well.
+_Croissant? Slice of cake? Brownie?_ This is harder because several continuations fit equally well.
 
-That difference matters: **some words are much easier to predict than others.** Predictable words feel almost inevitable. Unpredictable ones could go in many directions. The game makes this visible. Some words get guessed on the first try, others stump everyone.
+On some occasions, words are much easier to predict than on others. The game makes this visible. Some words get guessed on the first try, others nobody can figure out.
 
 ---
 
@@ -50,23 +50,21 @@ You can't _feel_ your brain making predictions. But scientists have found ways t
 
 One way is tracking people's eyes while they read. Your eyes don't slide smoothly across a page. They jump from word to word. And it turns out they spend less time on predictable words, sometimes skipping them entirely, while lingering on surprising ones. The brain already has a good guess for predictable words, so it doesn't need to look as carefully.
 
-There's also a more direct approach. Your brain runs on electricity: billions of cells communicating through small bursts of electrical activity, these are your neurons. All those tiny signals add up, and some of that activity actually reaches the surface of your head. By placing small sensors on someone's scalp (a technique called EEG, for electroencephalography), you can pick up those signals while the person reads. It looks like a cap covered in wires, and what it records is a kind of summary of what millions of neurons are doing at each moment. When a word shows up that the reader didn't expect, the electrical response shifts. The more surprising the word, the bigger the shift. The brain is, in a sense, going: "Hang on, that's not what I had in mind."
+There's also a more direct way to look into the brain. Your brain runs on electricity: billions of cells communicating through small bursts of electrical activity, these are your neurons. All those tiny signals add up, and some of that activity actually reaches the surface of your head. By placing small sensors on someone's scalp (a technique called EEG, for electroencephalography), you can pick up those signals while the person reads. It looks like a cap covered in wires, and what it records is a kind of summary of what millions of neurons are doing at each moment. When a word shows up that the reader didn't expect, the electrical response shifts. The more surprising the word, the bigger the shift. 
 
 ---
 
 ## Context is everything
 
-Watch what happens when you add more context:
 
-> <em>He ordered a coffee and a chocolate ___.</em>
+Watch what happens when you add more context to the last example, "<em>He had a coffee and a ___.</em>". Now we have, for example:
 
-Still hard. But:
 
-> <em>He was celebrating his birthday. He ordered a coffee and a chocolate ___.</em>
+> <em>He was celebrating his birthday. He had a coffee and a ___</em>
 
-Now _cake_ is much more obvious.
+Now _slice of cake_ is much more obvious.
 
-Guesses become easier the further into a sentence you get. Your brain pulls in everything available: the words already said, what makes sense in the real world, what people typically say in that kind of situation. More context means fewer plausible options, and easier guesses.
+Guesses become easier the further into a sentence you get. Your brain pulls in everything available: the words already said, what makes sense in the real world, what people typically say in that kind of situation. More context means fewer possible options, and easier guesses.
 
 The same thing happens when you listen. You start processing what someone is saying before they've finished the sentence. In conversation, people often begin composing their reply _while the other person is still speaking_, because they can already tell where it's going.
 
@@ -90,19 +88,21 @@ The English model, being larger, tends to predict a bit better. But the smaller 
 
 ---
 
-## Birds and planes
+## Of birds and planes
 
-Are human minds and language models the same thing? Definitely not. They are as different as birds and airplanes. One is alive and evolved over millions of years; the other is engineered metal. They also have very different motivations for flying. But they both fly, and they both succeed because they exploit the same physics: aerodynamics, the way air flows around a wing.
+::: {layout="[2,1]" layout-valign="center"}
+Are human minds and language models the same thing? Definitely not. They are as different as birds and airplanes. One is alive and evolved over millions of years; the other is engineered metal. They also have very different motivations for flying. But they both fly, and they both succeed because they use the same physics: aerodynamics, the way air flows around a wing.
 
-Studying airplanes can teach us a lot about the _medium_ birds fly through. Not about feathers or muscles, but about air itself, what makes flight possible in the first place.
+![Image generated with ChatGPT (OpenAI).](birds-and-planes-chatgpt.png)
+:::
 
-Something similar is going on with language models and human minds. They're built completely differently, but they both navigate the same thing: **language**. By studying what a model finds predictable or surprising, we learn about regularities in the language: what tends to appear where, what's common, what's unusual. Those are the same regularities that shape how our brains process words. In a way, the game score measures this too: high scores go to whoever best matches the statistical patterns of the language.
+Studying airplanes can teach us a lot about the *medium* birds fly through. Not about feathers or muscles, but about what makes flight possible in the first place.
 
-How far this analogy stretches is genuinely controversial. Some researchers argue that language models are so different from brains that comparing them is misleading. Others think the similarities go deeper than we'd expect. Nobody has settled this, and figuring it out is one of the most interesting open questions in the field right now.
+Something similar is going on with language models and human minds. They're built completely differently, but they both navigate the same thing: **language**. By studying what a model finds predictable or surprising, or how it represents words, we learn about patterns in the language: what tends to appear where, what's common, what's unusual. Those are the same patterns that shape how our brains process words.
 
----
+How far this analogy stretches is genuinely controversial. Some researchers argue that language models are so different from brains that comparing them is misleading. Others think the similarities go deeper than we'd expect. Nobody has settled this, and figuring it out is an intriguing open question in the field right now.
 
-Next time you finish someone else's sentence without thinking, remember: your brain has been playing this game your whole life.
+
 
 ---
 

@@ -33,13 +33,13 @@ Seguramente tu primera intuición fue _puerta_. Algo en el cerebro simplemente..
 
 Ahora esta:
 
-> <em>La investigadora publicó sus resultados en una revista ___.</em>
+> <em>Llovía, así que agarró su ___.</em>
 
-_Científica_, probablemente. O quizás _académica_.
+_Paraguas_, probablemente. O quizás _campera_.
 
-> <em>Pidió un café y una ___.</em>
+> <em>Tomó un café y comió ___.</em>
 
-_¿Medialuna? ¿Factura? ¿Tostada?_ Esta vez es más difícil, hay varias palabras que encajan igual de bien.
+_¿Una medialuna? ¿Un trozo de torta? ¿Una factura?_ Esta vez es más difícil, hay varias continuaciones que encajan igual de bien.
 
 Lo que importa es que **algunas palabras son mucho más fáciles de predecir que otras.** Cuando una palabra es muy predecible, casi no hay otra opción posible; cuando no lo es, podría ser cualquier cosa. El juego hace esto visible: algunas palabras se adivinan al primer intento, otras resultan casi imposibles.
 
@@ -57,15 +57,11 @@ También hay una forma más directa. El cerebro funciona con electricidad: miles
 
 ## El contexto es todo
 
-¿Qué pasa cuando se agrega más contexto?
+¿Qué pasa cuando se agrega más contexto al último ejemplo, "<em>Tomó un café y comió ___.</em>"? Por ejemplo:
 
-> <em>Pidió un café y una ___.</em>
+> <em>Era su cumpleaños. Tomó un café y comió ___.</em>
 
-Es bastante difícil. Pero:
-
-> <em>Era su cumpleaños. Pidió un café y una ___.</em>
-
-Ahora _torta_ es la continuación obvia.
+Ahora _un trozo de torta_ es la continuación obvia.
 
 A medida que uno lee más palabras de una oración, se vuelve más fácil adivinar qué viene después. El cerebro usa todo lo que tiene a mano para hacer predicciones: las palabras que ya se dijeron, lo que tiene sentido en el mundo real, lo que la gente suele decir en ese tipo de situaciones. Tener más contexto significa menos opciones posibles.
 
@@ -93,17 +89,17 @@ El modelo en inglés, al ser más grande, tiende a predecir un poco mejor. Pero 
 
 ## Pájaros y aviones
 
+::: {layout="[2,1]" layout-valign="center"}
 ¿Son lo mismo las mentes humanas y los modelos de lenguaje? Rotundamente no. Es como comparar pájaros con aviones. Son obviamente diferentes: uno está vivo y es el resultado de millones de años de evolución; el otro es de metal diseñado por ingenieros. Además tienen distintas motivaciones para volar. Pero los dos vuelan, y los dos lo logran porque aprovechan la misma física: la aerodinámica, la forma en que el aire fluye alrededor de un ala.
+
+![Imagen generada con ChatGPT (OpenAI).](birds-and-planes-chatgpt.png)
+:::
 
 Estudiar aviones nos puede enseñar sobre el _medio_ en el que vuelan los pájaros. No sobre plumas o músculos, sino sobre el aire en sí y sobre lo que hace posible el vuelo.
 
 Algo parecido pasa con los modelos de lenguaje y las mentes humanas. Están construidos de maneras completamente diferentes, pero ambos operan sobre lo mismo: **el lenguaje**. Estudiando qué encuentra predecible o sorprendente un modelo, se aprende sobre las regularidades y los patrones presentes en el idioma: qué tiende a aparecer dónde, qué es común, qué es inusual. Esos mismos patrones son los que determinan cómo nuestro cerebro procesa las palabras. De alguna manera, el puntaje del juego mide esto: quién coincide mejor con los patrones estadísticos del idioma.
 
-Hasta dónde llega esta analogía es materia de debate. Algunos investigadores sostienen que los modelos de lenguaje son tan diferentes de los cerebros que compararlos no tiene sentido. Otros piensan que las similitudes son más profundas de lo que uno esperaría. Esto no está resuelto todavía, y es una de las preguntas abiertas más interesantes del campo.
-
----
-
-La próxima vez que completes la oración de otra persona sin pensarlo, recordá: tu cerebro viene jugando a este juego desde siempre.
+Hasta dónde llega esta analogía es materia de debate. Algunos investigadores sostienen que los modelos de lenguaje son tan diferentes de los cerebros que compararlos no tiene sentido. Otros piensan que las similitudes son más profundas de lo que uno esperaría. Esto no está resuelto todavía, y es una pregunta abierta intrigante del campo en este momento.
 
 ---
 
