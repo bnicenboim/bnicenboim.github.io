@@ -14,32 +14,28 @@ library(htmltools)
 options(htmltools.dir.version = FALSE)
 
 library(RefManageR)
-articles <- ReadBib("papers/articles.bib", check = FALSE)
-inproceedings <- ReadBib("papers/papers_inproceedings.bib", check = FALSE)
-presentations <- ReadBib("papers/selected.bib", check = FALSE)
+source("common.R")
+articles <- read_bib("papers/articles.bib")
+inproceedings <- read_bib("papers/papers_inproceedings.bib")
+presentations <- read_bib("papers/selected.bib")
 
-underreview <- ReadBib("papers/underreview.bib", check = FALSE)
-books <- ReadBib("papers/books.bib", check = FALSE)
-unpublished <- ReadBib("papers/unpublished.bib", check = FALSE)
+underreview <- read_bib("papers/underreview.bib")
+books <- read_bib("papers/books.bib")
+unpublished <- read_bib("papers/unpublished.bib")
 
 endcit <- "</cite></p>"
  
 this_year <- as.numeric(format(Sys.Date(), "%Y"))
 first_year <-  2000
-source("common.R")
 
 
 BibOptions(check.entries = FALSE, style = "html", cite.style = "authortitle",
            bib.style = "authoryear",sorting="ydnt",max.names =10,dashed=FALSE, no.print.fields=c("issn","eprint","url","customa","customb","customc"))
 
 
-sort(articles,sorting="ydnt")
-sort(inproceedings,sorting="ydnt")
-sort(inproceedings,sorting="ydnt")
-sort(presentations,sorting="ydnt")
-sort(underreview,sorting="ydnt")
-sort(books,sorting="ydnt")
-sort(unpublished,sorting="ydnt")
+for(.b in list(articles, inproceedings, presentations, underreview, books, unpublished)){
+    if(!is.null(.b)) sort(.b, sorting = "ydnt")
+}
 
 endcit<- "</cite></p>"
 
